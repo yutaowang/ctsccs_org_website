@@ -236,7 +236,7 @@ function Calendar() {
   );
 }
 
-const courseRows = [
+const chineseCourses = [
   ["Children Spoken Mandarin (5+)", "Ziyan Xu", "206", "$290", "09:30–11:05", "course_description/cn_beginner.pdf"],
   ["Grade 1", "Yulan Zhang", "208", "$290", "09:30–11:05", "course_description/cn_Pioneer.pdf"],
   ["Grade 2", "Yaqin Li", "224", "$290", "09:30–11:05", ""],
@@ -251,15 +251,88 @@ const courseRows = [
   ["AP Chinese and Culture", "Liurong Luo", "220", "$290", "09:30–11:05", "course_description/satii.pdf"],
 ];
 
+const courseGroups = [
+  {
+    id: "chinese",
+    label: "Chinese 中文课",
+    courses: chineseCourses,
+  },
+  {
+    id: "math",
+    label: "Math 数学课",
+    courses: [
+      ["Math Advanced 3rd grade", "Katherine Zhang", "206", "$200", "11:10–11:55", "course_description/math_grade3.pdf"],
+      ["Math Advanced 4th grade", "Alina Li", "218", "$200", "11:10–11:55", "course_description/math_grade4.pdf"],
+      ["Math Advanced 5th grade", "Halen Liu", "212", "$200", "11:10–11:55", "course_description/math_grade5.pdf"],
+      ["Math Advanced 6th grade", "Jessica Feng", "214", "$200", "11:10–11:55", "course_description/math_grade6.pdf"],
+      ["Math Advanced 7th grade / Basic Pre-algebra", "Claire Li", "215", "$200", "11:10–11:55", ""],
+      ["Pre Algebra", "Julian Horst", "216", "$200", "11:10–11:55", "course_description/math_pre_algrbra.pdf"],
+      ["Algebra", "Danlu Li", "208", "$200", "11:10–11:55", "course_description/math_algebra.pdf"],
+      ["Advanced Math League", "Ethan Wang", "210", "$200", "12:00–12:45", "course_description/math_league.pdf"],
+      ["Geometry", "Mark Noe", "209", "$200", "11:10–11:55", "course_description/geometry.pdf"],
+      ["Amateur Radio Technician License Course", "Mark Noe", "209", "$200", "10:20–11:05", "course_description/artlc.pdf"],
+      ["Introduction to Computer Science and Electronics", "Mark Noe", "209", "$200", "12:00–12:45", "course_description/ComputerScienceCourseListing.pdf"],
+      ["Introduction to Robotics", "Xiaochen Li", "212", "$200", "12:00–12:45", "course_description/cs_robotics.pdf"],
+    ],
+  },
+  {
+    id: "arts",
+    label: "Art & PE 文体课",
+    courses: [
+      ["Academic Art (Age 9+)", "Yujuan Zhai", "219", "$300", "12:00–12:45", "course_description/academic_art.pdf"],
+      ["Chess Advanced", "Julian Horst", "214", "$150", "12:00–12:45", "course_description/chess.pdf"],
+      ["Chess Basic", "Stephen Faulkner", "215", "$150", "12:00–12:45", "course_description/chess.pdf"],
+      ["Dancing Beginner", "Claire Li", "222", "$150", "12:00–12:45", "course_description/dance_beginner.pdf"],
+      ["Flute", "Katherine Zhang", "208", "$150", "12:00–12:45", "course_description/Flute.pdf"],
+      ["Oil Pastel (5+)", "Krystal Chen", "224", "$300", "11:10–11:55", "course_description/OilPastel.pdf"],
+      ["Violin", "Joshua Payne", "218", "$150", "12:00–12:45", "course_description/violin.pdf"],
+      ["Chinese Watercolor Painting (7+)", "Yujuan Zhai", "219", "$300", "11:10–11:55", ""],
+      ["Kids Basketball", "Aaron Chen", "Gym", "$150", "12:00–12:45", "course_description/basketball.pdf"],
+      ["Practical Course in Communication and Leadership", "Rich Derksen", "220", "$200", "12:00–12:45", "course_description/public%20speaking.pdf"],
+    ],
+  },
+  {
+    id: "sat",
+    label: "PSAT & SAT+",
+    courses: [
+      ["SAT / PSAT", "Matthew Simpson", "222", "$500", "09:30–11:05", ""],
+    ],
+  },
+];
+
 function Courses() {
+  const [activeGroupId, setActiveGroupId] = useState(courseGroups[0].id);
+  const activeGroup = courseGroups.find((group) => group.id === activeGroupId);
+
   return (
     <Page eyebrow="Academics" title="课程安排 Courses">
       <Section>
-        <div className="course-tabs"><span>Chinese 中文课</span><span>Math 数学课</span><span>Art & PE 文体课</span><span>PSAT & SAT+</span></div>
-        <div className="table-wrap">
+        <div className="course-tabs" role="tablist" aria-label="课程类别">
+          {courseGroups.map((group) => (
+            <button
+              id={`course-tab-${group.id}`}
+              className={group.id === activeGroupId ? "is-active" : ""}
+              type="button"
+              role="tab"
+              aria-selected={group.id === activeGroupId}
+              aria-controls={`course-panel-${group.id}`}
+              onClick={() => setActiveGroupId(group.id)}
+              key={group.id}
+            >
+              {group.label}
+              <span>{group.courses.length}</span>
+            </button>
+          ))}
+        </div>
+        <div
+          id={`course-panel-${activeGroup.id}`}
+          className="table-wrap course-panel"
+          role="tabpanel"
+          aria-labelledby={`course-tab-${activeGroup.id}`}
+        >
           <table>
             <thead><tr><th>Class Name</th><th>Teacher</th><th>Room</th><th>Donation</th><th>Time</th></tr></thead>
-            <tbody>{courseRows.map(([name, teacher, room, fee, time, file]) => (
+            <tbody>{activeGroup.courses.map(([name, teacher, room, fee, time, file]) => (
               <tr key={name}>
                 <td>{file ? <ExternalLink href={file}>{name}</ExternalLink> : name}</td>
                 <td>{teacher}</td><td>{room}</td><td>{fee}</td><td>{time}</td>

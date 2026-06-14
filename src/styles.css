@@ -990,18 +990,71 @@ footer {
 }
 
 .course-tabs {
-  display: flex;
+  display: grid;
   margin-bottom: 20px;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 8px;
-  flex-wrap: wrap;
 }
 
-.course-tabs span {
-  padding: 8px 12px;
-  color: var(--blue);
-  background: #eaf0f8;
-  font-size: 0.7rem;
+.course-tabs button {
+  position: relative;
+  min-height: 58px;
+  padding: 10px 34px 10px 13px;
+  color: #52617a;
+  background: #eef2f7;
+  border: 1px solid #e0e5ec;
+  cursor: pointer;
+  font-size: 0.72rem;
   font-weight: 700;
+  text-align: left;
+  transition: 170ms ease;
+}
+
+.course-tabs button:hover {
+  color: var(--blue);
+  border-color: #b8c6d9;
+}
+
+.course-tabs button.is-active {
+  color: white;
+  background: var(--navy);
+  border-color: var(--navy);
+  box-shadow: inset 0 -4px var(--gold);
+}
+
+.course-tabs button span {
+  position: absolute;
+  top: 50%;
+  right: 10px;
+  display: grid;
+  width: 22px;
+  height: 22px;
+  place-items: center;
+  color: var(--blue);
+  background: white;
+  border-radius: 50%;
+  font-size: 0.62rem;
+  transform: translateY(-50%);
+}
+
+.course-tabs button.is-active span {
+  color: var(--navy);
+  background: var(--gold);
+}
+
+.course-panel {
+  animation: course-panel-in 180ms ease-out;
+}
+
+@keyframes course-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .contact-grid {
@@ -1330,6 +1383,10 @@ footer {
   .calendar-grid {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
+
+  .course-tabs {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 @media (max-width: 680px) {
@@ -1473,6 +1530,10 @@ footer {
 
   .calendar-grid {
     grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .course-tabs {
+    grid-template-columns: 1fr;
   }
 
   .feedback-form label.full,
