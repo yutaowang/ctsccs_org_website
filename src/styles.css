@@ -111,7 +111,7 @@ button {
 
 .brand-emblem img {
   display: block;
-  width: 50px;
+  width: 52px;
   height: auto;
 }
 
@@ -193,6 +193,11 @@ button {
   grid-template-columns: 246px minmax(0, 1fr);
   gap: 28px;
   padding: 34px 0 60px;
+}
+
+.page-shell.admin-shell {
+  display: block;
+  width: min(1440px, calc(100% - 64px));
 }
 
 .sidebar {
@@ -281,6 +286,10 @@ button {
 
 main {
   min-width: 0;
+}
+
+.admin-shell main {
+  width: 100%;
 }
 
 .hero {

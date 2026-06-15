@@ -305,6 +305,7 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { path, navigate } = useRouter();
   const normalizedPath = path.length > 1 ? path.replace(/\/$/, "") : path;
+  const isAdminPath = normalizedPath === "/admin";
   const authRoutes = ["/login", "/account", "/admin"];
   const isKnownPage = normalizedPath === "/" || pageRoutes.includes(normalizedPath) || authRoutes.includes(normalizedPath);
 
@@ -318,12 +319,14 @@ function App() {
     <RouterContext.Provider value={{ navigate }}>
       <div id="top">
         <Header menuOpen={menuOpen} setMenuOpen={setMenuOpen} />
-        <div className="page-shell">
-          <Navigation
-            menuOpen={menuOpen}
-            closeMenu={() => setMenuOpen(false)}
-            currentPath={normalizedPath}
-          />
+        <div className={`page-shell ${isAdminPath ? "admin-shell" : ""}`}>
+          {!isAdminPath && (
+            <Navigation
+              menuOpen={menuOpen}
+              closeMenu={() => setMenuOpen(false)}
+              currentPath={normalizedPath}
+            />
+          )}
           <main>
             {normalizedPath === "/" && <HomePage />}
             {pageRoutes.includes(normalizedPath) && <PageContent path={normalizedPath} Link={SiteLink} />}
@@ -342,7 +345,7 @@ function App() {
           </main>
         </div>
         <Footer />
-        {menuOpen && (
+        {menuOpen && !isAdminPath && (
           <button
             className="menu-backdrop"
             aria-label="关闭菜单"
