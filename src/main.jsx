@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { PageContent, pageRoutes } from "./pages";
 import { AuthProvider, LoginPage, useAuth } from "./auth";
+import { AdminPage } from "./admin";
 import { AccountPage } from "./portal";
 import "./styles.css";
 
@@ -304,7 +305,7 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { path, navigate } = useRouter();
   const normalizedPath = path.length > 1 ? path.replace(/\/$/, "") : path;
-  const authRoutes = ["/login", "/account"];
+  const authRoutes = ["/login", "/account", "/admin"];
   const isKnownPage = normalizedPath === "/" || pageRoutes.includes(normalizedPath) || authRoutes.includes(normalizedPath);
 
   useEffect(() => {
@@ -328,6 +329,7 @@ function App() {
             {pageRoutes.includes(normalizedPath) && <PageContent path={normalizedPath} Link={SiteLink} />}
             {normalizedPath === "/login" && <LoginPage Link={SiteLink} />}
             {normalizedPath === "/account" && <AccountPage Link={SiteLink} />}
+            {normalizedPath === "/admin" && <AdminPage Link={SiteLink} />}
             {!isKnownPage && (
               <div className="inner-page">
                 <div className="page-title"><span>404</span><h1>页面未找到</h1></div>

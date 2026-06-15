@@ -323,6 +323,141 @@ function DataTable({ columns, rows, empty = "No records found." }) {
   );
 }
 
+function StaffUserManager() {
+  const { session } = useAuth();
+  const emptyForm = {
+    id: "",
+    email: "",
+    password: "",
+    role: "sccs_admin_team_role",
+    teacher_id: "",
+    first_name: "",
+    last_name: "",
+    phone: "",
+    title: "",
+  };
+  const [users, setUsers] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [form, setForm] = useState(emptyForm);
+  const [status, setStatus] = useState({ error: "", message: "" });
+  const [busy, setBusy] = useState(false);
+
+  const request = async (method = "GET", body) => {
+    const response = await fetch("/api/admin-users", {
+      method,
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${session.access_token}`,
+      },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+    const result = await response.json();
+    if (!response.ok) throw new Error(result.error || "Staff account operation failed.");
+    return result;
+  };
+
+  const load = async () => {
+    try {
+      const result = await request();
+      setUsers(result.users || []);
+      setTeachers(result.teachers || []);
+    } catch (error) {
+      setStatus({ error: error.message, message: "" });
+    }
+  };
+  useEffect(() => { load(); }, [session.access_token]);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setStatus({ error: "", message: "" });
+    try {
+      await request(form.id ? "PATCH" : "POST", form);
+      setStatus({
+        error: "",
+        message: form.id ? "Staff account updated." : "Staff account created.",
+      });
+      setForm(emptyForm);
+      await load();
+    } catch (error) {
+      setStatus({ error: error.message, message: "" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const edit = (user) => {
+    setForm({
+      ...emptyForm,
+      id: user.id,
+      email: user.email,
+      role: user.role,
+      teacher_id: user.teacher_id || "",
+      first_name: user.profile?.first_name || "",
+      last_name: user.profile?.last_name || "",
+      phone: user.profile?.phone || "",
+      title: user.profile?.title || "",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const remove = async (user) => {
+    if (!window.confirm(`Delete staff account ${user.email}?`)) return;
+    setBusy(true);
+    try {
+      await request("DELETE", { id: user.id });
+      setStatus({ error: "", message: "Staff account deleted." });
+      if (form.id === user.id) setForm(emptyForm);
+      await load();
+    } catch (error) {
+      setStatus({ error: error.message, message: "" });
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  const isTeacher = form.role === "sccs_teacher_ta_role";
+  return (
+    <div className="portal-panel">
+      <div className="panel-heading">
+        <div><span>用户权限</span><h2>Manage Staff Users</h2></div>
+      </div>
+      <Status status={status} />
+      <form className="portal-form staff-user-form" onSubmit={submit}>
+        <label><span>ctsccs.org email</span><input type="email" pattern=".+@ctsccs\.org" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></label>
+        <label><span>{form.id ? "New password (optional)" : "Temporary password"}</span><input type="password" minLength="10" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required={!form.id} /></label>
+        <label><span>Role</span><select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, teacher_id: "" })}><option value="sccs_admin_team_role">Management Team</option><option value="sccs_teacher_ta_role">Teacher / TA</option></select></label>
+        {isTeacher ? (
+          <label><span>Teacher record</span><select value={form.teacher_id} onChange={(event) => setForm({ ...form, teacher_id: event.target.value })} required><option value="">Select teacher</option>{teachers.map((teacher) => <option value={teacher.id} key={teacher.id}>{fullName(teacher) || teacher.short_name} · {teacher.email_1 || "no email"}</option>)}</select></label>
+        ) : (
+          <>
+            <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
+            <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
+            <label><span>Phone</span><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
+            <label><span>Title</span><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label>
+          </>
+        )}
+        <div className="button-row">
+          <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update staff user" : "Create staff user"}</button>
+          {form.id && <button className="outline-link" type="button" onClick={() => setForm(emptyForm)}>Cancel edit</button>}
+        </div>
+      </form>
+      <div className="staff-user-list">
+        {users.map((user) => (
+          <div key={user.id}>
+            <span><strong>{user.email}</strong><small>{user.role.replaceAll("_", " ")}</small></span>
+            <div className="button-row">
+              <button className="outline-link" type="button" onClick={() => edit(user)}>Edit</button>
+              <button className="danger-link" type="button" onClick={() => remove(user)} disabled={busy}>Delete</button>
+            </div>
+          </div>
+        ))}
+        {!users.length && <div className="empty-state">No management team or teacher login accounts.</div>}
+      </div>
+    </div>
+  );
+}
+
 function StaffPortal({ isAdmin }) {
   const { session, role, teacherId, refreshRole } = useAuth();
   const [active, setActive] = useState(isAdmin ? "classes" : "classes");
@@ -339,6 +474,7 @@ function StaffPortal({ isAdmin }) {
   const [settingValue, setSettingValue] = useState("");
   const [search, setSearch] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
+  const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", message: "" });
 
   const load = async () => {
@@ -496,15 +632,25 @@ function StaffPortal({ isAdmin }) {
     }
   };
 
+  const changePassword = async (event) => {
+    event.preventDefault();
+    const result = await supabase.auth.updateUser({ password: newPassword });
+    setStatus(result.error
+      ? { error: result.error.message, message: "" }
+      : { error: "", message: "Password updated." });
+    if (!result.error) setNewPassword("");
+  };
+
   const adminTabs = [
     ["classes", "Classes"], ["teachers", "Teacher Contact"], ["rosters", "Rosters"],
     ["registrations", "Registration Summary"], ["payments", "Payment History"],
     ["search", "Family Search"], ["print", "Print Registration"],
   ];
   if (role === roles.admin) adminTabs.push(["users", "Users"], ["settings", "Site Settings"]);
+  adminTabs.push(["password", "Password"]);
   const teacherTabs = [
     ["classes", "My Classes"], ["rosters", "Roster"], ["attendance", "Attendance"],
-    ["grades", "Grades"], ["email", "Email Students"],
+    ["grades", "Grades"], ["email", "Email Students"], ["password", "Password"],
   ];
   const tabs = isAdmin ? adminTabs : teacherTabs;
   const query = search.trim().toLowerCase();
@@ -544,16 +690,19 @@ function StaffPortal({ isAdmin }) {
       {active === "payments" && <div className="portal-panel"><div className="panel-heading"><div><span>支付记录</span><h2>Payment History</h2></div></div><DataTable columns={[["family_id", "Family ID"], ["email", "Email"], ["name", "Name"], ["due", "Due"], ["paid", "Paid"], ["balance", "Balance"]]} rows={payments.map((row) => { const family = families.find((item) => item.id === row.family_id); const due = Number(row.registration_fee || 0) + Number(row.late_fee || 0); const paid = [row.pay_1_cash, row.pay_1_check, row.pay_2_cash, row.pay_2_check, row.pay_3_cash, row.pay_3_check, row.pay_4_cash, row.pay_4_check, row.pay_5_cash, row.pay_5_check].reduce((sum, value) => sum + Number(value || 0), 0); return { id: row.id, family_id: family?.legacy_family_id || family?.id, email: family?.email, name: fullName(family), due, paid, balance: due - paid }; })} /></div>}
       {active === "search" && <div className="portal-panel"><div className="panel-heading"><div><span>家庭与学生搜索</span><h2>Search Families</h2></div></div><label className="standalone-field"><span>Family ID, parent/student name, phone, or email</span><input value={search} onChange={(event) => setSearch(event.target.value)} /></label><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"]]} rows={searchRows} empty="Enter a search term." /></div>}
       {active === "print" && <div className="portal-panel print-area"><div className="panel-heading"><div><span>打印注册信息</span><h2>Print Registration</h2></div><button className="outline-link no-print" type="button" onClick={() => window.print()}>Print</button></div><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"]]} rows={searchRows} empty="Use Family Search first, then return here to print selected information." /></div>}
-      {active === "users" && <div className="portal-panel"><div className="panel-heading"><div><span>用户权限</span><h2>Manage Users</h2></div></div><div className="role-list">{userRoles.map((row) => { const family = families.find((item) => item.user_id === row.user_id); return <div key={row.user_id}><span><strong>{family?.email || "Unlinked Auth user"}</strong><code>{row.user_id}</code></span><select aria-label="Linked teacher" value={row.teacher_id || ""} onChange={(event) => updateTeacherLink(row.user_id, event.target.value)}><option value="">No teacher link</option>{teachers.map((teacher) => <option value={teacher.id} key={teacher.id}>{fullName(teacher) || teacher.short_name}</option>)}</select><select aria-label="Role" value={row.role} onChange={(event) => updateRole(row.user_id, event.target.value)}><option value={roles.family}>Family</option><option value={roles.teacher}>Teacher / TA</option><option value={roles.team}>Management Team</option><option value={roles.admin}>Administrator</option></select></div>; })}</div></div>}
+      {active === "users" && <StaffUserManager />}
       {active === "settings" && <div className="portal-panel"><div className="panel-heading"><div><span>网站配置</span><h2>Site Settings</h2></div></div><form className="portal-form compact" onSubmit={saveSetting}><label><span>Setting key</span><input value={settingKey} onChange={(event) => setSettingKey(event.target.value)} placeholder="registration_open" required /></label><label><span>JSON value or text</span><input value={settingValue} onChange={(event) => setSettingValue(event.target.value)} placeholder='true or {"text":"Notice"}' required /></label><button className="button-link" type="submit">Save setting</button></form><DataTable columns={[["key", "Key"], ["display_value", "Value"], ["updated_at", "Updated"]]} rows={siteSettings.map((row) => ({ ...row, display_value: JSON.stringify(row.value) }))} /></div>}
+      {active === "password" && <form className="portal-form compact" onSubmit={changePassword}><div className="panel-heading"><div><span>更改密码</span><h2>Change Password</h2></div></div><label className="wide"><span>New password</span><input type="password" minLength="12" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label><button className="button-link" type="submit">Update password</button></form>}
     </PortalLayout>
   );
 }
 
-export function AccountPage({ Link }) {
+export function AccountPage({ Link, staffOnly = false }) {
   const { session, loading, role } = useAuth();
   if (loading) return <article className="inner-page"><section className="page-section"><p>Loading...</p></section></article>;
   if (!session) return <article className="inner-page"><section className="page-section"><p>Please log in first.</p><Link className="button-link" to="/login">Log in</Link></section></article>;
+  if (staffOnly && role === roles.family) return <article className="inner-page"><section className="page-section"><div className="form-message error">This account is not authorized for the staff portal. Please contact IT.</div></section></article>;
+  if (!staffOnly && role !== roles.family) return <article className="inner-page"><section className="page-section"><p>Staff accounts use the separate administration portal.</p><Link className="button-link" to="/admin">Open staff portal</Link></section></article>;
   if (role === roles.family) return <FamilyPortal />;
   if (role === roles.teacher) return <StaffPortal isAdmin={false} />;
   return <StaffPortal isAdmin />;

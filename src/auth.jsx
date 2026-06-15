@@ -43,12 +43,11 @@ export function AuthProvider({ children }) {
       await loadRole(data.session);
       setLoading(false);
     });
-    const { data } = supabase.auth.onAuthStateChange(async (event, nextSession) => {
+    const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
       setSession(nextSession);
-      await loadRole(nextSession);
       if (event === "PASSWORD_RECOVERY") setRecovering(true);
       if (event === "SIGNED_OUT") setRecovering(false);
-      setLoading(false);
+      void loadRole(nextSession).finally(() => setLoading(false));
     });
     return () => data.subscription.unsubscribe();
   }, []);
@@ -60,7 +59,7 @@ export function AuthProvider({ children }) {
       recovering,
       role,
       teacherId,
-      refreshRole: () => loadRole(session),
+      refreshRole: (nextSession = session) => loadRole(nextSession),
       finishRecovery: () => setRecovering(false),
       signOut: () => supabase?.auth.signOut(),
     }}>

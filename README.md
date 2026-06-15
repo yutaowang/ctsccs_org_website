@@ -122,6 +122,19 @@ python scripts/set_portal_role.py --email teacher@example.org `
   --role sccs_teacher_ta_role --teacher-id 123 --yes
 ```
 
+The separate staff portal is available at `/admin`. Administrator, management
+team, and teacher/TA accounts must use `@ctsccs.org` email addresses. Initialize
+the first administrator by setting `ADMIN_INITIAL_PASSWORD` only in the current
+shell and running:
+
+```powershell
+python scripts/bootstrap_admin.py
+```
+
+The password is stored and verified only by Supabase Auth. The `sccs.admins`
+table contains profile information and the first-login password-change flag,
+never a plaintext password or application-managed password hash.
+
 ### Password reset email
 
 Forgot-password requests are handled by the Vercel Function at

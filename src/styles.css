@@ -1887,6 +1887,43 @@ footer {
 .role-list span strong, .role-list span code { display: block; }
 .role-list span strong { margin-bottom: 4px; color: var(--navy); font-size: 0.72rem; }
 .role-list select { max-width: 240px; }
+.admin-entry-card { max-width: 760px; }
+.admin-login-intro h2 { margin: 0; color: var(--navy); }
+.admin-login-intro p, .admin-help { color: #657187; font-size: 0.76rem; }
+.admin-login-form { margin-bottom: 18px; }
+.staff-user-form {
+  margin: 0 0 28px;
+  padding: 22px;
+  background: #f5f7fa;
+  border: 1px solid var(--line);
+}
+.staff-user-form .button-row { grid-column: 1 / -1; }
+.staff-user-list > div {
+  display: flex;
+  padding: 14px 16px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  border-bottom: 1px solid var(--line);
+}
+.staff-user-list strong, .staff-user-list small { display: block; }
+.staff-user-list strong { color: var(--navy); font-size: 0.78rem; }
+.staff-user-list small {
+  margin-top: 4px;
+  color: #78859a;
+  font-size: 0.61rem;
+  text-transform: uppercase;
+}
+.danger-link {
+  padding: 9px 13px;
+  color: #9b2f2f;
+  background: #fff1f1;
+  border: 1px solid #e5bcbc;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+}
+.danger-link:hover { color: #fff; background: #9b2f2f; }
 
 @media (max-width: 920px) {
   .portal-panel, .portal-form { padding-right: 18px; padding-left: 18px; }
@@ -1898,6 +1935,7 @@ footer {
     align-items: stretch;
     flex-direction: column;
   }
+  .staff-user-list > div { align-items: stretch; flex-direction: column; }
   .portal-tabs { padding: 0 12px; }
   .summary-grid, .portal-form { grid-template-columns: 1fr; }
   .summary-grid .wide, .portal-form label.wide { grid-column: auto; }
