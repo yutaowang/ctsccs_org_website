@@ -18,10 +18,7 @@ except ImportError:
 
 
 ROOT = Path(__file__).resolve().parents[1]
-MIGRATIONS = [
-    ROOT / "supabase" / "migrations" / "20260615_initial_schema.sql",
-    ROOT / "supabase" / "migrations" / "20260616_legacy_import_support.sql",
-]
+MIGRATIONS_DIR = ROOT / "supabase" / "migrations"
 DEFAULT_DATA = ROOT / "supabase" / "seed" / "legacy_data_20260615.sql"
 
 EXPECTED_COUNTS = {
@@ -200,7 +197,7 @@ def seed_body(sql: str) -> str:
 def planned_files(args: argparse.Namespace) -> list[Path]:
     files: list[Path] = []
     if not args.data_only:
-        files.extend(MIGRATIONS)
+        files.extend(sorted(MIGRATIONS_DIR.glob("*.sql")))
     if not args.schema_only:
         files.append(args.data_file.resolve())
     return files

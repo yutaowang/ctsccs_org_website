@@ -1,7 +1,8 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { PageContent, pageRoutes } from "./pages";
-import { AccountPage, AuthProvider, LoginPage, useAuth } from "./auth";
+import { AuthProvider, LoginPage, useAuth } from "./auth";
+import { AccountPage } from "./portal";
 import "./styles.css";
 
 const navGroups = [
@@ -89,11 +90,13 @@ function Header({ menuOpen, setMenuOpen }) {
     <header className="site-header">
       <div className="header-inner">
         <SiteLink className="brand" to="/" aria-label="SCCS 首页">
-          <img
-            className="brand-logo"
-            src="/sccs-logo.png"
-            alt="Southeastern Connecticut Chinese School"
-          />
+          <span className="brand-emblem" aria-hidden="true">
+            <img src="/sccs-blue-mark.png" alt="" />
+          </span>
+          <span className="brand-name">
+            <strong>东南康州中文学校</strong>
+            <small>Southeastern Connecticut Chinese School</small>
+          </span>
         </SiteLink>
 
         <div className="header-actions">
@@ -102,7 +105,7 @@ function Header({ menuOpen, setMenuOpen }) {
             to={session ? "/account" : "/login"}
           >
             <span className="portal-icon" aria-hidden="true">人</span>
-            {session ? "Family Account" : "My SCCS"}
+            {session ? "My SCCS Portal" : "My SCCS"}
           </SiteLink>
           <button
             className="menu-button"

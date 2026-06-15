@@ -48,9 +48,9 @@ Copy `.env.example` to `.env.local` and set the Supabase project URL and
 publishable key. Never put a secret key or service-role key in a `VITE_*`
 variable because Vite exposes those values to browsers.
 
-Run `supabase/migrations/20260615_initial_schema.sql` once in the Supabase SQL
-editor. Add `sccs` to **Project Settings > API > Exposed schemas** so the
-browser client can access the schema through the Supabase Data API.
+Run the SQL files in `supabase/migrations` in filename order. The
+`20260618_expose_sccs_data_api.sql` migration adds `sccs` to the PostgREST
+schema list so the browser client can access it through the Supabase Data API.
 
 For the June 15, 2026 SQL Server backup, next run
 `supabase/migrations/20260616_legacy_import_support.sql`, then generate and run
@@ -113,6 +113,14 @@ python scripts/migrate_legacy_auth.py --force-reset --yes
 The script never prints or writes passwords. Invalid emails, duplicate emails,
 and passwords that do not satisfy Supabase's minimum are reported for manual
 handling.
+
+Assign portal roles from a trusted local environment:
+
+```powershell
+python scripts/set_portal_role.py --email admin@example.org --role admin --yes
+python scripts/set_portal_role.py --email teacher@example.org `
+  --role sccs_teacher_ta_role --teacher-id 123 --yes
+```
 
 ### Password reset email
 

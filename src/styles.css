@@ -83,7 +83,7 @@ button {
 
 .header-inner {
   display: flex;
-  min-height: 160px;
+  min-height: 118px;
   align-items: center;
   justify-content: space-between;
 }
@@ -93,17 +93,45 @@ button {
   z-index: 1;
   display: flex;
   align-items: center;
-  padding: 7px;
-  background: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.65);
-  border-radius: 14px;
-  box-shadow: 0 10px 28px rgba(4, 17, 42, 0.24);
+  gap: 17px;
 }
 
-.brand-logo {
+.brand-emblem {
+  display: grid;
+  width: 78px;
+  height: 78px;
+  flex: 0 0 78px;
+  place-items: center;
+  overflow: hidden;
+  background: var(--gold);
+  border: 2px solid rgba(255, 255, 255, 0.55);
+  border-radius: 50%;
+  box-shadow: 0 0 0 6px rgba(240, 191, 50, 0.12);
+}
+
+.brand-emblem img {
   display: block;
-  width: clamp(210px, 24vw, 260px);
+  width: 68px;
   height: auto;
+}
+
+.brand-name strong,
+.brand-name small {
+  display: block;
+}
+
+.brand-name strong {
+  color: var(--gold);
+  font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+  letter-spacing: 0.07em;
+}
+
+.brand-name small {
+  margin-top: 5px;
+  color: #fff;
+  font-family: "Playfair Display", Georgia, serif;
+  font-size: clamp(0.76rem, 1.4vw, 0.96rem);
+  letter-spacing: 0.025em;
 }
 
 .header-actions {
@@ -1508,16 +1536,31 @@ footer {
 
 @media (max-width: 680px) {
   .header-inner {
-    min-height: 116px;
+    min-height: 94px;
   }
 
   .brand {
-    padding: 5px;
-    border-radius: 10px;
+    gap: 11px;
   }
 
-  .brand-logo {
-    width: clamp(150px, 47vw, 190px);
+  .brand-emblem {
+    width: 55px;
+    height: 55px;
+    flex-basis: 55px;
+    box-shadow: 0 0 0 4px rgba(240, 191, 50, 0.12);
+  }
+
+  .brand-emblem img {
+    width: 49px;
+  }
+
+  .brand-name strong {
+    font-size: clamp(0.92rem, 4vw, 1.12rem);
+  }
+
+  .brand-name small {
+    max-width: 225px;
+    font-size: 0.58rem;
   }
 
   .portal-link {
@@ -1677,4 +1720,201 @@ footer {
     animation-duration: 0.01ms !important;
     animation-iteration-count: 1 !important;
   }
+}
+/* Authenticated role-based portal */
+.portal-page { max-width: none; }
+.portal-card { padding: 0; }
+.portal-identity {
+  display: flex;
+  padding: 20px 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  background: #f5f7fa;
+  border-bottom: 1px solid var(--line);
+}
+.portal-identity strong, .portal-identity small { display: block; }
+.portal-identity strong { color: var(--navy); font-size: 0.85rem; }
+.portal-identity small {
+  margin-top: 4px;
+  color: #78859a;
+  font-size: 0.62rem;
+  text-transform: uppercase;
+}
+.portal-tabs {
+  display: flex;
+  padding: 0 24px;
+  gap: 4px;
+  overflow-x: auto;
+  background: var(--navy);
+}
+.portal-tabs button {
+  flex: 0 0 auto;
+  padding: 14px 13px;
+  color: #fff;
+  background: transparent;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  cursor: pointer;
+  font: 700 0.65rem/1.2 inherit;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.portal-tabs button:hover, .portal-tabs button.is-active {
+  color: var(--gold);
+  border-bottom-color: var(--gold);
+}
+.portal-panel, .portal-form { margin: 0; padding: 28px 24px 36px; }
+.panel-heading {
+  display: flex;
+  margin-bottom: 24px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+.panel-heading span { color: var(--blue); font-size: 0.68rem; font-weight: 700; }
+.panel-heading h2 { margin: 3px 0 0; color: var(--navy); font-size: 1.35rem; }
+.summary-grid {
+  display: grid;
+  margin: 0 0 28px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1px;
+  background: var(--line);
+  border: 1px solid var(--line);
+}
+.summary-grid > div { padding: 15px; background: #fff; }
+.summary-grid .wide { grid-column: 1 / -1; }
+.summary-grid dt {
+  color: #778397;
+  font-size: 0.62rem;
+  font-weight: 700;
+  text-transform: uppercase;
+}
+.summary-grid dd { margin: 5px 0 0; color: var(--navy); font-size: 0.83rem; font-weight: 700; }
+.student-summary, .attendance-row, .role-list > div {
+  display: flex;
+  padding: 14px 16px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+  border-bottom: 1px solid var(--line);
+}
+.student-summary:nth-child(even), .attendance-row:nth-child(even) { background: #f5f6ff; }
+.student-summary span { color: #647087; font-size: 0.73rem; text-align: right; }
+.portal-form {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 17px;
+}
+.portal-form .panel-heading, .portal-form button { grid-column: 1 / -1; }
+.portal-form.compact { max-width: 760px; }
+.portal-form label, .standalone-field {
+  display: grid;
+  gap: 7px;
+  color: var(--navy);
+  font-size: 0.69rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+.portal-form label.wide { grid-column: 1 / -1; }
+.portal-form input, .portal-form select, .portal-form textarea,
+.standalone-field input, .standalone-field select, .attendance-row select, .role-list select {
+  width: 100%;
+  padding: 11px 12px;
+  color: var(--navy);
+  background: #f8f9fb;
+  border: 1px solid #d6dce5;
+  font: inherit;
+}
+.portal-form textarea { min-height: 95px; resize: vertical; }
+.portal-form input:focus, .portal-form select:focus, .portal-form textarea:focus,
+.standalone-field input:focus, .standalone-field select:focus {
+  border-color: var(--blue);
+  outline: 3px solid rgba(23, 73, 142, 0.08);
+}
+.registration-card {
+  margin-top: 18px;
+  padding: 20px;
+  background: #f5f7fa;
+  border-left: 4px solid var(--gold);
+}
+.registration-card h3 { margin: 0 0 16px; }
+.registration-selects {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+.registration-selects label {
+  display: grid;
+  gap: 6px;
+  color: var(--navy);
+  font-size: 0.68rem;
+  font-weight: 700;
+}
+.registration-selects select { min-width: 0; padding: 10px; border: 1px solid #d6dce5; }
+.button-row { display: flex; margin-top: 16px; gap: 10px; }
+.empty-state {
+  padding: 24px;
+  color: #657187;
+  background: #f5f7fa;
+  border: 1px dashed #cfd6e0;
+  font-size: 0.78rem;
+}
+.data-table-wrap { width: 100%; overflow-x: auto; border: 1px solid #d9dfea; }
+.data-table {
+  width: 100%;
+  min-width: 760px;
+  border-collapse: collapse;
+  color: #253d6a;
+  font-size: 0.7rem;
+}
+.data-table th {
+  padding: 10px;
+  color: var(--navy);
+  background: #f8e8a5;
+  text-align: left;
+  white-space: nowrap;
+}
+.data-table td { padding: 9px 10px; border-bottom: 1px solid #e4e8ef; }
+.data-table tbody tr:nth-child(odd) { background: #f0f1ff; }
+.data-table tbody tr:hover { background: #fff7d9; }
+.standalone-field { max-width: 520px; margin-bottom: 20px; }
+.attendance-row select { max-width: 180px; }
+.email-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
+.email-list a { padding: 12px; color: var(--blue); background: #f5f7fa; font-size: 0.72rem; }
+.role-list > div { align-items: center; }
+.role-list code { color: #5f6d83; font-size: 0.68rem; }
+.role-list span strong, .role-list span code { display: block; }
+.role-list span strong { margin-bottom: 4px; color: var(--navy); font-size: 0.72rem; }
+.role-list select { max-width: 240px; }
+
+@media (max-width: 920px) {
+  .portal-panel, .portal-form { padding-right: 18px; padding-left: 18px; }
+  .registration-selects, .email-list { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 680px) {
+  .portal-identity, .panel-heading, .student-summary, .attendance-row, .role-list > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .portal-tabs { padding: 0 12px; }
+  .summary-grid, .portal-form { grid-template-columns: 1fr; }
+  .summary-grid .wide, .portal-form label.wide { grid-column: auto; }
+  .student-summary span { text-align: left; }
+  .button-row { align-items: stretch; flex-direction: column; }
+}
+
+@media print {
+  .site-header, .sidebar, footer, .portal-identity, .portal-tabs,
+  .no-print, .menu-backdrop { display: none !important; }
+  body, #top, .page-shell, main, .inner-page, .page-section {
+    width: 100% !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+    box-shadow: none !important;
+  }
+  .page-title { padding: 0 0 18px !important; }
+  .print-area { padding: 0 !important; }
 }
