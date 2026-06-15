@@ -3,6 +3,14 @@ const STAFF_ROLES = new Set([
   "sccs_teacher_ta_role",
 ]);
 const STAFF_EMAIL = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@ctsccs\.org$/i;
+const ROLE_ALIASES = {
+  saas_admin_team_role: "sccs_admin_team_role",
+  saas_teacher_ta_role: "sccs_teacher_ta_role",
+};
+
+function normalizeStaffRole(role) {
+  return ROLE_ALIASES[role] || role;
+}
 
 function json(response, status, body) {
   response.status(status).setHeader("Content-Type", "application/json; charset=utf-8");
@@ -117,11 +125,15 @@ async function listStaff(configuration, administratorToken) {
 
 async function createStaff(configuration, administratorToken, body) {
   const email = String(body.email || "").trim().toLowerCase();
-  const role = String(body.role || "");
+  const role = normalizeStaffRole(String(body.role || ""));
   const password = String(body.password || "");
   const teacherId = body.teacher_id ? Number(body.teacher_id) : null;
-  if (!STAFF_EMAIL.test(email)) throw new Error("A valid @ctsccs.org email is required.");
-  if (!STAFF_ROLES.has(role)) throw new Error("Only team and teacher accounts can be created here.");
+  if (!STAFF_EMAIL.test(email)) {
+    throw new Error("Staff email is required and must end with @ctsccs.org.");
+  }
+  if (!STAFF_ROLES.has(role)) {
+    throw new Error("Only admin team member and teacher accounts can be created here.");
+  }
   if (password.length < 10) throw new Error("The temporary password must be at least 10 characters.");
   if (role === "sccs_teacher_ta_role" && !teacherId) {
     throw new Error("A teacher record must be linked.");
@@ -179,10 +191,10 @@ async function createStaff(configuration, administratorToken, body) {
 async function updateStaff(configuration, administratorToken, body) {
   const userId = String(body.id || "");
   const email = String(body.email || "").trim().toLowerCase();
-  const role = String(body.role || "");
+  const role = normalizeStaffRole(String(body.role || ""));
   const teacherId = body.teacher_id ? Number(body.teacher_id) : null;
   if (!userId || !STAFF_EMAIL.test(email) || !STAFF_ROLES.has(role)) {
-    throw new Error("Invalid staff account update.");
+    throw new Error("Invalid staff account update. Email must be a non-empty @ctsccs.org address.");
   }
   if (role === "sccs_teacher_ta_role" && !teacherId) {
     throw new Error("A teacher record must be linked.");
@@ -271,7 +283,7 @@ export default async function handler(request, response) {
       { profile: "sccs", token: administrator.token },
     );
     if (!STAFF_ROLES.has(roleResult.data?.[0]?.role)) {
-      return json(response, 400, { error: "Only team and teacher accounts can be deleted." });
+      return json(response, 400, { error: "Only admin team member and teacher accounts can be deleted." });
     }
     const deleted = await supabaseRequest(configuration, `/auth/v1/admin/users/${userId}`, {
       method: "DELETE",

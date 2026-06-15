@@ -1900,6 +1900,18 @@ footer {
 .admin-login-intro h2 { margin: 0; color: var(--navy); }
 .admin-login-intro p, .admin-help { color: #657187; font-size: 0.76rem; }
 .admin-login-form { margin-bottom: 18px; }
+.staff-help {
+  max-width: 980px;
+  margin: 0 0 18px;
+  color: #657187;
+  font-size: 0.76rem;
+  line-height: 1.8;
+}
+.staff-help code {
+  color: var(--navy);
+  font-size: 0.7rem;
+  font-weight: 800;
+}
 .staff-user-form {
   margin: 0 0 28px;
   padding: 22px;
@@ -1907,6 +1919,7 @@ footer {
   border: 1px solid var(--line);
 }
 .staff-user-form .button-row { grid-column: 1 / -1; }
+.staff-search { max-width: 720px; }
 .staff-user-list > div {
   display: flex;
   padding: 14px 16px;
