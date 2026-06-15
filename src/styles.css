@@ -1326,6 +1326,145 @@ footer {
   margin-top: 7px;
 }
 
+.auth-card {
+  max-width: 760px;
+}
+
+.auth-form,
+.account-form {
+  display: grid;
+  margin-top: 24px;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+}
+
+.auth-form label,
+.account-form label {
+  display: grid;
+  gap: 7px;
+  color: var(--navy);
+  font-size: 0.72rem;
+  font-weight: 700;
+  text-transform: capitalize;
+}
+
+.auth-form input,
+.account-form input,
+.registration-row select {
+  width: 100%;
+  padding: 12px 13px;
+  color: var(--navy);
+  background: #f8f9fb;
+  border: 1px solid #d8dee7;
+  font: inherit;
+}
+
+.auth-form button,
+.auth-form .form-message,
+.account-form h2,
+.account-form button {
+  grid-column: 1 / -1;
+}
+
+.auth-switches {
+  display: flex;
+  margin-top: 20px;
+  gap: 18px;
+  flex-wrap: wrap;
+}
+
+.auth-switches button,
+.student-list button {
+  padding: 0;
+  color: var(--blue);
+  background: none;
+  border: 0;
+  cursor: pointer;
+  font-weight: 700;
+}
+
+.form-message {
+  margin-top: 18px;
+  padding: 12px 14px;
+  color: #185b42;
+  background: #ecf8f2;
+  border-left: 4px solid #2d8d68;
+}
+
+.form-message.error {
+  color: #8a2f28;
+  background: #fff2ef;
+  border-left-color: #b23c34;
+}
+
+.account-heading,
+.student-list > div {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+}
+
+.account-form,
+.student-list,
+.registration-list {
+  padding-top: 25px;
+  border-top: 1px solid var(--line);
+}
+
+.account-form h2,
+.student-list h2,
+.registration-list h2 {
+  margin: 0;
+  color: var(--navy);
+  font-size: 1.2rem;
+}
+
+.student-list {
+  margin-top: 28px;
+}
+
+.registration-list {
+  margin-top: 28px;
+}
+
+.registration-row {
+  display: grid;
+  margin-top: 16px;
+  padding: 18px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 14px;
+  background: #f4f6f9;
+}
+
+.registration-row h3,
+.registration-row button {
+  grid-column: 1 / -1;
+}
+
+.registration-row h3 {
+  margin: 0;
+}
+
+.registration-row label {
+  display: grid;
+  gap: 7px;
+  color: var(--navy);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+
+.feedback-form .form-message {
+  grid-column: 1 / -1;
+}
+
+.student-list > div {
+  padding: 13px 0;
+  color: #536078;
+  border-bottom: 1px solid var(--line);
+  font-size: 0.85rem;
+}
+
 @media (max-width: 920px) {
   .header-inner,
   .page-shell,
@@ -1538,6 +1677,25 @@ footer {
 
   .feedback-form label.full,
   .feedback-form button {
+    grid-column: auto;
+  }
+
+  .auth-form,
+  .account-form,
+  .registration-row {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-form button,
+  .auth-form .form-message,
+  .account-form h2,
+  .account-form button {
+    grid-column: auto;
+  }
+
+  .registration-row h3,
+  .registration-row button,
+  .feedback-form .form-message {
     grid-column: auto;
   }
 }

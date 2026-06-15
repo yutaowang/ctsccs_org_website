@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { PageContent, pageRoutes } from "./pages";
+import { AccountPage, AuthProvider, LoginPage, useAuth } from "./auth";
 import "./styles.css";
 
 const navGroups = [
@@ -83,6 +84,7 @@ function SiteLink({ to, children, className, onClick }) {
 const RouterContext = React.createContext({ navigate: () => {} });
 
 function Header({ menuOpen, setMenuOpen }) {
+  const { session } = useAuth();
   return (
     <header className="site-header">
       <div className="header-inner">
@@ -95,15 +97,13 @@ function Header({ menuOpen, setMenuOpen }) {
         </SiteLink>
 
         <div className="header-actions">
-          <a
+          <SiteLink
             className="portal-link"
-            href="https://ctsccs.org/Login_Login.aspx"
-            target="_blank"
-            rel="noreferrer"
+            to={session ? "/account" : "/login"}
           >
             <span className="portal-icon" aria-hidden="true">人</span>
-            My SCCS
-          </a>
+            {session ? "Family Account" : "My SCCS"}
+          </SiteLink>
           <button
             className="menu-button"
             type="button"
@@ -301,7 +301,8 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const { path, navigate } = useRouter();
   const normalizedPath = path.length > 1 ? path.replace(/\/$/, "") : path;
-  const isKnownPage = normalizedPath === "/" || pageRoutes.includes(normalizedPath);
+  const authRoutes = ["/login", "/account"];
+  const isKnownPage = normalizedPath === "/" || pageRoutes.includes(normalizedPath) || authRoutes.includes(normalizedPath);
 
   useEffect(() => {
     document.title = normalizedPath === "/"
@@ -322,6 +323,8 @@ function App() {
           <main>
             {normalizedPath === "/" && <HomePage />}
             {pageRoutes.includes(normalizedPath) && <PageContent path={normalizedPath} Link={SiteLink} />}
+            {normalizedPath === "/login" && <LoginPage Link={SiteLink} />}
+            {normalizedPath === "/account" && <AccountPage Link={SiteLink} />}
             {!isKnownPage && (
               <div className="inner-page">
                 <div className="page-title"><span>404</span><h1>页面未找到</h1></div>
@@ -348,6 +351,8 @@ function App() {
 
 createRoot(document.getElementById("root")).render(
   <React.StrictMode>
-    <App />
+    <AuthProvider>
+      <App />
+    </AuthProvider>
   </React.StrictMode>,
 );

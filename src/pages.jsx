@@ -1,4 +1,5 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
+import { publicSupabase, supabase } from "./supabase";
 
 const oldSite = "https://ctsccs.org/";
 
@@ -189,7 +190,7 @@ function Registration({ Link }) {
           <li><strong>加课、转课、退课</strong><p>请于 2025 年 9 月 21 日前在线办理。该日期后学校不再接受转课或退课请求。</p></li>
         </ol>
         <div className="action-row">
-          <ExternalLink className="button-link" href="Login_Login.aspx">进入网上注册</ExternalLink>
+          <Link className="button-link" to="/login">进入网上注册</Link>
           <Download href="Forms/SCCS Online Registration User Guide.pdf">网上注册指南</Download>
         </div>
       </Section>
@@ -302,13 +303,44 @@ const courseGroups = [
 
 function Courses() {
   const [activeGroupId, setActiveGroupId] = useState(courseGroups[0].id);
-  const activeGroup = courseGroups.find((group) => group.id === activeGroupId);
+  const [databaseCourses, setDatabaseCourses] = useState([]);
+
+  useEffect(() => {
+    if (!supabase) return;
+    supabase
+      .from("classes")
+      .select("id, name, teacher_short_name, classroom, donation, type, class_times(display_time)")
+      .eq("is_open", true)
+      .order("name")
+      .then(({ data }) => setDatabaseCourses(data || []));
+  }, []);
+
+  const databaseGroups = Object.entries(
+    databaseCourses.reduce((groups, course) => {
+      const type = course.type || "Other";
+      groups[type] = [...(groups[type] || []), [
+        course.name,
+        course.teacher_short_name || "",
+        course.classroom || "",
+        course.donation == null ? "" : `$${course.donation}`,
+        course.class_times?.display_time || "",
+        "",
+      ]];
+      return groups;
+    }, {}),
+  ).map(([label, courses], index) => ({
+    id: `database-${index}`,
+    label,
+    courses,
+  }));
+  const displayedGroups = databaseGroups.length > 0 ? databaseGroups : courseGroups;
+  const activeGroup = displayedGroups.find((group) => group.id === activeGroupId) || displayedGroups[0];
 
   return (
     <Page eyebrow="Academics" title="课程安排 Courses">
       <Section>
         <div className="course-tabs" role="tablist" aria-label="课程类别">
-          {courseGroups.map((group) => (
+          {displayedGroups.map((group) => (
             <button
               id={`course-tab-${group.id}`}
               className={group.id === activeGroupId ? "is-active" : ""}
@@ -493,6 +525,26 @@ function Links() {
 
 function Feedback() {
   const [submitted, setSubmitted] = useState(false);
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const submitFeedback = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    const form = new FormData(event.currentTarget);
+    const result = await publicSupabase?.from("feedback").insert({
+      name: form.get("name"),
+      email: form.get("email"),
+      phone: form.get("phone") || null,
+      message: form.get("message"),
+    });
+    setBusy(false);
+    if (!publicSupabase) setError("Supabase is not configured.");
+    else if (result.error) setError(result.error.message);
+    else setSubmitted(true);
+  };
+
   return (
     <Page eyebrow="More About" title="意见反馈 Feedback">
       <Section>
@@ -500,12 +552,13 @@ function Feedback() {
         {submitted ? (
           <div className="success-message"><strong>谢谢您的反馈！</strong><p>此演示站已接收表单内容。正式上线时可连接学校邮箱或后端服务。</p></div>
         ) : (
-          <form className="feedback-form" onSubmit={(event) => { event.preventDefault(); setSubmitted(true); }}>
+          <form className="feedback-form" onSubmit={submitFeedback}>
             <label><span>Your Name *</span><input name="name" required /></label>
             <label><span>Your Email *</span><input name="email" type="email" required /></label>
             <label><span>Your Phone</span><input name="phone" type="tel" /></label>
             <label className="full"><span>Your Comment or Questions *</span><textarea name="message" rows="7" required /></label>
-            <button className="button-link" type="submit">提交反馈 Submit</button>
+            {error && <div className="form-message error">{error}</div>}
+            <button className="button-link" type="submit" disabled={busy}>{busy ? "Submitting..." : "提交反馈 Submit"}</button>
           </form>
         )}
       </Section>
