@@ -89,11 +89,11 @@ function Header({ menuOpen, setMenuOpen }) {
     <header className="site-header">
       <div className="header-inner">
         <SiteLink className="brand" to="/" aria-label="SCCS 首页">
-          <span className="brand-mark">S</span>
-          <span>
-            <strong>东南康州中文学校</strong>
-            <small>Southeastern Connecticut Chinese School</small>
-          </span>
+          <img
+            className="brand-logo"
+            src="/sccs-logo.png"
+            alt="Southeastern Connecticut Chinese School"
+          />
         </SiteLink>
 
         <div className="header-actions">
