@@ -330,14 +330,12 @@ function StaffUserManager() {
     email: "",
     password: "",
     role: "sccs_admin_team_role",
-    teacher_id: "",
     first_name: "",
     last_name: "",
     phone: "",
     title: "",
   };
   const [users, setUsers] = useState([]);
-  const [teachers, setTeachers] = useState([]);
   const [form, setForm] = useState(emptyForm);
   const [status, setStatus] = useState({ error: "", message: "" });
   const [busy, setBusy] = useState(false);
@@ -361,7 +359,6 @@ function StaffUserManager() {
     try {
       const result = await request();
       setUsers(result.users || []);
-      setTeachers(result.teachers || []);
     } catch (error) {
       setStatus({ error: error.message, message: "" });
     }
@@ -373,10 +370,6 @@ function StaffUserManager() {
     const email = form.email.trim().toLowerCase();
     if (!/^[^\s@]+@ctsccs\.org$/i.test(email)) {
       setStatus({ error: "Staff email is required and must end with @ctsccs.org.", message: "" });
-      return;
-    }
-    if (form.role === "sccs_teacher_ta_role" && !form.teacher_id) {
-      setStatus({ error: "Please link teacher staff to a teacher record.", message: "" });
       return;
     }
     setBusy(true);
@@ -401,8 +394,7 @@ function StaffUserManager() {
       ...emptyForm,
       id: user.id,
       email: user.email,
-      role: user.role,
-      teacher_id: user.teacher_id || "",
+      role: "sccs_admin_team_role",
       first_name: user.profile?.first_name || "",
       last_name: user.profile?.last_name || "",
       phone: user.profile?.phone || "",
@@ -426,26 +418,16 @@ function StaffUserManager() {
     }
   };
 
-  const isTeacher = form.role === "sccs_teacher_ta_role";
   const staffQuery = staffSearch.trim().toLowerCase();
-  const teacherById = new Map(teachers.map((teacher) => [teacher.id, teacher]));
-  const roleLabel = (roleValue) => (
-    roleValue === "sccs_admin_team_role" ? "Admin Team Member" : "Teacher / TA"
-  );
   const filteredUsers = !staffQuery ? users : users.filter((user) => {
-    const teacher = teacherById.get(user.teacher_id);
     const searchable = [
       user.email,
       user.role,
-      roleLabel(user.role),
+      "Admin Team Member",
       user.profile?.first_name,
       user.profile?.last_name,
       user.profile?.phone,
       user.profile?.title,
-      fullName(teacher),
-      teacher?.short_name,
-      teacher?.email_1,
-      teacher?.phone_1,
     ].join(" ").toLowerCase();
     return searchable.includes(staffQuery);
   });
@@ -456,24 +438,17 @@ function StaffUserManager() {
       </div>
       <Status status={status} />
       <p className="staff-help">
-        Use this page to create, search, update, and delete admin team members and teachers.
-        Admin team members receive <code>sccs_admin_team_role</code>; teachers receive <code>sccs_teacher_ta_role</code>.
-        Staff email is required and must end with <code>@ctsccs.org</code>.
+        Use this page to create, search, update, and delete admin team login accounts.
+        Staff accounts receive <code>sccs_admin_team_role</code>, and email is required to end with <code>@ctsccs.org</code>.
       </p>
       <form className="portal-form staff-user-form" onSubmit={submit}>
         <label><span>Staff email (@ctsccs.org)</span><input type="email" pattern="^[^@\s]+@ctsccs\.org$" title="Email must end with @ctsccs.org" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></label>
         <label><span>{form.id ? "New password (optional)" : "Temporary password"}</span><input type="password" minLength="10" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required={!form.id} /></label>
-        <label><span>Role</span><select value={form.role} onChange={(event) => setForm({ ...form, role: event.target.value, teacher_id: "" })}><option value="sccs_admin_team_role">Admin Team Member</option><option value="sccs_teacher_ta_role">Teacher / TA</option></select></label>
-        {isTeacher ? (
-          <label><span>Teacher record</span><select value={form.teacher_id} onChange={(event) => setForm({ ...form, teacher_id: event.target.value })} required><option value="">Select teacher</option>{teachers.map((teacher) => <option value={teacher.id} key={teacher.id}>{fullName(teacher) || teacher.short_name} - {teacher.email_1 || "no email"}</option>)}</select></label>
-        ) : (
-          <>
-            <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
-            <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
-            <label><span>Phone</span><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
-            <label><span>Title</span><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label>
-          </>
-        )}
+        <label><span>Role</span><input value="sccs_admin_team_role" disabled /></label>
+        <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
+        <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
+        <label><span>Phone</span><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
+        <label><span>Title</span><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label>
         <div className="button-row">
           <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update staff user" : "Create staff user"}</button>
           {form.id && <button className="outline-link" type="button" onClick={() => setForm(emptyForm)}>Cancel edit</button>}
@@ -481,25 +456,158 @@ function StaffUserManager() {
       </form>
       <label className="standalone-field staff-search">
         <span>Search staff</span>
-        <input value={staffSearch} onChange={(event) => setStaffSearch(event.target.value)} placeholder="Email, name, phone, role, or teacher record" />
+        <input value={staffSearch} onChange={(event) => setStaffSearch(event.target.value)} placeholder="Email, name, phone, title, or role" />
       </label>
       <div className="staff-user-list">
-        {filteredUsers.map((user) => {
-          const teacher = teacherById.get(user.teacher_id);
-          return (
+        {filteredUsers.map((user) => (
           <div key={user.id}>
             <span>
               <strong>{user.email}</strong>
-              <small>{roleLabel(user.role)}{teacher ? ` - ${fullName(teacher) || teacher.short_name}` : ""}</small>
+              <small>Admin Team Member</small>
             </span>
             <div className="button-row">
               <button className="outline-link" type="button" onClick={() => edit(user)}>Edit</button>
               <button className="danger-link" type="button" onClick={() => remove(user)} disabled={busy}>Delete</button>
             </div>
           </div>
-        );})}
-        {!users.length && <div className="empty-state">No admin team member or teacher login accounts.</div>}
+        ))}
+        {!users.length && <div className="empty-state">No admin team member login accounts.</div>}
         {!!users.length && !filteredUsers.length && <div className="empty-state">No staff accounts match this search.</div>}
+      </div>
+    </div>
+  );
+}
+
+function TeacherManager({ teachers, onReload, setStatus }) {
+  const emptyTeacher = {
+    id: "",
+    short_name: "",
+    first_name: "",
+    last_name: "",
+    email_1: "",
+    phone_1: "",
+    email_2: "",
+    phone_2: "",
+  };
+  const [form, setForm] = useState(emptyTeacher);
+  const [teacherSearch, setTeacherSearch] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const payload = () => ({
+    short_name: form.short_name.trim() || null,
+    first_name: form.first_name.trim() || null,
+    last_name: form.last_name.trim() || null,
+    email_1: form.email_1.trim() || null,
+    phone_1: form.phone_1.trim() || null,
+    email_2: form.email_2.trim() || null,
+    phone_2: form.phone_2.trim() || null,
+  });
+
+  const saveTeacher = async (event) => {
+    event.preventDefault();
+    if (!form.short_name.trim() && !form.first_name.trim() && !form.last_name.trim()) {
+      setStatus({ error: "Please enter at least a short name or teacher name.", message: "" });
+      return;
+    }
+    setBusy(true);
+    setStatus({ error: "", message: "" });
+    const request = form.id
+      ? supabase.from("teachers").update(payload()).eq("id", form.id)
+      : supabase.from("teachers").insert(payload());
+    const result = await request;
+    if (result.error) {
+      setStatus({ error: result.error.message, message: "" });
+    } else {
+      setForm(emptyTeacher);
+      setStatus({ error: "", message: form.id ? "Teacher updated." : "Teacher created." });
+      await onReload();
+    }
+    setBusy(false);
+  };
+
+  const editTeacher = (teacher) => {
+    setForm({
+      ...emptyTeacher,
+      id: teacher.id,
+      short_name: teacher.short_name || "",
+      first_name: teacher.first_name || "",
+      last_name: teacher.last_name || "",
+      email_1: teacher.email_1 || "",
+      phone_1: teacher.phone_1 || "",
+      email_2: teacher.email_2 || "",
+      phone_2: teacher.phone_2 || "",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const deleteTeacher = async (teacher) => {
+    if (!window.confirm(`Delete teacher ${fullName(teacher) || teacher.short_name || teacher.id}?`)) return;
+    setBusy(true);
+    const result = await supabase.from("teachers").delete().eq("id", teacher.id);
+    if (result.error) {
+      setStatus({ error: result.error.message, message: "" });
+    } else {
+      if (form.id === teacher.id) setForm(emptyTeacher);
+      setStatus({ error: "", message: "Teacher deleted." });
+      await onReload();
+    }
+    setBusy(false);
+  };
+
+  const query = teacherSearch.trim().toLowerCase();
+  const filteredTeachers = !query ? teachers : teachers.filter((teacher) => [
+    teacher.short_name,
+    teacher.first_name,
+    teacher.last_name,
+    teacher.email_1,
+    teacher.phone_1,
+    teacher.email_2,
+    teacher.phone_2,
+  ].join(" ").toLowerCase().includes(query));
+
+  return (
+    <div className="portal-panel">
+      <div className="panel-heading">
+        <div><span>Teacher Management</span><h2>Teacher</h2></div>
+      </div>
+      <p className="staff-help">
+        Use this page to create, search, update, and delete teacher records.
+        Teacher email can be any valid email address and is not required to use <code>@ctsccs.org</code>.
+        Teacher portal login accounts use <code>sccs_teacher_ta_role</code>.
+      </p>
+      <form className="portal-form staff-user-form" onSubmit={saveTeacher}>
+        <label><span>Short name</span><input value={form.short_name} onChange={(event) => setForm({ ...form, short_name: event.target.value })} placeholder="e.g. yzhao" /></label>
+        <label><span>Role</span><input value="sccs_teacher_ta_role" disabled /></label>
+        <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
+        <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
+        <label><span>Email 1</span><input type="email" value={form.email_1} onChange={(event) => setForm({ ...form, email_1: event.target.value })} /></label>
+        <label><span>Phone 1</span><input value={form.phone_1} onChange={(event) => setForm({ ...form, phone_1: event.target.value })} /></label>
+        <label><span>Email 2</span><input type="email" value={form.email_2} onChange={(event) => setForm({ ...form, email_2: event.target.value })} /></label>
+        <label><span>Phone 2</span><input value={form.phone_2} onChange={(event) => setForm({ ...form, phone_2: event.target.value })} /></label>
+        <div className="button-row">
+          <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update teacher" : "Create teacher"}</button>
+          {form.id && <button className="outline-link" type="button" onClick={() => setForm(emptyTeacher)}>Cancel edit</button>}
+        </div>
+      </form>
+      <label className="standalone-field staff-search">
+        <span>Search teachers</span>
+        <input value={teacherSearch} onChange={(event) => setTeacherSearch(event.target.value)} placeholder="Name, short name, email, or phone" />
+      </label>
+      <div className="staff-user-list">
+        {filteredTeachers.map((teacher) => (
+          <div key={teacher.id}>
+            <span>
+              <strong>{fullName(teacher) || teacher.short_name || `Teacher ${teacher.id}`}</strong>
+              <small>{[teacher.short_name, teacher.email_1, teacher.phone_1].filter(Boolean).join(" - ")}</small>
+            </span>
+            <div className="button-row">
+              <button className="outline-link" type="button" onClick={() => editTeacher(teacher)}>Edit</button>
+              <button className="danger-link" type="button" onClick={() => deleteTeacher(teacher)} disabled={busy}>Delete</button>
+            </div>
+          </div>
+        ))}
+        {!teachers.length && <div className="empty-state">No teacher records.</div>}
+        {!!teachers.length && !filteredTeachers.length && <div className="empty-state">No teachers match this search.</div>}
       </div>
     </div>
   );
@@ -689,7 +797,7 @@ function StaffPortal({ isAdmin }) {
   };
 
   const adminTabs = [
-    ["classes", "Classes"], ["teachers", "Teacher Contact"], ["rosters", "Rosters"],
+    ["classes", "Classes"], ["teachers", "Teacher"], ["rosters", "Rosters"],
     ["registrations", "Registration Summary"], ["payments", "Payment History"],
     ["search", "Family Search"], ["print", "Print Registration"],
   ];
@@ -722,7 +830,7 @@ function StaffPortal({ isAdmin }) {
     >
       <Status status={status} />
       {active === "classes" && <div className="portal-panel"><div className="panel-heading"><div><span>课程</span><h2>{isAdmin ? "All Classes" : "My Classes"}</h2></div></div><DataTable columns={[["id", "ID"], ["name", "Name"], ["count", "Registered"], ["available", "Available"], ["teacher", "Teacher"], ["room", "Room"], ["time", "Time"]]} rows={classRows} /></div>}
-      {active === "teachers" && <div className="portal-panel"><div className="panel-heading"><div><span>教师通讯录</span><h2>Teacher Contact</h2></div></div><DataTable columns={[["name", "Teacher"], ["phone", "Phone"], ["email", "Email"]]} rows={teachers.map((row) => ({ id: row.id, name: fullName(row) || row.short_name, phone: row.phone_1, email: row.email_1 }))} /></div>}
+      {active === "teachers" && <TeacherManager teachers={teachers} onReload={load} setStatus={setStatus} />}
       {["rosters", "attendance", "grades", "email"].includes(active) && (
         <div className="portal-panel">
           <div className="panel-heading"><div><span>报名单</span><h2>{active === "rosters" ? "Class Roster" : active[0].toUpperCase() + active.slice(1)}</h2></div></div>

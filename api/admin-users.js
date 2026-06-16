@@ -1,11 +1,7 @@
-const STAFF_ROLES = new Set([
-  "sccs_admin_team_role",
-  "sccs_teacher_ta_role",
-]);
+const STAFF_ROLE = "sccs_admin_team_role";
 const STAFF_EMAIL = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@ctsccs\.org$/i;
 const ROLE_ALIASES = {
-  saas_admin_team_role: "sccs_admin_team_role",
-  saas_teacher_ta_role: "sccs_teacher_ta_role",
+  saas_admin_team_role: STAFF_ROLE,
 };
 
 function normalizeStaffRole(role) {
@@ -85,16 +81,11 @@ async function listAllAuthUsers(configuration) {
 }
 
 async function listStaff(configuration, administratorToken) {
-  const [users, rolesResult, teachersResult, teamResult] = await Promise.all([
+  const [users, rolesResult, teamResult] = await Promise.all([
     listAllAuthUsers(configuration),
     supabaseRequest(
       configuration,
-      "/rest/v1/user_roles?select=user_id,role,teacher_id&role=in.(sccs_admin_team_role,sccs_teacher_ta_role)",
-      { profile: "sccs", token: administratorToken },
-    ),
-    supabaseRequest(
-      configuration,
-      "/rest/v1/teachers?select=id,first_name,last_name,short_name,email_1,phone_1&order=last_name.asc",
+      `/rest/v1/user_roles?select=user_id,role,teacher_id&role=eq.${STAFF_ROLE}`,
       { profile: "sccs", token: administratorToken },
     ),
     supabaseRequest(
@@ -103,7 +94,7 @@ async function listStaff(configuration, administratorToken) {
       { profile: "sccs", token: administratorToken },
     ),
   ]);
-  const failed = [rolesResult, teachersResult, teamResult].find((result) => !result.ok);
+  const failed = [rolesResult, teamResult].find((result) => !result.ok);
   if (failed) throw new Error(failed.data?.message || "Could not load staff users.");
 
   const teamByUser = new Map(teamResult.data.map((row) => [row.user_id, row]));
@@ -119,26 +110,49 @@ async function listStaff(configuration, administratorToken) {
         last_sign_in_at: user?.last_sign_in_at || null,
       };
     }),
-    teachers: teachersResult.data,
   };
 }
 
-async function createStaff(configuration, administratorToken, body) {
+function validateStaffPayload(body, existing = false) {
   const email = String(body.email || "").trim().toLowerCase();
-  const role = normalizeStaffRole(String(body.role || ""));
+  const role = normalizeStaffRole(String(body.role || STAFF_ROLE));
   const password = String(body.password || "");
-  const teacherId = body.teacher_id ? Number(body.teacher_id) : null;
+
   if (!STAFF_EMAIL.test(email)) {
     throw new Error("Staff email is required and must end with @ctsccs.org.");
   }
-  if (!STAFF_ROLES.has(role)) {
-    throw new Error("Only admin team member and teacher accounts can be created here.");
+  if (role !== STAFF_ROLE) {
+    throw new Error("Staff only manages admin team member accounts.");
   }
-  if (password.length < 10) throw new Error("The temporary password must be at least 10 characters.");
-  if (role === "sccs_teacher_ta_role" && !teacherId) {
-    throw new Error("A teacher record must be linked.");
+  if (!existing && password.length < 10) {
+    throw new Error("The temporary password must be at least 10 characters.");
   }
+  if (existing && password && password.length < 10) {
+    throw new Error("Password must be at least 10 characters.");
+  }
+  return { email, password };
+}
 
+async function saveTeamProfile(configuration, administratorToken, userId, email, body) {
+  const profileResult = await supabaseRequest(configuration, "/rest/v1/admin_team_members", {
+    method: "POST",
+    profile: "sccs",
+    token: administratorToken,
+    prefer: "resolution=merge-duplicates,return=minimal",
+    body: {
+      user_id: userId,
+      email,
+      first_name: body.first_name || null,
+      last_name: body.last_name || null,
+      phone: body.phone || null,
+      title: body.title || null,
+    },
+  });
+  if (!profileResult.ok) throw new Error(profileResult.data?.message || "Could not save team profile.");
+}
+
+async function createStaff(configuration, administratorToken, body) {
+  const { email, password } = validateStaffPayload(body);
   const created = await supabaseRequest(configuration, "/auth/v1/admin/users", {
     method: "POST",
     body: {
@@ -160,27 +174,11 @@ async function createStaff(configuration, administratorToken, body) {
         profile: "sccs",
         token: administratorToken,
         prefer: "return=minimal",
-        body: { role, teacher_id: teacherId },
+        body: { role: STAFF_ROLE, teacher_id: null },
       },
     );
     if (!roleResult.ok) throw new Error(roleResult.data?.message || "Could not assign role.");
-    if (role === "sccs_admin_team_role") {
-      const profileResult = await supabaseRequest(configuration, "/rest/v1/admin_team_members", {
-        method: "POST",
-        profile: "sccs",
-        token: administratorToken,
-        prefer: "resolution=merge-duplicates,return=minimal",
-        body: {
-          user_id: userId,
-          email,
-          first_name: body.first_name || null,
-          last_name: body.last_name || null,
-          phone: body.phone || null,
-          title: body.title || null,
-        },
-      });
-      if (!profileResult.ok) throw new Error(profileResult.data?.message || "Could not save team profile.");
-    }
+    await saveTeamProfile(configuration, administratorToken, userId, email, body);
     return { id: userId };
   } catch (error) {
     await supabaseRequest(configuration, `/auth/v1/admin/users/${userId}`, { method: "DELETE" });
@@ -190,20 +188,11 @@ async function createStaff(configuration, administratorToken, body) {
 
 async function updateStaff(configuration, administratorToken, body) {
   const userId = String(body.id || "");
-  const email = String(body.email || "").trim().toLowerCase();
-  const role = normalizeStaffRole(String(body.role || ""));
-  const teacherId = body.teacher_id ? Number(body.teacher_id) : null;
-  if (!userId || !STAFF_EMAIL.test(email) || !STAFF_ROLES.has(role)) {
-    throw new Error("Invalid staff account update. Email must be a non-empty @ctsccs.org address.");
-  }
-  if (role === "sccs_teacher_ta_role" && !teacherId) {
-    throw new Error("A teacher record must be linked.");
-  }
+  const { email } = validateStaffPayload(body, true);
+  if (!userId) throw new Error("Invalid staff account update.");
+
   const authBody = { email, email_confirm: true };
-  if (body.password) {
-    if (String(body.password).length < 10) throw new Error("Password must be at least 10 characters.");
-    authBody.password = String(body.password);
-  }
+  if (body.password) authBody.password = String(body.password);
   const authResult = await supabaseRequest(configuration, `/auth/v1/admin/users/${userId}`, {
     method: "PUT",
     body: authBody,
@@ -218,33 +207,11 @@ async function updateStaff(configuration, administratorToken, body) {
       profile: "sccs",
       token: administratorToken,
       prefer: "return=minimal",
-      body: { role, teacher_id: teacherId },
+      body: { role: STAFF_ROLE, teacher_id: null },
     },
   );
   if (!roleResult.ok) throw new Error(roleResult.data?.message || "Could not update role.");
-
-  if (role === "sccs_admin_team_role") {
-    await supabaseRequest(configuration, "/rest/v1/admin_team_members", {
-      method: "POST",
-      profile: "sccs",
-      token: administratorToken,
-      prefer: "resolution=merge-duplicates,return=minimal",
-      body: {
-        user_id: userId,
-        email,
-        first_name: body.first_name || null,
-        last_name: body.last_name || null,
-        phone: body.phone || null,
-        title: body.title || null,
-      },
-    });
-  } else {
-    await supabaseRequest(
-      configuration,
-      `/rest/v1/admin_team_members?user_id=eq.${encodeURIComponent(userId)}`,
-      { method: "DELETE", profile: "sccs", token: administratorToken },
-    );
-  }
+  await saveTeamProfile(configuration, administratorToken, userId, email, body);
 }
 
 export default async function handler(request, response) {
@@ -282,8 +249,8 @@ export default async function handler(request, response) {
       `/rest/v1/user_roles?select=role&user_id=eq.${encodeURIComponent(userId)}`,
       { profile: "sccs", token: administrator.token },
     );
-    if (!STAFF_ROLES.has(roleResult.data?.[0]?.role)) {
-      return json(response, 400, { error: "Only admin team member and teacher accounts can be deleted." });
+    if (roleResult.data?.[0]?.role !== STAFF_ROLE) {
+      return json(response, 400, { error: "Only admin team member accounts can be deleted here." });
     }
     const deleted = await supabaseRequest(configuration, `/auth/v1/admin/users/${userId}`, {
       method: "DELETE",

@@ -159,3 +159,103 @@ export function LoginPage({ Link }) {
     </Layout>
   );
 }
+
+export function ResetPasswordPage({ Link }) {
+  const [checking, setChecking] = useState(true);
+  const [ready, setReady] = useState(false);
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("");
+  const [error, setError] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    let cancelled = false;
+
+    const verifyRecoveryToken = async () => {
+      if (!supabase) {
+        setError("Supabase is not configured.");
+        setChecking(false);
+        return;
+      }
+
+      const query = new URLSearchParams(window.location.search);
+      const hash = new URLSearchParams(window.location.hash.replace(/^#/, ""));
+      const hashError = hash.get("error_description") || hash.get("error");
+      if (hashError) {
+        setError(hashError.replace(/\+/g, " "));
+        setChecking(false);
+        return;
+      }
+
+      const tokenHash = query.get("token_hash") || query.get("token");
+      const type = query.get("type") || "recovery";
+      if (!tokenHash || type !== "recovery") {
+        setError("This password reset link is invalid. Please request a new link.");
+        setChecking(false);
+        return;
+      }
+
+      const result = await supabase.auth.verifyOtp({
+        type: "recovery",
+        token_hash: tokenHash,
+      });
+      if (cancelled) return;
+      if (result.error) {
+        setError(result.error.message);
+      } else {
+        window.history.replaceState({}, "", "/reset-password");
+        setReady(true);
+      }
+      setChecking(false);
+    };
+
+    void verifyRecoveryToken();
+    return () => { cancelled = true; };
+  }, []);
+
+  const submit = async (event) => {
+    event.preventDefault();
+    setBusy(true);
+    setError("");
+    setMessage("");
+    const result = await supabase.auth.updateUser({ password });
+    setBusy(false);
+    if (result.error) {
+      setError(result.error.message);
+      return;
+    }
+    setPassword("");
+    setReady(false);
+    setMessage("Your password has been updated. You can now open the portal.");
+  };
+
+  return (
+    <Layout title="Set a new password">
+      {checking && <p>Checking your reset link...</p>}
+      {!checking && <Message error={error} message={message} />}
+      {ready && (
+        <form className="auth-form" onSubmit={submit}>
+          <label>
+            <span>New password</span>
+            <input
+              type="password"
+              minLength="8"
+              value={password}
+              onChange={(event) => setPassword(event.target.value)}
+              required
+            />
+          </label>
+          <button className="button-link" type="submit" disabled={busy}>
+            {busy ? "Updating..." : "Update password"}
+          </button>
+        </form>
+      )}
+      {!checking && !ready && (
+        <div className="auth-switches">
+          <Link className="button-link" to="/login">Request a new reset link</Link>
+          <Link className="outline-link" to="/account">Open portal</Link>
+        </div>
+      )}
+    </Layout>
+  );
+}

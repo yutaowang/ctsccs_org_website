@@ -102,12 +102,11 @@ function emailTemplate(actionLink) {
   };
 }
 
-async function generateRecoveryLink(config, email, redirectTo) {
+async function generateRecoveryLink(config, email) {
   const endpoint = new URL(
     "/auth/v1/admin/generate_link",
     config.supabaseUrl,
   );
-  endpoint.searchParams.set("redirect_to", redirectTo);
   const result = await fetch(endpoint, {
     method: "POST",
     headers: {
@@ -123,7 +122,13 @@ async function generateRecoveryLink(config, email, redirectTo) {
     return null;
   }
   const data = await result.json();
-  return data.action_link || null;
+  const tokenHash = data.properties?.hashed_token || data.hashed_token;
+  if (!tokenHash) return data.action_link || null;
+
+  const resetUrl = new URL("/reset-password", config.siteUrl);
+  resetUrl.searchParams.set("type", "recovery");
+  resetUrl.searchParams.set("token_hash", tokenHash);
+  return resetUrl.toString();
 }
 
 export default async function handler(request, response) {
@@ -142,8 +147,7 @@ export default async function handler(request, response) {
 
   try {
     const config = requiredEnvironment();
-    const redirectTo = `${config.siteUrl.replace(/\/$/, "")}/account`;
-    const actionLink = await generateRecoveryLink(config, email, redirectTo);
+    const actionLink = await generateRecoveryLink(config, email);
 
     // Return the same response when the account does not exist.
     if (!actionLink) {

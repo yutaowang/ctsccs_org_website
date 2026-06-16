@@ -138,9 +138,10 @@ never a plaintext password or application-managed password hash.
 ### Password reset email
 
 Forgot-password requests are handled by the Vercel Function at
-`/api/forgot-password`. Supabase Auth creates the signed recovery link, and the
-function sends it through Google Workspace SMTP. The service-role key and SMTP
-password stay on the server and must never use a `VITE_*` prefix.
+`/api/forgot-password`. The function asks Supabase Auth for a recovery token,
+wraps it in a first-party `${SITE_URL}/reset-password` link, and sends that link
+through Google Workspace SMTP. The service-role key and SMTP password stay on
+the server and must never use a `VITE_*` prefix.
 
 Add these values to **Vercel > Project Settings > Environment Variables** for
 Production, Preview, and Development as appropriate:
@@ -158,8 +159,8 @@ MAIL_FROM_ADDRESS
 SITE_URL
 ```
 
-Local `.env.local` values are not automatically uploaded to Vercel. Also add
-`${SITE_URL}/account` to **Supabase Auth > URL Configuration > Redirect URLs**.
+Local `.env.local` values are not automatically uploaded to Vercel. Set
+`SITE_URL` to the deployed origin, for example `https://sccs.tianfu.app`.
 Use Node.js 20 or newer locally and in Vercel.
 
 ## Production Build
