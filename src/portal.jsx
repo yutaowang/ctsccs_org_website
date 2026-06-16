@@ -20,6 +20,19 @@ const fullName = (row) => [
   row?.last_name || row?.parent_last_name,
 ].filter(Boolean).join(" ");
 
+function settingDate(value) {
+  if (!value) return "";
+  if (typeof value === "string") return value;
+  return value.date || value.deadline || value.text || "";
+}
+
+function isDateOpenThrough(dateText) {
+  if (!dateText) return true;
+  const date = new Date(`${dateText}T23:59:59`);
+  if (Number.isNaN(date.getTime())) return true;
+  return Date.now() <= date.getTime();
+}
+
 function PortalLayout({ title, tabs, active, setActive, children }) {
   const { session, role, signOut } = useAuth();
   return (
@@ -73,18 +86,22 @@ function FamilyPortal() {
   const [teachers, setTeachers] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [registrations, setRegistrations] = useState({});
+  const [registrationDeadline, setRegistrationDeadline] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", message: "" });
 
   const load = async () => {
-    const [classResult, familyResult] = await Promise.all([
+    const [classResult, familyResult, settingResult] = await Promise.all([
       supabase.from("classes")
         .select("id, name, short_name, type, classroom, teacher_short_name, class_times(display_time)")
         .eq("is_open", true).order("name"),
       supabase.from("families").select("*")
         .eq("user_id", session.user.id).maybeSingle(),
+      supabase.from("site_settings").select("value")
+        .eq("key", "registration_change_deadline").maybeSingle(),
     ]);
     if (!classResult.error) setClasses(classResult.data || []);
+    if (!settingResult.error) setRegistrationDeadline(settingDate(settingResult.data?.value));
     const [teacherResult, assignmentResult] = await Promise.all([
       supabase.from("teachers").select("*"),
       supabase.from("teacher_classes").select("*"),
@@ -160,6 +177,13 @@ function FamilyPortal() {
   };
 
   const saveRegistration = async (studentId, cancel = false) => {
+    if (!isDateOpenThrough(registrationDeadline)) {
+      setStatus({
+        error: `Class changes are closed. The change deadline was ${registrationDeadline}.`,
+        message: "",
+      });
+      return;
+    }
     const current = registrations[studentId] || {};
     const payload = {
       student_id: studentId,
@@ -211,6 +235,7 @@ function FamilyPortal() {
     ["profile", "Profile"],
     ["password", "Password"],
   ];
+  const registrationChangeOpen = isDateOpenThrough(registrationDeadline);
 
   return (
     <PortalLayout title="Family Account" tabs={tabs} active={active} setActive={setActive}>
@@ -243,18 +268,33 @@ function FamilyPortal() {
                   <strong>{fullName(row)} {row.chinese_name && `· ${row.chinese_name}`}</strong>
                 </div>
                 {registeredCourses.length ? (
-                  <div className="student-course-list">
-                    {registeredCourses.map((course) => (
-                      <article key={course.id}>
-                        <div>
-                          <strong>{course.name || course.short_name}</strong>
-                          <span>{course.time} · {course.classroom} · {course.teacher}</span>
-                        </div>
-                        <a href={course.descriptionLink} target={course.descriptionLink.startsWith("/") ? undefined : "_blank"} rel={course.descriptionLink.startsWith("/") ? undefined : "noreferrer"}>
-                          Course description
-                        </a>
-                      </article>
-                    ))}
+                  <div className="student-course-table data-table-wrap">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Course</th>
+                          <th>Time</th>
+                          <th>Classroom</th>
+                          <th>Teacher</th>
+                          <th>Introduction</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {registeredCourses.map((course) => (
+                          <tr key={course.id}>
+                            <td>{course.name || course.short_name}</td>
+                            <td>{course.time}</td>
+                            <td>{course.classroom}</td>
+                            <td>{course.teacher}</td>
+                            <td>
+                              <a href={course.descriptionLink} target={course.descriptionLink.startsWith("/") ? undefined : "_blank"} rel={course.descriptionLink.startsWith("/") ? undefined : "noreferrer"}>
+                                Course description
+                              </a>
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
                   </div>
                 ) : (
                   <span className="student-no-registration">No classes selected.</span>
@@ -285,6 +325,11 @@ function FamilyPortal() {
       {active === "register" && (
         <div className="portal-panel">
           <div className="panel-heading"><div><span>注册课程</span><h2>Register Classes</h2></div></div>
+          {registrationDeadline && (
+            <div className={`form-message ${registrationChangeOpen ? "" : "error"}`}>
+              Class changes are {registrationChangeOpen ? "open" : "closed"}. Deadline: {registrationDeadline}.
+            </div>
+          )}
           {!students.length && <div className="empty-state">Please add a student before registering classes.</div>}
           {students.map((row) => (
             <div className="registration-card" key={row.id}>
@@ -296,6 +341,7 @@ function FamilyPortal() {
                     <label key={field}><span>Session {number}</span>
                       <select
                         value={registrations[row.id]?.[field] || ""}
+                        disabled={!registrationChangeOpen}
                         onChange={(event) => setRegistrations({
                           ...registrations,
                           [row.id]: {
@@ -317,8 +363,8 @@ function FamilyPortal() {
                 })}
               </div>
               <div className="button-row">
-                <button className="button-link" type="button" onClick={() => saveRegistration(row.id)}>Save registration</button>
-                <button className="outline-link" type="button" onClick={() => saveRegistration(row.id, true)}>Cancel all</button>
+                <button className="button-link" type="button" onClick={() => saveRegistration(row.id)} disabled={!registrationChangeOpen}>Save registration</button>
+                <button className="outline-link" type="button" onClick={() => saveRegistration(row.id, true)} disabled={!registrationChangeOpen}>Cancel all</button>
               </div>
             </div>
           ))}
@@ -1108,7 +1154,7 @@ function StaffPortal({ isAdmin }) {
       {active === "search" && <div className="portal-panel"><div className="panel-heading"><div><span>家庭与学生搜索</span><h2>Search Families</h2></div></div><label className="standalone-field"><span>Family ID, parent/student name, phone, or email</span><input value={search} onChange={(event) => setSearch(event.target.value)} /></label><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"]]} rows={searchRows} empty="Enter a search term." /></div>}
       {active === "print" && <div className="portal-panel print-area"><div className="panel-heading"><div><span>打印注册信息</span><h2>Print Registration</h2></div><button className="outline-link no-print" type="button" onClick={() => window.print()}>Print</button></div><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"]]} rows={searchRows} empty="Use Family Search first, then return here to print selected information." /></div>}
       {active === "staff" && <StaffUserManager />}
-      {active === "settings" && <div className="portal-panel"><div className="panel-heading"><div><span>网站配置</span><h2>Site Settings</h2></div></div><form className="portal-form compact" onSubmit={saveSetting}><label><span>Setting key</span><input value={settingKey} onChange={(event) => setSettingKey(event.target.value)} placeholder="registration_open" required /></label><label><span>JSON value or text</span><input value={settingValue} onChange={(event) => setSettingValue(event.target.value)} placeholder='true or {"text":"Notice"}' required /></label><button className="button-link" type="submit">Save setting</button></form><DataTable columns={[["key", "Key"], ["display_value", "Value"], ["updated_at", "Updated"]]} rows={siteSettings.map((row) => ({ ...row, display_value: JSON.stringify(row.value) }))} /></div>}
+      {active === "settings" && <div className="portal-panel"><div className="panel-heading"><div><span>网站配置</span><h2>Site Settings</h2></div></div><div className="form-message">To set the class change deadline, use key <strong>registration_change_deadline</strong> and value <strong>{"{\"date\":\"2026-09-21\"}"}</strong>.</div><form className="portal-form compact" onSubmit={saveSetting}><label><span>Setting key</span><input value={settingKey} onChange={(event) => setSettingKey(event.target.value)} placeholder="registration_change_deadline" required /></label><label><span>JSON value or text</span><input value={settingValue} onChange={(event) => setSettingValue(event.target.value)} placeholder='{"date":"2026-09-21"}' required /></label><button className="button-link" type="submit">Save setting</button></form><DataTable columns={[["key", "Key"], ["display_value", "Value"], ["updated_at", "Updated"]]} rows={siteSettings.map((row) => ({ ...row, display_value: JSON.stringify(row.value) }))} /></div>}
       {active === "password" && <form className="portal-form compact" onSubmit={changePassword}><div className="panel-heading"><div><span>更改密码</span><h2>Change Password</h2></div></div><label className="wide"><span>New password</span><input type="password" minLength="12" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label><button className="button-link" type="submit">Update password</button></form>}
     </PortalLayout>
   );

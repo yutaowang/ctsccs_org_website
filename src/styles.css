@@ -1851,6 +1851,18 @@ footer {
   text-decoration: none;
 }
 .student-course-list a:hover { color: var(--gold-dark); }
+.student-course-table {
+  border-color: #dfe5f0;
+}
+.student-course-table .data-table {
+  min-width: 640px;
+}
+.student-course-table a {
+  color: var(--blue);
+  font-weight: 800;
+  text-decoration: none;
+}
+.student-course-table a:hover { color: var(--gold-dark); }
 .portal-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
