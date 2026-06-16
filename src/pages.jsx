@@ -334,12 +334,24 @@ function Courses() {
 
   useEffect(() => {
     if (!supabase) return;
-    supabase
-      .from("classes")
-      .select("id, name, teacher_short_name, classroom, donation, type, class_times(display_time)")
-      .eq("is_open", true)
-      .order("name")
-      .then(({ data }) => setDatabaseCourses(data || []));
+    const loadCourses = async () => {
+      const viewResult = await supabase
+        .from("public_course_schedule")
+        .select("id, name, teacher_name, teacher_short_name, classroom, donation, type, display_time")
+        .eq("is_open", true)
+        .order("name");
+      if (!viewResult.error) {
+        setDatabaseCourses(viewResult.data || []);
+        return;
+      }
+      const classResult = await supabase
+        .from("classes")
+        .select("id, name, teacher_short_name, classroom, donation, type, class_times(display_time)")
+        .eq("is_open", true)
+        .order("name");
+      setDatabaseCourses(classResult.data || []);
+    };
+    loadCourses();
   }, []);
 
   const databaseGroups = Object.entries(
@@ -347,10 +359,10 @@ function Courses() {
       const type = course.type || "Other";
       groups[type] = [...(groups[type] || []), [
         course.name,
-        course.teacher_short_name || "",
+        course.teacher_name || course.teacher_short_name || "",
         course.classroom || "",
         course.donation == null ? "" : `$${course.donation}`,
-        course.class_times?.display_time || "",
+        course.display_time || course.class_times?.display_time || "",
         courseDescriptionLinkFor(course.name),
       ]];
       return groups;

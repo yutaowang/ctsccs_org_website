@@ -757,6 +757,15 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
     });
   };
 
+  const updateClassTeacher = (teacherId) => {
+    const teacher = teachers.find((row) => String(row.id) === String(teacherId));
+    setForm({
+      ...form,
+      teacher_id: teacherId,
+      teacher_short_name: teacher?.short_name || "",
+    });
+  };
+
   const saveClass = async (event) => {
     event.preventDefault();
     if (!form.name.trim()) {
@@ -786,6 +795,7 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
 
   const editClass = (course) => {
     const assignment = assignments.find((row) => row.class_id === course.id);
+    const assignedTeacher = teachers.find((row) => row.id === assignment?.teacher_id);
     setFormOpen(true);
     setForm({
       ...emptyClass,
@@ -797,7 +807,7 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
       type: course.type || "",
       donation: course.donation ?? "",
       classroom: course.classroom || "",
-      teacher_short_name: course.teacher_short_name || "",
+      teacher_short_name: assignedTeacher?.short_name || course.teacher_short_name || "",
       teacher_id: assignment?.teacher_id || "",
       is_open: course.is_open !== false,
       equivalent: course.equivalent || "",
@@ -856,8 +866,8 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
           <form className="portal-form staff-user-form" onSubmit={saveClass}>
             <label><span>Class name</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></label>
             <label><span>Short name</span><input value={form.short_name} onChange={(event) => setForm({ ...form, short_name: event.target.value })} placeholder="e.g. CN3" /></label>
-            <label><span>Teacher</span><select value={form.teacher_id} onChange={(event) => setForm({ ...form, teacher_id: event.target.value })}><option value="">No teacher assigned</option>{teachers.map((teacher) => <option value={teacher.id} key={teacher.id}>{teacherLabel(teacher)}</option>)}</select></label>
-            <label><span>Teacher short name</span><input value={form.teacher_short_name} onChange={(event) => setForm({ ...form, teacher_short_name: event.target.value })} /></label>
+            <label><span>Teacher</span><select value={form.teacher_id} onChange={(event) => updateClassTeacher(event.target.value)}><option value="">No teacher assigned</option>{teachers.map((teacher) => <option value={teacher.id} key={teacher.id}>{teacherLabel(teacher)}</option>)}</select></label>
+            <label><span>Teacher short name</span><input value={form.teacher_short_name} readOnly /></label>
             <label><span>Class time</span><select value={form.class_time_id} onChange={(event) => setForm({ ...form, class_time_id: event.target.value })}><option value="">No time selected</option>{classTimes.map((time) => <option value={time.id} key={time.id}>{time.display_time || time.name || time.id}</option>)}</select></label>
             <label><span>Classroom</span><input value={form.classroom} onChange={(event) => setForm({ ...form, classroom: event.target.value })} /></label>
             <label><span>Type</span><input value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} /></label>
@@ -1077,6 +1087,7 @@ function StaffPortal({ isAdmin }) {
   const [selectedClass, setSelectedClass] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", message: "" });
+  const [rosterEmailBusy, setRosterEmailBusy] = useState(false);
 
   const load = async () => {
     const requests = [
@@ -1145,13 +1156,40 @@ function StaffPortal({ isAdmin }) {
         };
       });
   }, [selectedClassId, registrations, students, families]);
-  const rosterEmailHref = selectedTeacherEmail ? `mailto:${selectedTeacherEmail}?subject=${encodeURIComponent(`Roster for ${selectedCourse?.name || "Class"}`)}&body=${encodeURIComponent([
-    `Roster for ${selectedCourse?.name || "Class"}`,
-    selectedCourse?.class_times?.display_time ? `Time: ${selectedCourse.class_times.display_time}` : "",
-    selectedCourse?.classroom ? `Room: ${selectedCourse.classroom}` : "",
-    "",
-    ...rosterRows.map((row, index) => `${index + 1}. ${row.student || "Student"} | Parent: ${row.parent || ""} | Email: ${row.email || ""} | Phone: ${row.phone || ""} | Family ID: ${row.family_id || ""}`),
-  ].filter((line) => line !== "").join("\n"))}` : "";
+  const sendRosterEmail = async () => {
+    if (!selectedTeacherEmail) {
+      setStatus({ error: "This class does not have a teacher email.", message: "" });
+      return;
+    }
+    setRosterEmailBusy(true);
+    setStatus({ error: "", message: "" });
+    try {
+      const result = await fetch("/api/email-roster", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          teacherEmail: selectedTeacherEmail,
+          course: {
+            name: selectedCourse?.name || "Class",
+            time: selectedCourse?.class_times?.display_time || "",
+            teacher: teacherDisplayName(selectedCourse, teachers, assignments, ""),
+            room: selectedCourse?.classroom || "",
+          },
+          rows: rosterRows,
+        }),
+      });
+      const body = await result.json();
+      if (!result.ok) throw new Error(body.error || "Could not email roster.");
+      setStatus({ error: "", message: body.message || "Roster PDF sent to teacher." });
+    } catch (error) {
+      setStatus({ error: error.message, message: "" });
+    } finally {
+      setRosterEmailBusy(false);
+    }
+  };
 
   const classRows = visibleClasses.map((course) => {
     const count = registrations.filter((row) => (
@@ -1297,18 +1335,24 @@ function StaffPortal({ isAdmin }) {
             {active === "rosters" && (
               <div className="button-row no-print">
                 <button className="outline-link" type="button" onClick={() => window.print()}>Print Roster</button>
-                {rosterEmailHref ? (
-                  <a className="button-link" href={rosterEmailHref}>Email to Teacher</a>
-                ) : (
-                  <button className="button-link" type="button" disabled title="No teacher email is available for this class.">Email to Teacher</button>
-                )}
+                <button
+                  className="button-link"
+                  type="button"
+                  onClick={sendRosterEmail}
+                  disabled={rosterEmailBusy || !selectedTeacherEmail}
+                  title={selectedTeacherEmail ? "" : "No teacher email is available for this class."}
+                >
+                  {rosterEmailBusy ? "Sending..." : "Email to Teacher"}
+                </button>
               </div>
             )}
           </div>
           {active === "rosters" && (
-            <div className="print-heading">
-              <strong>{selectedCourse?.name || "Class Roster"}</strong>
-              <span>{[selectedCourse?.class_times?.display_time, selectedCourse?.classroom, teacherDisplayName(selectedCourse, teachers, assignments, "")].filter(Boolean).join(" · ")}</span>
+            <div className="roster-summary">
+              <div><span>Class</span><strong>{selectedCourse?.name || "Class Roster"}</strong></div>
+              <div><span>Time</span><strong>{selectedCourse?.class_times?.display_time || "Time TBD"}</strong></div>
+              <div><span>Teacher</span><strong>{teacherDisplayName(selectedCourse, teachers, assignments, "Teacher TBD")}</strong></div>
+              <div><span>Classroom</span><strong>{selectedCourse?.classroom || "Room TBD"}</strong></div>
             </div>
           )}
           <label className="standalone-field no-print"><span>Class</span><select value={selectedClass || visibleClasses[0]?.id || ""} onChange={(event) => setSelectedClass(event.target.value)}>{visibleClasses.map((row) => <option value={row.id} key={row.id}>{row.name}</option>)}</select></label>
