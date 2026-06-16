@@ -323,6 +323,18 @@ function DataTable({ columns, rows, empty = "No records found." }) {
   );
 }
 
+function RowActions({ onEdit, onDelete, disabled = false }) {
+  return (
+    <details className="row-actions">
+      <summary aria-label="Row actions">...</summary>
+      <div>
+        <button type="button" onClick={onEdit}>Edit</button>
+        <button className="danger" type="button" onClick={onDelete} disabled={disabled}>Delete</button>
+      </div>
+    </details>
+  );
+}
+
 function StaffUserManager() {
   const { session } = useAuth();
   const emptyForm = {
@@ -465,14 +477,194 @@ function StaffUserManager() {
               <strong>{user.email}</strong>
               <small>Admin Team Member</small>
             </span>
-            <div className="button-row">
-              <button className="outline-link" type="button" onClick={() => edit(user)}>Edit</button>
-              <button className="danger-link" type="button" onClick={() => remove(user)} disabled={busy}>Delete</button>
-            </div>
+            <RowActions onEdit={() => edit(user)} onDelete={() => remove(user)} disabled={busy} />
           </div>
         ))}
         {!users.length && <div className="empty-state">No admin team member login accounts.</div>}
         {!!users.length && !filteredUsers.length && <div className="empty-state">No staff accounts match this search.</div>}
+      </div>
+    </div>
+  );
+}
+
+function ClassManager({ classes, classTimes, teachers, assignments, registrations, onReload, setStatus }) {
+  const emptyClass = {
+    id: "",
+    short_name: "",
+    name: "",
+    maximum: "",
+    class_time_id: "",
+    type: "",
+    donation: "",
+    classroom: "",
+    teacher_short_name: "",
+    teacher_id: "",
+    is_open: true,
+    equivalent: "",
+    textbook: "",
+  };
+  const [form, setForm] = useState(emptyClass);
+  const [classSearch, setClassSearch] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const classPayload = () => ({
+    short_name: form.short_name.trim() || null,
+    name: form.name.trim() || null,
+    maximum: form.maximum === "" ? null : Number(form.maximum),
+    class_time_id: form.class_time_id ? Number(form.class_time_id) : null,
+    type: form.type.trim() || null,
+    donation: form.donation === "" ? null : Number(form.donation),
+    classroom: form.classroom.trim() || null,
+    teacher_short_name: form.teacher_short_name.trim() || null,
+    is_open: Boolean(form.is_open),
+    equivalent: form.equivalent.trim() || null,
+    textbook: form.textbook.trim() || null,
+  });
+
+  const saveAssignment = async (classId) => {
+    await supabase.from("teacher_classes").delete().eq("class_id", classId);
+    if (!form.teacher_id) return { error: null };
+    return supabase.from("teacher_classes").insert({
+      class_id: classId,
+      teacher_id: Number(form.teacher_id),
+      is_primary: true,
+    });
+  };
+
+  const saveClass = async (event) => {
+    event.preventDefault();
+    if (!form.name.trim()) {
+      setStatus({ error: "Class name is required.", message: "" });
+      return;
+    }
+    setBusy(true);
+    setStatus({ error: "", message: "" });
+    const result = form.id
+      ? await supabase.from("classes").update(classPayload()).eq("id", form.id).select("id").single()
+      : await supabase.from("classes").insert(classPayload()).select("id").single();
+    if (result.error) {
+      setStatus({ error: result.error.message, message: "" });
+      setBusy(false);
+      return;
+    }
+    const assignmentResult = await saveAssignment(result.data.id);
+    if (assignmentResult.error) {
+      setStatus({ error: assignmentResult.error.message, message: "" });
+    } else {
+      setForm(emptyClass);
+      setStatus({ error: "", message: form.id ? "Class updated." : "Class created." });
+      await onReload();
+    }
+    setBusy(false);
+  };
+
+  const editClass = (course) => {
+    const assignment = assignments.find((row) => row.class_id === course.id);
+    setForm({
+      ...emptyClass,
+      id: course.id,
+      short_name: course.short_name || "",
+      name: course.name || "",
+      maximum: course.maximum ?? "",
+      class_time_id: course.class_time_id || "",
+      type: course.type || "",
+      donation: course.donation ?? "",
+      classroom: course.classroom || "",
+      teacher_short_name: course.teacher_short_name || "",
+      teacher_id: assignment?.teacher_id || "",
+      is_open: course.is_open !== false,
+      equivalent: course.equivalent || "",
+      textbook: course.textbook || "",
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+
+  const deleteClass = async (course) => {
+    if (!window.confirm(`Delete class ${course.name || course.short_name || course.id}?`)) return;
+    setBusy(true);
+    const result = await supabase.from("classes").delete().eq("id", course.id);
+    if (result.error) {
+      setStatus({ error: result.error.message, message: "" });
+    } else {
+      if (form.id === course.id) setForm(emptyClass);
+      setStatus({ error: "", message: "Class deleted." });
+      await onReload();
+    }
+    setBusy(false);
+  };
+
+  const query = classSearch.trim().toLowerCase();
+  const filteredClasses = (!query ? classes : classes.filter((course) => {
+    const assignment = assignments.find((row) => row.class_id === course.id);
+    const teacher = teachers.find((row) => row.id === assignment?.teacher_id);
+    return [
+      course.short_name,
+      course.name,
+      course.type,
+      course.classroom,
+      course.teacher_short_name,
+      fullName(teacher),
+      teacher?.short_name,
+      course.class_times?.display_time,
+      course.textbook,
+    ].join(" ").toLowerCase().includes(query);
+  })).slice().sort((left, right) => String(left.name || "").localeCompare(String(right.name || "")));
+
+  return (
+    <div className="portal-panel">
+      <div className="panel-heading">
+        <div><span>Class Management</span><h2>Classes</h2></div>
+      </div>
+      <p className="staff-help">
+        Use this page to create, search, update, and delete course records.
+        Teacher assignment is saved to <code>teacher_classes</code>; class details are saved to <code>classes</code>.
+      </p>
+      <form className="portal-form staff-user-form" onSubmit={saveClass}>
+        <label><span>Class name</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></label>
+        <label><span>Short name</span><input value={form.short_name} onChange={(event) => setForm({ ...form, short_name: event.target.value })} placeholder="e.g. CN3" /></label>
+        <label><span>Teacher</span><select value={form.teacher_id} onChange={(event) => setForm({ ...form, teacher_id: event.target.value })}><option value="">No teacher assigned</option>{teachers.map((teacher) => <option value={teacher.id} key={teacher.id}>{fullName(teacher) || teacher.short_name}</option>)}</select></label>
+        <label><span>Teacher short name</span><input value={form.teacher_short_name} onChange={(event) => setForm({ ...form, teacher_short_name: event.target.value })} /></label>
+        <label><span>Class time</span><select value={form.class_time_id} onChange={(event) => setForm({ ...form, class_time_id: event.target.value })}><option value="">No time selected</option>{classTimes.map((time) => <option value={time.id} key={time.id}>{time.display_time || time.name || time.id}</option>)}</select></label>
+        <label><span>Classroom</span><input value={form.classroom} onChange={(event) => setForm({ ...form, classroom: event.target.value })} /></label>
+        <label><span>Type</span><input value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} /></label>
+        <label><span>Maximum seats</span><input type="number" min="0" value={form.maximum} onChange={(event) => setForm({ ...form, maximum: event.target.value })} /></label>
+        <label><span>Tuition / donation</span><input type="number" min="0" value={form.donation} onChange={(event) => setForm({ ...form, donation: event.target.value })} /></label>
+        <label><span>Equivalent</span><input value={form.equivalent} onChange={(event) => setForm({ ...form, equivalent: event.target.value })} /></label>
+        <label className="wide"><span>Textbook</span><input value={form.textbook} onChange={(event) => setForm({ ...form, textbook: event.target.value })} /></label>
+        <label><span>Status</span><select value={form.is_open ? "open" : "closed"} onChange={(event) => setForm({ ...form, is_open: event.target.value === "open" })}><option value="open">Open</option><option value="closed">Closed</option></select></label>
+        <div className="button-row">
+          <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update class" : "Create class"}</button>
+          {form.id && <button className="outline-link" type="button" onClick={() => setForm(emptyClass)}>Cancel edit</button>}
+        </div>
+      </form>
+      <label className="standalone-field staff-search">
+        <span>Search classes</span>
+        <input value={classSearch} onChange={(event) => setClassSearch(event.target.value)} placeholder="Class name, short name, teacher, room, time, or type" />
+      </label>
+      <div className="staff-user-list">
+        {filteredClasses.map((course) => {
+          const assignment = assignments.find((row) => row.class_id === course.id);
+          const teacher = teachers.find((row) => row.id === assignment?.teacher_id);
+          const registered = registrations.filter((row) => [row.session_1, row.session_2, row.session_3].includes(course.id)).length;
+          return (
+            <div key={course.id}>
+              <span>
+                <strong>{course.name || course.short_name || `Class ${course.id}`}</strong>
+                <small>{[
+                  course.short_name,
+                  fullName(teacher) || teacher?.short_name || course.teacher_short_name,
+                  course.classroom,
+                  course.class_times?.display_time,
+                  `${registered} registered`,
+                  course.is_open === false ? "closed" : "open",
+                ].filter(Boolean).join(" - ")}</small>
+              </span>
+              <RowActions onEdit={() => editClass(course)} onDelete={() => deleteClass(course)} disabled={busy} />
+            </div>
+          );
+        })}
+        {!classes.length && <div className="empty-state">No class records.</div>}
+        {!!classes.length && !filteredClasses.length && <div className="empty-state">No classes match this search.</div>}
       </div>
     </div>
   );
@@ -600,10 +792,7 @@ function TeacherManager({ teachers, onReload, setStatus }) {
               <strong>{fullName(teacher) || teacher.short_name || `Teacher ${teacher.id}`}</strong>
               <small>{[teacher.short_name, teacher.email_1, teacher.phone_1].filter(Boolean).join(" - ")}</small>
             </span>
-            <div className="button-row">
-              <button className="outline-link" type="button" onClick={() => editTeacher(teacher)}>Edit</button>
-              <button className="danger-link" type="button" onClick={() => deleteTeacher(teacher)} disabled={busy}>Delete</button>
-            </div>
+            <RowActions onEdit={() => editTeacher(teacher)} onDelete={() => deleteTeacher(teacher)} disabled={busy} />
           </div>
         ))}
         {!teachers.length && <div className="empty-state">No teacher records.</div>}
@@ -617,6 +806,7 @@ function StaffPortal({ isAdmin }) {
   const { session, role, teacherId, refreshRole } = useAuth();
   const [active, setActive] = useState(isAdmin ? "classes" : "classes");
   const [classes, setClasses] = useState([]);
+  const [classTimes, setClassTimes] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [students, setStudents] = useState([]);
@@ -635,6 +825,7 @@ function StaffPortal({ isAdmin }) {
   const load = async () => {
     const requests = [
       supabase.from("classes").select("*, class_times(display_time)").order("name"),
+      supabase.from("class_times").select("*").order("id"),
       supabase.from("teacher_classes").select("*"),
       supabase.from("teachers").select("*").order("last_name"),
       supabase.from("students").select("*").order("last_name"),
@@ -652,15 +843,16 @@ function StaffPortal({ isAdmin }) {
     const firstError = results.find((result) => result.error)?.error;
     if (firstError) setStatus({ error: firstError.message, message: "" });
     setClasses(results[0].data || []);
-    setAssignments(results[1].data || []);
-    setTeachers(results[2].data || []);
-    setStudents(results[3].data || []);
-    setFamilies(results[4].data || []);
-    setRegistrations(results[5].data || []);
+    setClassTimes(results[1].data || []);
+    setAssignments(results[2].data || []);
+    setTeachers(results[3].data || []);
+    setStudents(results[4].data || []);
+    setFamilies(results[5].data || []);
+    setRegistrations(results[6].data || []);
     if (isAdmin) {
-      setPayments(results[6].data || []);
-      setUserRoles(results[7].data || []);
-      setSiteSettings(results[8].data || []);
+      setPayments(results[7].data || []);
+      setUserRoles(results[8].data || []);
+      setSiteSettings(results[9].data || []);
     }
   };
   useEffect(() => { load(); }, [role, teacherId]);
@@ -797,7 +989,7 @@ function StaffPortal({ isAdmin }) {
   };
 
   const adminTabs = [
-    ["classes", "Classes"], ["teachers", "Teacher"], ["rosters", "Rosters"],
+    ["classes", "Classes"], ["teachers", "Teachers"], ["rosters", "Rosters"],
     ["registrations", "Registration Summary"], ["payments", "Payment History"],
     ["search", "Family Search"], ["print", "Print Registration"],
   ];
@@ -829,7 +1021,7 @@ function StaffPortal({ isAdmin }) {
       setActive={setActive}
     >
       <Status status={status} />
-      {active === "classes" && <div className="portal-panel"><div className="panel-heading"><div><span>课程</span><h2>{isAdmin ? "All Classes" : "My Classes"}</h2></div></div><DataTable columns={[["id", "ID"], ["name", "Name"], ["count", "Registered"], ["available", "Available"], ["teacher", "Teacher"], ["room", "Room"], ["time", "Time"]]} rows={classRows} /></div>}
+      {active === "classes" && (isAdmin ? <ClassManager classes={classes} classTimes={classTimes} teachers={teachers} assignments={assignments} registrations={registrations} onReload={load} setStatus={setStatus} /> : <div className="portal-panel"><div className="panel-heading"><div><span>课程</span><h2>My Classes</h2></div></div><DataTable columns={[["id", "ID"], ["name", "Name"], ["count", "Registered"], ["available", "Available"], ["teacher", "Teacher"], ["room", "Room"], ["time", "Time"]]} rows={classRows} /></div>)}
       {active === "teachers" && <TeacherManager teachers={teachers} onReload={load} setStatus={setStatus} />}
       {["rosters", "attendance", "grades", "email"].includes(active) && (
         <div className="portal-panel">

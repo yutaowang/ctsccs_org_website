@@ -1936,6 +1936,59 @@ footer {
   font-size: 0.61rem;
   text-transform: uppercase;
 }
+.row-actions {
+  position: relative;
+  flex: 0 0 auto;
+}
+.row-actions summary {
+  display: inline-flex;
+  width: 42px;
+  height: 34px;
+  align-items: center;
+  justify-content: center;
+  color: var(--navy);
+  background: #fff;
+  border: 1px solid var(--line);
+  cursor: pointer;
+  font-size: 1rem;
+  font-weight: 900;
+  list-style: none;
+}
+.row-actions summary::-webkit-details-marker { display: none; }
+.row-actions[open] summary {
+  border-color: var(--blue);
+  box-shadow: 0 0 0 2px rgba(18, 73, 136, 0.08);
+}
+.row-actions > div {
+  position: absolute;
+  right: 0;
+  z-index: 10;
+  display: grid;
+  min-width: 130px;
+  margin-top: 6px;
+  padding: 6px;
+  background: #fff;
+  border: 1px solid var(--line);
+  box-shadow: 0 14px 32px rgba(15, 36, 70, 0.16);
+}
+.row-actions button {
+  padding: 10px 12px;
+  color: var(--navy);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-align: left;
+}
+.row-actions button:hover { background: #eef3fb; }
+.row-actions button.danger { color: #9b2f2f; }
+.row-actions button.danger:hover { background: #fff1f1; }
+.row-actions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.5;
+}
 .danger-link {
   padding: 9px 13px;
   color: #9b2f2f;
