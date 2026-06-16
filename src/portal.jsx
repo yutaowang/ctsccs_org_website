@@ -1,6 +1,6 @@
 ﻿import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "./auth";
-import { courseDescriptionLinks } from "./pages";
+import { courseDescriptionLinkFor } from "./pages";
 import { supabase } from "./supabase";
 
 const roles = {
@@ -219,7 +219,7 @@ function FamilyPortal() {
     if (!course) return null;
     const assignment = assignments.find((row) => row.class_id === course.id);
     const teacher = teachers.find((row) => row.id === assignment?.teacher_id);
-    const descriptionLink = courseDescriptionLinks[(course.name || "").toLowerCase()] || "/courses";
+    const descriptionLink = courseDescriptionLinkFor(course.name || course.short_name);
     return {
       ...course,
       teacher: fullName(teacher) || teacher?.short_name || course.teacher_short_name || "TBD",
@@ -272,8 +272,8 @@ function FamilyPortal() {
                     <table className="data-table">
                       <thead>
                         <tr>
-                          <th>Course</th>
                           <th>Time</th>
+                          <th>Course</th>
                           <th>Classroom</th>
                           <th>Teacher</th>
                           <th>Introduction</th>
@@ -282,14 +282,16 @@ function FamilyPortal() {
                       <tbody>
                         {registeredCourses.map((course) => (
                           <tr key={course.id}>
-                            <td>{course.name || course.short_name}</td>
                             <td>{course.time}</td>
+                            <td>{course.name || course.short_name}</td>
                             <td>{course.classroom}</td>
                             <td>{course.teacher}</td>
                             <td>
-                              <a href={course.descriptionLink} target={course.descriptionLink.startsWith("/") ? undefined : "_blank"} rel={course.descriptionLink.startsWith("/") ? undefined : "noreferrer"}>
-                                Course description
-                              </a>
+                              {course.descriptionLink && (
+                                <a href={course.descriptionLink} target="_blank" rel="noreferrer">
+                                  Course description
+                                </a>
+                              )}
                             </td>
                           </tr>
                         ))}

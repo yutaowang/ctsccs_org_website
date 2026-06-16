@@ -3,11 +3,21 @@ import { publicSupabase, supabase } from "./supabase";
 
 const oldSite = "https://ctsccs.org/";
 
+const isLocalPath = (path) => path.startsWith("/") || path.startsWith("course_description/");
+const localPath = (path) => path.startsWith("/") ? path : `/${path}`;
+
 const external = (path) => path.startsWith("http") || path.startsWith("mailto:")
   ? path
   : `${oldSite}${path}`;
 
 function ExternalLink({ href, children, className }) {
+  if (isLocalPath(href)) {
+    return (
+      <a className={className} href={localPath(href)} target="_blank" rel="noreferrer">
+        {children}
+      </a>
+    );
+  }
   return (
     <a className={className} href={external(href)} target="_blank" rel="noreferrer">
       {children}
@@ -304,7 +314,11 @@ const courseGroups = [
 export const courseDescriptionLinks = Object.fromEntries(
   courseGroups.flatMap((group) => group.courses)
     .filter(([name, , , , , file]) => file)
-    .map(([name, , , , , file]) => [name.toLowerCase(), file]),
+    .map(([name, , , , , file]) => [name.toLowerCase(), localPath(file)]),
+);
+
+export const courseDescriptionLinkFor = (courseName) => (
+  courseDescriptionLinks[(courseName || "").toLowerCase()] || ""
 );
 
 function Courses() {
@@ -330,7 +344,7 @@ function Courses() {
         course.classroom || "",
         course.donation == null ? "" : `$${course.donation}`,
         course.class_times?.display_time || "",
-        "",
+        courseDescriptionLinkFor(course.name),
       ]];
       return groups;
     }, {}),
@@ -369,11 +383,12 @@ function Courses() {
           aria-labelledby={`course-tab-${activeGroup.id}`}
         >
           <table>
-            <thead><tr><th>Class Name</th><th>Teacher</th><th>Room</th><th>Donation</th><th>Time</th></tr></thead>
+            <thead><tr><th>Class Name</th><th>Teacher</th><th>Room</th><th>Donation</th><th>Time</th><th>Introduction</th></tr></thead>
             <tbody>{activeGroup.courses.map(([name, teacher, room, fee, time, file]) => (
               <tr key={name}>
-                <td>{file ? <ExternalLink href={file}>{name}</ExternalLink> : name}</td>
+                <td>{name}</td>
                 <td>{teacher}</td><td>{room}</td><td>{fee}</td><td>{time}</td>
+                <td>{file ? <ExternalLink href={file}>Course description</ExternalLink> : ""}</td>
               </tr>
             ))}</tbody>
           </table>

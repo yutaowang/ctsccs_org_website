@@ -1812,6 +1812,8 @@ footer {
 .student-summary span { color: #647087; font-size: 0.73rem; text-align: right; }
 .student-summary {
   display: grid;
+  width: 100%;
+  grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   background: #fff;
 }
@@ -1853,12 +1855,21 @@ footer {
 }
 .student-course-list a:hover { color: var(--gold-dark); }
 .student-course-table {
+  display: block;
   width: 100%;
+  min-width: 0;
+  max-width: none;
   border-color: #dfe5f0;
 }
 .student-course-table .data-table {
   width: 100%;
-  min-width: 640px;
+  min-width: 100%;
+  table-layout: fixed;
+}
+.student-course-table .data-table tbody tr,
+.student-course-table .data-table tbody tr:nth-child(odd),
+.student-course-table .data-table tbody tr:hover {
+  background: #fff;
 }
 .student-course-table a {
   color: var(--blue);
