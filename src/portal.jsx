@@ -1,5 +1,6 @@
 import React, { useEffect, useMemo, useState } from "react";
 import { useAuth } from "./auth";
+import { courseDescriptionLinks } from "./pages";
 import { supabase } from "./supabase";
 
 const roles = {
@@ -69,6 +70,8 @@ function FamilyPortal() {
   const [students, setStudents] = useState([]);
   const [student, setStudent] = useState(blank(studentFields));
   const [classes, setClasses] = useState([]);
+  const [teachers, setTeachers] = useState([]);
+  const [assignments, setAssignments] = useState([]);
   const [registrations, setRegistrations] = useState({});
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", message: "" });
@@ -76,12 +79,18 @@ function FamilyPortal() {
   const load = async () => {
     const [classResult, familyResult] = await Promise.all([
       supabase.from("classes")
-        .select("id, name, short_name, type, class_times(display_time)")
+        .select("id, name, short_name, type, classroom, teacher_short_name, class_times(display_time)")
         .eq("is_open", true).order("name"),
       supabase.from("families").select("*")
         .eq("user_id", session.user.id).maybeSingle(),
     ]);
     if (!classResult.error) setClasses(classResult.data || []);
+    const [teacherResult, assignmentResult] = await Promise.all([
+      supabase.from("teachers").select("*"),
+      supabase.from("teacher_classes").select("*"),
+    ]);
+    if (!teacherResult.error) setTeachers(teacherResult.data || []);
+    if (!assignmentResult.error) setAssignments(assignmentResult.data || []);
     if (familyResult.error) {
       setStatus({ error: familyResult.error.message, message: "" });
       return;
@@ -181,7 +190,20 @@ function FamilyPortal() {
     }
   };
 
-  const courseName = (id) => classes.find((row) => row.id === id)?.name || "Not selected";
+  const courseDetails = (id) => {
+    const course = classes.find((row) => row.id === id);
+    if (!course) return null;
+    const assignment = assignments.find((row) => row.class_id === course.id);
+    const teacher = teachers.find((row) => row.id === assignment?.teacher_id);
+    const descriptionLink = courseDescriptionLinks[(course.name || "").toLowerCase()] || "/courses";
+    return {
+      ...course,
+      teacher: fullName(teacher) || teacher?.short_name || course.teacher_short_name || "TBD",
+      time: course.class_times?.display_time || "Time TBD",
+      classroom: course.classroom || "Room TBD",
+      descriptionLink,
+    };
+  };
   const tabs = [
     ["summary", "Summary"],
     ["student", "Add Student"],
@@ -212,10 +234,31 @@ function FamilyPortal() {
           {!students.length && <div className="empty-state">No students yet. Use Add Student to begin.</div>}
           {students.map((row) => {
             const registration = registrations[row.id] || {};
+            const registeredCourses = [1, 2, 3]
+              .map((number) => courseDetails(registration[`session_${number}`]))
+              .filter(Boolean);
             return (
               <div className="student-summary" key={row.id}>
-                <strong>{fullName(row)} {row.chinese_name && `· ${row.chinese_name}`}</strong>
-                <span>{[1, 2, 3].map((number) => courseName(registration[`session_${number}`])).join(" / ")}</span>
+                <div className="student-summary-heading">
+                  <strong>{fullName(row)} {row.chinese_name && `· ${row.chinese_name}`}</strong>
+                </div>
+                {registeredCourses.length ? (
+                  <div className="student-course-list">
+                    {registeredCourses.map((course) => (
+                      <article key={course.id}>
+                        <div>
+                          <strong>{course.name || course.short_name}</strong>
+                          <span>{course.time} · {course.classroom} · {course.teacher}</span>
+                        </div>
+                        <a href={course.descriptionLink} target={course.descriptionLink.startsWith("/") ? undefined : "_blank"} rel={course.descriptionLink.startsWith("/") ? undefined : "noreferrer"}>
+                          Course description
+                        </a>
+                      </article>
+                    ))}
+                  </div>
+                ) : (
+                  <span className="student-no-registration">No classes selected.</span>
+                )}
               </div>
             );
           })}

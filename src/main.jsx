@@ -331,7 +331,7 @@ function App() {
           <main>
             {normalizedPath === "/" && <HomePage />}
             {pageRoutes.includes(normalizedPath) && <PageContent path={normalizedPath} Link={SiteLink} />}
-            {normalizedPath === "/login" && <LoginPage Link={SiteLink} />}
+            {normalizedPath === "/login" && <LoginPage Link={SiteLink} navigate={navigate} />}
             {normalizedPath === "/reset-password" && <ResetPasswordPage Link={SiteLink} />}
             {normalizedPath === "/account" && <AccountPage Link={SiteLink} />}
             {normalizedPath === "/admin" && <AdminPage Link={SiteLink} />}

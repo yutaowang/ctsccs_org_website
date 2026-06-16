@@ -84,7 +84,7 @@ function Message({ error, message }) {
   return <div className={`form-message ${error ? "error" : ""}`}>{error || message}</div>;
 }
 
-export function LoginPage({ Link }) {
+export function LoginPage({ Link, navigate }) {
   const { session, loading, role, signOut } = useAuth();
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
@@ -92,6 +92,10 @@ export function LoginPage({ Link }) {
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    if (!loading && session && role === FAMILY_ROLE) navigate?.("/account");
+  }, [loading, session, role, navigate]);
 
   const submit = async (event) => {
     event.preventDefault();
@@ -122,6 +126,7 @@ export function LoginPage({ Link }) {
     if (result.error) setError(result.error.message);
     else if (mode === "signup") setMessage("Account created. Please confirm your email.");
     else if (mode === "reset") setMessage(result.data.message);
+    else navigate?.("/account");
   };
 
   if (!isSupabaseConfigured) return <Layout title="My SCCS"><Message error="Supabase is not configured." /></Layout>;
@@ -135,12 +140,7 @@ export function LoginPage({ Link }) {
         </Layout>
       );
     }
-    return (
-      <Layout title="My SCCS">
-        <p>Signed in as <strong>{session.user.email}</strong>.</p>
-        <Link className="button-link" to="/account">Open My SCCS portal</Link>
-      </Layout>
-    );
+    return <Layout title="My SCCS"><p>Opening My SCCS portal...</p></Layout>;
   }
 
   const titles = {

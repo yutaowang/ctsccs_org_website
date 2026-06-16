@@ -301,6 +301,12 @@ const courseGroups = [
   },
 ];
 
+export const courseDescriptionLinks = Object.fromEntries(
+  courseGroups.flatMap((group) => group.courses)
+    .filter(([name, , , , , file]) => file)
+    .map(([name, , , , , file]) => [name.toLowerCase(), file]),
+);
+
 function Courses() {
   const [activeGroupId, setActiveGroupId] = useState(courseGroups[0].id);
   const [databaseCourses, setDatabaseCourses] = useState([]);

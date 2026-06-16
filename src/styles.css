@@ -1810,6 +1810,47 @@ footer {
 }
 .student-summary:nth-child(even), .attendance-row:nth-child(even) { background: #f5f6ff; }
 .student-summary span { color: #647087; font-size: 0.73rem; text-align: right; }
+.student-summary {
+  display: grid;
+  align-items: stretch;
+}
+.student-summary-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+}
+.student-course-list {
+  display: grid;
+  gap: 10px;
+}
+.student-course-list article {
+  display: flex;
+  padding: 12px 14px;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  background: rgba(255, 255, 255, 0.78);
+  border: 1px solid #dfe5f0;
+}
+.student-course-list article div {
+  display: grid;
+  gap: 4px;
+}
+.student-summary .student-course-list span,
+.student-no-registration {
+  color: #50617d;
+  font-size: 0.68rem;
+  text-align: left;
+}
+.student-course-list a {
+  flex: 0 0 auto;
+  color: var(--blue);
+  font-size: 0.68rem;
+  font-weight: 800;
+  text-decoration: none;
+}
+.student-course-list a:hover { color: var(--gold-dark); }
 .portal-form {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
