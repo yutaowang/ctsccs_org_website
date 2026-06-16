@@ -86,7 +86,8 @@ function SiteLink({ to, children, className, onClick }) {
 const RouterContext = React.createContext({ navigate: () => {} });
 
 function Header({ menuOpen, setMenuOpen }) {
-  const { session } = useAuth();
+  const { session, role } = useAuth();
+  const isFamilySession = session && role === "sccs_family_role";
   return (
     <header className="site-header">
       <div className="header-inner">
@@ -103,10 +104,10 @@ function Header({ menuOpen, setMenuOpen }) {
         <div className="header-actions">
           <SiteLink
             className="portal-link"
-            to={session ? "/account" : "/login"}
+            to={isFamilySession ? "/account" : "/login"}
           >
             <span className="portal-icon" aria-hidden="true">人</span>
-            {session ? "My SCCS Portal" : "My SCCS"}
+            {isFamilySession ? "My SCCS Portal" : "My SCCS"}
           </SiteLink>
           <button
             className="menu-button"

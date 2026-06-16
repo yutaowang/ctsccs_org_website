@@ -1887,6 +1887,12 @@ footer {
 .data-table td { padding: 9px 10px; border-bottom: 1px solid #e4e8ef; }
 .data-table tbody tr:nth-child(odd) { background: #f0f1ff; }
 .data-table tbody tr:hover { background: #fff7d9; }
+.action-table .actions-column,
+.action-table .actions-cell {
+  width: 58px;
+  text-align: right;
+}
+.action-table .actions-cell { overflow: visible; }
 .standalone-field { max-width: 520px; margin-bottom: 20px; }
 .attendance-row select { max-width: 180px; }
 .email-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }

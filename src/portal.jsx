@@ -323,6 +323,30 @@ function DataTable({ columns, rows, empty = "No records found." }) {
   );
 }
 
+function ActionTable({ columns, rows, empty = "No records found." }) {
+  if (!rows.length) return <div className="empty-state">{empty}</div>;
+  return (
+    <div className="data-table-wrap">
+      <table className="data-table action-table">
+        <thead>
+          <tr>
+            {columns.map((column) => <th key={column}>{column}</th>)}
+            <th className="actions-column" aria-label="Actions" />
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row) => (
+            <tr key={row.id}>
+              {row.cells.map((cell, index) => <td key={`${row.id}-${index}`}>{cell}</td>)}
+              <td className="actions-cell">{row.actions}</td>
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
 function RowActions({ onEdit, onDelete, disabled = false }) {
   return (
     <details className="row-actions">
@@ -470,19 +494,21 @@ function StaffUserManager() {
         <span>Search staff</span>
         <input value={staffSearch} onChange={(event) => setStaffSearch(event.target.value)} placeholder="Email, name, phone, title, or role" />
       </label>
-      <div className="staff-user-list">
-        {filteredUsers.map((user) => (
-          <div key={user.id}>
-            <span>
-              <strong>{user.email}</strong>
-              <small>Admin Team Member</small>
-            </span>
-            <RowActions onEdit={() => edit(user)} onDelete={() => remove(user)} disabled={busy} />
-          </div>
-        ))}
-        {!users.length && <div className="empty-state">No admin team member login accounts.</div>}
-        {!!users.length && !filteredUsers.length && <div className="empty-state">No staff accounts match this search.</div>}
-      </div>
+      <ActionTable
+        columns={["Email", "Role", "Name", "Phone", "Title"]}
+        rows={filteredUsers.map((user) => ({
+          id: user.id,
+          cells: [
+            user.email,
+            "Admin Team Member",
+            fullName(user.profile) || "",
+            user.profile?.phone || "",
+            user.profile?.title || "",
+          ],
+          actions: <RowActions onEdit={() => edit(user)} onDelete={() => remove(user)} disabled={busy} />,
+        }))}
+        empty={users.length ? "No staff accounts match this search." : "No admin team member login accounts."}
+      />
     </div>
   );
 }
@@ -641,31 +667,29 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
         <span>Search classes</span>
         <input value={classSearch} onChange={(event) => setClassSearch(event.target.value)} placeholder="Class name, short name, teacher, room, time, or type" />
       </label>
-      <div className="staff-user-list">
-        {filteredClasses.map((course) => {
+      <ActionTable
+        columns={["ID", "Name", "Registered", "Available", "Teacher", "Room", "Time", "Status"]}
+        rows={filteredClasses.map((course) => {
           const assignment = assignments.find((row) => row.class_id === course.id);
           const teacher = teachers.find((row) => row.id === assignment?.teacher_id);
           const registered = registrations.filter((row) => [row.session_1, row.session_2, row.session_3].includes(course.id)).length;
-          return (
-            <div key={course.id}>
-              <span>
-                <strong>{course.name || course.short_name || `Class ${course.id}`}</strong>
-                <small>{[
-                  course.short_name,
-                  fullName(teacher) || teacher?.short_name || course.teacher_short_name,
-                  course.classroom,
-                  course.class_times?.display_time,
-                  `${registered} registered`,
-                  course.is_open === false ? "closed" : "open",
-                ].filter(Boolean).join(" - ")}</small>
-              </span>
-              <RowActions onEdit={() => editClass(course)} onDelete={() => deleteClass(course)} disabled={busy} />
-            </div>
-          );
+          return {
+            id: course.id,
+            cells: [
+              course.legacy_class_id || course.id,
+              course.name || course.short_name || "",
+              registered,
+              course.maximum == null ? "" : Math.max(course.maximum - registered, 0),
+              fullName(teacher) || teacher?.short_name || course.teacher_short_name || "",
+              course.classroom || "",
+              course.class_times?.display_time || "",
+              course.is_open === false ? "Closed" : "Open",
+            ],
+            actions: <RowActions onEdit={() => editClass(course)} onDelete={() => deleteClass(course)} disabled={busy} />,
+          };
         })}
-        {!classes.length && <div className="empty-state">No class records.</div>}
-        {!!classes.length && !filteredClasses.length && <div className="empty-state">No classes match this search.</div>}
-      </div>
+        empty={classes.length ? "No classes match this search." : "No class records."}
+      />
     </div>
   );
 }
@@ -785,19 +809,22 @@ function TeacherManager({ teachers, onReload, setStatus }) {
         <span>Search teachers</span>
         <input value={teacherSearch} onChange={(event) => setTeacherSearch(event.target.value)} placeholder="Name, short name, email, or phone" />
       </label>
-      <div className="staff-user-list">
-        {filteredTeachers.map((teacher) => (
-          <div key={teacher.id}>
-            <span>
-              <strong>{fullName(teacher) || teacher.short_name || `Teacher ${teacher.id}`}</strong>
-              <small>{[teacher.short_name, teacher.email_1, teacher.phone_1].filter(Boolean).join(" - ")}</small>
-            </span>
-            <RowActions onEdit={() => editTeacher(teacher)} onDelete={() => deleteTeacher(teacher)} disabled={busy} />
-          </div>
-        ))}
-        {!teachers.length && <div className="empty-state">No teacher records.</div>}
-        {!!teachers.length && !filteredTeachers.length && <div className="empty-state">No teachers match this search.</div>}
-      </div>
+      <ActionTable
+        columns={["Teacher", "Short Name", "Phone", "Email", "Phone 2", "Email 2"]}
+        rows={filteredTeachers.map((teacher) => ({
+          id: teacher.id,
+          cells: [
+            fullName(teacher) || teacher.short_name || `Teacher ${teacher.id}`,
+            teacher.short_name || "",
+            teacher.phone_1 || "",
+            teacher.email_1 || "",
+            teacher.phone_2 || "",
+            teacher.email_2 || "",
+          ],
+          actions: <RowActions onEdit={() => editTeacher(teacher)} onDelete={() => deleteTeacher(teacher)} disabled={busy} />,
+        }))}
+        empty={teachers.length ? "No teachers match this search." : "No teacher records."}
+      />
     </div>
   );
 }
@@ -1045,11 +1072,11 @@ function StaffPortal({ isAdmin }) {
 }
 
 export function AccountPage({ Link, staffOnly = false }) {
-  const { session, loading, role } = useAuth();
+  const { session, loading, role, signOut } = useAuth();
   if (loading) return <article className="inner-page"><section className="page-section"><p>Loading...</p></section></article>;
   if (!session) return <article className="inner-page"><section className="page-section"><p>Please log in first.</p><Link className="button-link" to="/login">Log in</Link></section></article>;
   if (staffOnly && role === roles.family) return <article className="inner-page"><section className="page-section"><div className="form-message error">This account is not authorized for the staff portal. Please contact IT.</div></section></article>;
-  if (!staffOnly && role !== roles.family) return <article className="inner-page"><section className="page-section"><p>Staff accounts use the separate administration portal.</p><Link className="button-link" to="/admin">Open staff portal</Link></section></article>;
+  if (!staffOnly && role !== roles.family) return <article className="inner-page"><section className="page-section"><div className="form-message">My SCCS Portal is for family accounts. Staff and admin login links are sent separately by email.</div><button className="outline-link" type="button" onClick={signOut}>Log out</button></section></article>;
   if (role === roles.family) return <FamilyPortal />;
   if (role === roles.teacher) return <StaffPortal isAdmin={false} />;
   return <StaffPortal isAdmin />;

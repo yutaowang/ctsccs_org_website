@@ -85,7 +85,7 @@ function Message({ error, message }) {
 }
 
 export function LoginPage({ Link }) {
-  const { session, loading } = useAuth();
+  const { session, loading, role, signOut } = useAuth();
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -127,6 +127,14 @@ export function LoginPage({ Link }) {
   if (!isSupabaseConfigured) return <Layout title="My SCCS"><Message error="Supabase is not configured." /></Layout>;
   if (loading) return <Layout title="My SCCS"><p>Loading...</p></Layout>;
   if (session) {
+    if (role !== FAMILY_ROLE) {
+      return (
+        <Layout title="My SCCS">
+          <Message message="My SCCS Portal is for family accounts. Staff and admin login links are sent separately by email." />
+          <button className="outline-link" type="button" onClick={signOut}>Log out</button>
+        </Layout>
+      );
+    }
     return (
       <Layout title="My SCCS">
         <p>Signed in as <strong>{session.user.email}</strong>.</p>
