@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { publicSupabase, supabase } from "./supabase";
 
 const oldSite = "https://ctsccs.org/";
@@ -87,7 +87,7 @@ const adminTeam = [
 
 function Administration() {
   return (
-    <Page eyebrow="Our School" title="管理团队 Management Team 2025–2026">
+    <Page eyebrow="Our School" title="管理团队 Management Team 2026–2027">
       <Section title="Admin Team">
         <div className="table-wrap">
           <table>
@@ -179,15 +179,15 @@ function Registration({ Link }) {
   return (
     <Page eyebrow="Academics" title="课程注册 Registration">
       <Section>
-        <div className="notice-banner"><strong>2025 秋季开学日期</strong><span>2025 年 9 月 7 日</span></div>
+        <div className="notice-banner"><strong>2026 秋季开学日期</strong><span>2026 年 9 月 7 日</span></div>
         <ol className="numbered-list">
-          <li><strong>注册期限</strong><p>请于 2025 年 9 月 21 日前完成注册缴费，在此之前注册的家庭免除 $25 注册费。</p></li>
-          <li><strong>网上注册</strong><p>网上注册于 2025 年 7 月 20 日上午 9 时后开始。完成后请打印注册表，并同支票一同交到注册处。</p></li>
+          <li><strong>注册期限</strong><p>请于 2026 年 9 月 21 日前完成注册缴费，在此之前注册的家庭免除 $25 注册费。</p></li>
+          <li><strong>网上注册</strong><p>网上注册于 2026 年 7 月 20 日上午 9 时后开始。完成后请打印注册表，并同支票一同交到注册处。</p></li>
           <li><strong>家庭账户</strong><p>每个学生家庭需要一个家庭账户。请加入微信号以方便学校联系，不要重复建立新账户。</p></li>
           <li><strong>课程</strong><p>具体课程、时间、地点和收费情况，请查看 <Link to="/courses">课程安排</Link>。</p></li>
           <li><strong>课本</strong><p>课本在开学第一天由任课老师发放。改课或退课时，请将课本退回学校办公室。</p></li>
           <li><strong>付款与邮寄</strong><p>支票请开给 SCCS，邮寄至 SCCS PO Box 766, East Lyme, CT 06333。银行退票罚款 $25。</p></li>
-          <li><strong>加课、转课、退课</strong><p>请于 2025 年 9 月 21 日前在线办理。该日期后学校不再接受转课或退课请求。</p></li>
+          <li><strong>加课、转课、退课</strong><p>请于 2026 年 9 月 21 日前在线办理。该日期后学校不再接受转课或退课请求。</p></li>
         </ol>
         <div className="action-row">
           <Link className="button-link" to="/login">进入网上注册</Link>
@@ -199,28 +199,28 @@ function Registration({ Link }) {
 }
 
 const calendarEvents = [
-  ["9/7/25", "Start of Fall 2025 Semester"],
-  ["9/14/25", ""],
-  ["9/21/25", "Last Day to Change Class Registration"],
-  ["9/28/25", ""], ["10/5/25", ""], ["10/12/25", ""], ["10/19/25", ""], ["10/26/25", ""],
-  ["11/2/25", "Daylight Saving Time Ends"], ["11/9/25", ""], ["11/16/25", ""], ["11/23/25", ""],
-  ["11/30/25", "Thanksgiving Holiday · No School"],
-  ["12/7/25", ""], ["12/14/25", "Final Exam"],
-  ["12/21/25", "Speech Contest · End of Fall Semester · Full Attendance Required"],
-  ["12/28/25", "Christmas Holiday · No School"],
-  ["1/4/26", "New Year Holiday · No School"],
-  ["1/11/26", "Start of Spring 2026 Semester"], ["1/18/26", ""], ["1/25/26", ""],
-  ["2/1/26", ""], ["2/8/26", ""], ["2/15/26", "Chinese New Year Celebration"], ["2/22/26", ""],
-  ["3/1/26", ""], ["3/8/26", "Daylight Saving Time Starts"], ["3/15/26", ""], ["3/22/26", ""], ["3/29/26", ""],
-  ["4/5/26", ""], ["4/12/26", "Spring Break · No School"], ["4/19/26", ""], ["4/26/26", ""],
-  ["5/3/26", ""], ["5/10/26", "Final Exam"], ["5/17/26", "Talent Show · End of Academic Year"],
+  ["9/7/26", "Start of Fall 2026 Semester"],
+  ["9/14/26", ""],
+  ["9/21/26", "Last Day to Change Class Registration"],
+  ["9/28/26", ""], ["10/5/26", ""], ["10/12/26", ""], ["10/19/26", ""], ["10/26/26", ""],
+  ["11/2/26", "Daylight Saving Time Ends"], ["11/9/26", ""], ["11/16/26", ""], ["11/23/26", ""],
+  ["11/30/26", "Thanksgiving Holiday · No School"],
+  ["12/7/26", ""], ["12/14/26", "Final Exam"],
+  ["12/21/26", "Speech Contest · End of Fall Semester · Full Attendance Required"],
+  ["12/28/26", "Christmas Holiday · No School"],
+  ["1/4/27", "New Year Holiday · No School"],
+  ["1/11/27", "Start of Spring 2027 Semester"], ["1/18/27", ""], ["1/25/27", ""],
+  ["2/1/27", ""], ["2/8/27", ""], ["2/15/27", "Chinese New Year Celebration"], ["2/22/27", ""],
+  ["3/1/27", ""], ["3/8/27", "Daylight Saving Time Starts"], ["3/15/27", ""], ["3/22/27", ""], ["3/29/27", ""],
+  ["4/5/27", ""], ["4/12/27", "Spring Break · No School"], ["4/19/27", ""], ["4/26/27", ""],
+  ["5/3/27", ""], ["5/10/27", "Final Exam"], ["5/17/27", "Talent Show · End of Academic Year"],
 ];
 
 function Calendar() {
   return (
-    <Page eyebrow="Academics" title="学校校历 2025–2026 School Calendar">
+    <Page eyebrow="Academics" title="学校校历 2026–2027 School Calendar">
       <Section>
-        <Download href="Forms/SCCS 2025-2026 School Calendar.pdf">下载校历 Download PDF</Download>
+        <Download href="Forms/SCCS 2026-2027 School Calendar.pdf">下载校历 Download PDF</Download>
         <div className="calendar-grid">
           {calendarEvents.map(([date, event]) => (
             <div className={event.includes("No School") ? "no-school" : ""} key={date}>

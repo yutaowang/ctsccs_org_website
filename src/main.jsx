@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+﻿import React, { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { PageContent, pageRoutes } from "./pages";
 import { AuthProvider, LoginPage, ResetPasswordPage, useAuth } from "./auth";
@@ -224,10 +224,10 @@ function Announcements() {
         <article>
           <div className="date-badge"><strong>07</strong><span>SEP</span></div>
           <div>
-            <h3>关于 2025–2026 学年通知</h3>
+            <h3>关于 2026–2027 学年通知</h3>
             <ul>
-              <li>中文学校新学期将于 2025 年 9 月 7 日开始，第一节课上课时间为上午 9:30。</li>
-              <li>2025 秋季所有课程将在 <strong>Waterford High School</strong> 进行，恢复课堂现场教学。</li>
+              <li>中文学校新学期将于 2026 年 9 月 7 日开始，第一节课上课时间为上午 9:30。</li>
+              <li>2026 秋季所有课程将在 <strong>Waterford High School</strong> 进行，恢复课堂现场教学。</li>
               <li>LCG 将 SAT、PSAT 合并为一节 90 分钟课程，收费调整为 $500。</li>
               <li>Norwich 家庭可选择现场注册，也可以 <SiteLink to="/registration">在线注册课程</SiteLink>。</li>
             </ul>
@@ -296,7 +296,7 @@ function Footer() {
           <SiteLink to="/location">Location</SiteLink>
           <SiteLink to="/newsletters">Newsletter</SiteLink>
         </div>
-        <p className="copyright">© 2025–2026 SCCS · East Lyme, Connecticut, USA</p>
+        <p className="copyright">© 2026–2027 SCCS · East Lyme, Connecticut, USA</p>
       </div>
     </footer>
   );

@@ -1808,11 +1808,12 @@ footer {
   gap: 20px;
   border-bottom: 1px solid var(--line);
 }
-.student-summary:nth-child(even), .attendance-row:nth-child(even) { background: #f5f6ff; }
+.attendance-row:nth-child(even) { background: #f5f6ff; }
 .student-summary span { color: #647087; font-size: 0.73rem; text-align: right; }
 .student-summary {
   display: grid;
   align-items: stretch;
+  background: #fff;
 }
 .student-summary-heading {
   display: flex;
@@ -1852,9 +1853,11 @@ footer {
 }
 .student-course-list a:hover { color: var(--gold-dark); }
 .student-course-table {
+  width: 100%;
   border-color: #dfe5f0;
 }
 .student-course-table .data-table {
+  width: 100%;
   min-width: 640px;
 }
 .student-course-table a {
