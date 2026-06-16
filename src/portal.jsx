@@ -20,6 +20,39 @@ const fullName = (row) => [
   row?.last_name || row?.parent_last_name,
 ].filter(Boolean).join(" ");
 
+const teacherDisplayName = (course, teachers, assignments, fallback = "TBD") => {
+  const assignment = assignments.find((row) => row.class_id === course?.id);
+  const assignedTeacher = teachers.find((row) => row.id === assignment?.teacher_id);
+  const shortNameTeacher = teachers.find((row) => (
+    String(row.short_name || "").trim().toLowerCase()
+    === String(course?.teacher_short_name || "").trim().toLowerCase()
+  ));
+  const teacher = assignedTeacher || shortNameTeacher;
+  return fullName(teacher) || teacher?.short_name || course?.teacher_short_name || fallback;
+};
+
+const sortPrimitive = (value) => {
+  if (React.isValidElement(value)) return "";
+  if (typeof value === "number") return value;
+  const text = String(value ?? "").trim();
+  if (text && !Number.isNaN(Number(text))) return Number(text);
+  return text.toLowerCase();
+};
+
+const compareValues = (left, right) => {
+  const normalizedLeft = sortPrimitive(left);
+  const normalizedRight = sortPrimitive(right);
+  if (typeof normalizedLeft === "number" && typeof normalizedRight === "number") {
+    return normalizedLeft - normalizedRight;
+  }
+  return String(normalizedLeft).localeCompare(String(normalizedRight), undefined, {
+    numeric: true,
+    sensitivity: "base",
+  });
+};
+
+const classStatusRank = (course) => (course?.is_open === false ? 1 : 0);
+
 function settingDate(value) {
   if (!value) return "";
   if (typeof value === "string") return value;
@@ -217,12 +250,10 @@ function FamilyPortal() {
   const courseDetails = (id) => {
     const course = classes.find((row) => row.id === id);
     if (!course) return null;
-    const assignment = assignments.find((row) => row.class_id === course.id);
-    const teacher = teachers.find((row) => row.id === assignment?.teacher_id);
     const descriptionLink = courseDescriptionLinkFor(course.name || course.short_name);
     return {
       ...course,
-      teacher: fullName(teacher) || teacher?.short_name || course.teacher_short_name || "TBD",
+      teacher: teacherDisplayName(course, teachers, assignments),
       time: course.class_times?.display_time || "Time TBD",
       classroom: course.classroom || "Room TBD",
       descriptionLink,
@@ -397,13 +428,43 @@ function FamilyPortal() {
 }
 
 function DataTable({ columns, rows, empty = "No records found." }) {
+  const [sort, setSort] = useState(null);
+  const sortedRows = useMemo(() => {
+    if (!sort) return rows;
+    return rows.slice().sort((left, right) => {
+      const result = compareValues(left[sort.key], right[sort.key]);
+      return sort.direction === "asc" ? result : -result;
+    });
+  }, [rows, sort]);
+  const toggleSort = (key) => {
+    setSort((current) => (
+      current?.key === key
+        ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
+        : { key, direction: "asc" }
+    ));
+  };
   if (!rows.length) return <div className="empty-state">{empty}</div>;
   return (
     <div className="data-table-wrap">
       <table className="data-table">
-        <thead><tr>{columns.map(([key, label]) => <th key={key}>{label}</th>)}</tr></thead>
+        <thead>
+          <tr>
+            {columns.map(([key, label]) => (
+              <th key={key}>
+                <button
+                  className={`sort-header ${sort?.key === key ? "is-active" : ""}`}
+                  type="button"
+                  onClick={() => toggleSort(key)}
+                >
+                  <span>{label}</span>
+                  <span aria-hidden="true">{sort?.key === key && sort.direction === "desc" ? "v" : "^"}</span>
+                </button>
+              </th>
+            ))}
+          </tr>
+        </thead>
         <tbody>
-          {rows.map((row, index) => (
+          {sortedRows.map((row, index) => (
             <tr key={row.id || `${index}-${columns[0][0]}`}>
               {columns.map(([key]) => <td key={key}>{row[key] ?? ""}</td>)}
             </tr>
@@ -415,18 +476,47 @@ function DataTable({ columns, rows, empty = "No records found." }) {
 }
 
 function ActionTable({ columns, rows, empty = "No records found." }) {
+  const [sort, setSort] = useState(null);
+  const sortedRows = useMemo(() => {
+    if (!sort) return rows;
+    return rows.slice().sort((left, right) => {
+      const result = compareValues(
+        left.sortValues?.[sort.index] ?? left.cells[sort.index],
+        right.sortValues?.[sort.index] ?? right.cells[sort.index],
+      );
+      return sort.direction === "asc" ? result : -result;
+    });
+  }, [rows, sort]);
+  const toggleSort = (index) => {
+    setSort((current) => (
+      current?.index === index
+        ? { index, direction: current.direction === "asc" ? "desc" : "asc" }
+        : { index, direction: "asc" }
+    ));
+  };
   if (!rows.length) return <div className="empty-state">{empty}</div>;
   return (
     <div className="data-table-wrap">
       <table className="data-table action-table">
         <thead>
           <tr>
-            {columns.map((column) => <th key={column}>{column}</th>)}
+            {columns.map((column, index) => (
+              <th key={column}>
+                <button
+                  className={`sort-header ${sort?.index === index ? "is-active" : ""}`}
+                  type="button"
+                  onClick={() => toggleSort(index)}
+                >
+                  <span>{column}</span>
+                  <span aria-hidden="true">{sort?.index === index && sort.direction === "desc" ? "v" : "^"}</span>
+                </button>
+              </th>
+            ))}
             <th className="actions-column" aria-label="Actions" />
           </tr>
         </thead>
         <tbody>
-          {rows.map((row) => (
+          {sortedRows.map((row) => (
             <tr key={row.id}>
               {row.cells.map((cell, index) => <td key={`${row.id}-${index}`}>{cell}</td>)}
               <td className="actions-cell">{row.actions}</td>
@@ -622,6 +712,7 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
   };
   const [form, setForm] = useState(emptyClass);
   const [classSearch, setClassSearch] = useState("");
+  const [formOpen, setFormOpen] = useState(true);
   const [busy, setBusy] = useState(false);
 
   const classPayload = () => ({
@@ -677,6 +768,7 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
 
   const editClass = (course) => {
     const assignment = assignments.find((row) => row.class_id === course.id);
+    setFormOpen(true);
     setForm({
       ...emptyClass,
       id: course.id,
@@ -712,20 +804,21 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
 
   const query = classSearch.trim().toLowerCase();
   const filteredClasses = (!query ? classes : classes.filter((course) => {
-    const assignment = assignments.find((row) => row.class_id === course.id);
-    const teacher = teachers.find((row) => row.id === assignment?.teacher_id);
     return [
       course.short_name,
       course.name,
       course.type,
       course.classroom,
       course.teacher_short_name,
-      fullName(teacher),
-      teacher?.short_name,
+      teacherDisplayName(course, teachers, assignments, ""),
       course.class_times?.display_time,
       course.textbook,
     ].join(" ").toLowerCase().includes(query);
-  })).slice().sort((left, right) => String(left.name || "").localeCompare(String(right.name || "")));
+  })).slice().sort((left, right) => (
+    classStatusRank(left) - classStatusRank(right)
+    || compareValues(left.class_times?.display_time || "", right.class_times?.display_time || "")
+    || compareValues(left.name || left.short_name || "", right.name || right.short_name || "")
+  ));
 
   return (
     <div className="portal-panel">
@@ -736,24 +829,32 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
         Use this page to create, search, update, and delete course records.
         Teacher assignment is saved to <code>teacher_classes</code>; class details are saved to <code>classes</code>.
       </p>
-      <form className="portal-form staff-user-form" onSubmit={saveClass}>
-        <label><span>Class name</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></label>
-        <label><span>Short name</span><input value={form.short_name} onChange={(event) => setForm({ ...form, short_name: event.target.value })} placeholder="e.g. CN3" /></label>
-        <label><span>Teacher</span><select value={form.teacher_id} onChange={(event) => setForm({ ...form, teacher_id: event.target.value })}><option value="">No teacher assigned</option>{teachers.map((teacher) => <option value={teacher.id} key={teacher.id}>{fullName(teacher) || teacher.short_name}</option>)}</select></label>
-        <label><span>Teacher short name</span><input value={form.teacher_short_name} onChange={(event) => setForm({ ...form, teacher_short_name: event.target.value })} /></label>
-        <label><span>Class time</span><select value={form.class_time_id} onChange={(event) => setForm({ ...form, class_time_id: event.target.value })}><option value="">No time selected</option>{classTimes.map((time) => <option value={time.id} key={time.id}>{time.display_time || time.name || time.id}</option>)}</select></label>
-        <label><span>Classroom</span><input value={form.classroom} onChange={(event) => setForm({ ...form, classroom: event.target.value })} /></label>
-        <label><span>Type</span><input value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} /></label>
-        <label><span>Maximum seats</span><input type="number" min="0" value={form.maximum} onChange={(event) => setForm({ ...form, maximum: event.target.value })} /></label>
-        <label><span>Tuition / donation</span><input type="number" min="0" value={form.donation} onChange={(event) => setForm({ ...form, donation: event.target.value })} /></label>
-        <label><span>Equivalent</span><input value={form.equivalent} onChange={(event) => setForm({ ...form, equivalent: event.target.value })} /></label>
-        <label className="wide"><span>Textbook</span><input value={form.textbook} onChange={(event) => setForm({ ...form, textbook: event.target.value })} /></label>
-        <label><span>Status</span><select value={form.is_open ? "open" : "closed"} onChange={(event) => setForm({ ...form, is_open: event.target.value === "open" })}><option value="open">Open</option><option value="closed">Closed</option></select></label>
-        <div className="button-row">
-          <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update class" : "Create class"}</button>
-          {form.id && <button className="outline-link" type="button" onClick={() => setForm(emptyClass)}>Cancel edit</button>}
-        </div>
-      </form>
+      <section className={`collapsible-editor ${formOpen ? "is-open" : ""}`}>
+        <button className="collapsible-editor-toggle" type="button" onClick={() => setFormOpen(!formOpen)} aria-expanded={formOpen}>
+          <span>{form.id ? "Edit class" : "Create class"}</span>
+          <span aria-hidden="true">{formOpen ? "v" : ">"}</span>
+        </button>
+        {formOpen && (
+          <form className="portal-form staff-user-form" onSubmit={saveClass}>
+            <label><span>Class name</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></label>
+            <label><span>Short name</span><input value={form.short_name} onChange={(event) => setForm({ ...form, short_name: event.target.value })} placeholder="e.g. CN3" /></label>
+            <label><span>Teacher</span><select value={form.teacher_id} onChange={(event) => setForm({ ...form, teacher_id: event.target.value })}><option value="">No teacher assigned</option>{teachers.map((teacher) => <option value={teacher.id} key={teacher.id}>{fullName(teacher) || teacher.short_name}</option>)}</select></label>
+            <label><span>Teacher short name</span><input value={form.teacher_short_name} onChange={(event) => setForm({ ...form, teacher_short_name: event.target.value })} /></label>
+            <label><span>Class time</span><select value={form.class_time_id} onChange={(event) => setForm({ ...form, class_time_id: event.target.value })}><option value="">No time selected</option>{classTimes.map((time) => <option value={time.id} key={time.id}>{time.display_time || time.name || time.id}</option>)}</select></label>
+            <label><span>Classroom</span><input value={form.classroom} onChange={(event) => setForm({ ...form, classroom: event.target.value })} /></label>
+            <label><span>Type</span><input value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} /></label>
+            <label><span>Maximum seats</span><input type="number" min="0" value={form.maximum} onChange={(event) => setForm({ ...form, maximum: event.target.value })} /></label>
+            <label><span>Tuition / donation</span><input type="number" min="0" value={form.donation} onChange={(event) => setForm({ ...form, donation: event.target.value })} /></label>
+            <label><span>Equivalent</span><input value={form.equivalent} onChange={(event) => setForm({ ...form, equivalent: event.target.value })} /></label>
+            <label className="wide"><span>Textbook</span><input value={form.textbook} onChange={(event) => setForm({ ...form, textbook: event.target.value })} /></label>
+            <label><span>Status</span><select value={form.is_open ? "open" : "closed"} onChange={(event) => setForm({ ...form, is_open: event.target.value === "open" })}><option value="open">Open</option><option value="closed">Closed</option></select></label>
+            <div className="button-row">
+              <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update class" : "Create class"}</button>
+              {form.id && <button className="outline-link" type="button" onClick={() => setForm(emptyClass)}>Cancel edit</button>}
+            </div>
+          </form>
+        )}
+      </section>
       <label className="standalone-field staff-search">
         <span>Search classes</span>
         <input value={classSearch} onChange={(event) => setClassSearch(event.target.value)} placeholder="Class name, short name, teacher, room, time, or type" />
@@ -761,9 +862,8 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
       <ActionTable
         columns={["ID", "Name", "Registered", "Available", "Teacher", "Room", "Time", "Status"]}
         rows={filteredClasses.map((course) => {
-          const assignment = assignments.find((row) => row.class_id === course.id);
-          const teacher = teachers.find((row) => row.id === assignment?.teacher_id);
           const registered = registrations.filter((row) => [row.session_1, row.session_2, row.session_3].includes(course.id)).length;
+          const teacherName = teacherDisplayName(course, teachers, assignments, "");
           return {
             id: course.id,
             cells: [
@@ -771,10 +871,20 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
               course.name || course.short_name || "",
               registered,
               course.maximum == null ? "" : Math.max(course.maximum - registered, 0),
-              fullName(teacher) || teacher?.short_name || course.teacher_short_name || "",
+              teacherName,
               course.classroom || "",
               course.class_times?.display_time || "",
               course.is_open === false ? "Closed" : "Open",
+            ],
+            sortValues: [
+              course.legacy_class_id || course.id,
+              course.name || course.short_name || "",
+              registered,
+              course.maximum == null ? "" : Math.max(course.maximum - registered, 0),
+              teacherName,
+              course.classroom || "",
+              course.class_times?.display_time || "",
+              classStatusRank(course),
             ],
             actions: <RowActions onEdit={() => editClass(course)} onDelete={() => deleteClass(course)} disabled={busy} />,
           };
@@ -1006,14 +1116,12 @@ function StaffPortal({ isAdmin }) {
     const count = registrations.filter((row) => (
       [row.session_1, row.session_2, row.session_3].includes(course.id)
     )).length;
-    const assignment = assignments.find((row) => row.class_id === course.id);
-    const teacher = teachers.find((row) => row.id === assignment?.teacher_id);
     return {
       id: course.legacy_class_id || course.id,
       name: course.name,
       count,
       available: course.maximum == null ? "" : Math.max(course.maximum - count, 0),
-      teacher: fullName(teacher) || teacher?.short_name,
+      teacher: teacherDisplayName(course, teachers, assignments, ""),
       room: course.classroom,
       time: course.class_times?.display_time,
     };
