@@ -321,6 +321,13 @@ export const courseDescriptionLinkFor = (courseName) => (
   courseDescriptionLinks[(courseName || "").toLowerCase()] || ""
 );
 
+const databaseCourseTypeGroups = {
+  CHN: { id: "chinese", label: "Chinese 中文课", order: 0 },
+  BB: { id: "math", label: "Math 数学课", order: 1 },
+  CC: { id: "arts", label: "Art&PE 文体课", order: 2 },
+  SAT: { id: "sat", label: "SAT", order: 3 },
+};
+
 function Courses() {
   const [activeGroupId, setActiveGroupId] = useState(courseGroups[0].id);
   const [databaseCourses, setDatabaseCourses] = useState([]);
@@ -348,11 +355,12 @@ function Courses() {
       ]];
       return groups;
     }, {}),
-  ).map(([label, courses], index) => ({
-    id: `database-${index}`,
-    label,
+  ).map(([type, courses]) => ({
+    id: databaseCourseTypeGroups[type]?.id || `database-${type}`,
+    label: databaseCourseTypeGroups[type]?.label || type,
+    order: databaseCourseTypeGroups[type]?.order ?? 99,
     courses,
-  }));
+  })).sort((left, right) => left.order - right.order || left.label.localeCompare(right.label));
   const displayedGroups = databaseGroups.length > 0 ? databaseGroups : courseGroups;
   const activeGroup = displayedGroups.find((group) => group.id === activeGroupId) || displayedGroups[0];
 
