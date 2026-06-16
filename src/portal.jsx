@@ -20,6 +20,10 @@ const fullName = (row) => [
   row?.last_name || row?.parent_last_name,
 ].filter(Boolean).join(" ");
 
+const teacherLabel = (teacher) => (
+  fullName(teacher) || teacher?.short_name || teacher?.email_1 || `Teacher ${teacher?.id || ""}`.trim()
+);
+
 const teacherForCourse = (course, teachers, assignments) => {
   const assignment = assignments.find((row) => row.class_id === course?.id);
   const assignedTeacher = teachers.find((row) => row.id === assignment?.teacher_id);
@@ -560,7 +564,7 @@ function StaffUserManager() {
   const [form, setForm] = useState(emptyForm);
   const [status, setStatus] = useState({ error: "", message: "" });
   const [busy, setBusy] = useState(false);
-  const [formOpen, setFormOpen] = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
   const [staffSearch, setStaffSearch] = useState("");
 
   const request = async (method = "GET", body) => {
@@ -726,7 +730,7 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
   };
   const [form, setForm] = useState(emptyClass);
   const [classSearch, setClassSearch] = useState("");
-  const [formOpen, setFormOpen] = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const classPayload = () => ({
@@ -852,7 +856,7 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
           <form className="portal-form staff-user-form" onSubmit={saveClass}>
             <label><span>Class name</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></label>
             <label><span>Short name</span><input value={form.short_name} onChange={(event) => setForm({ ...form, short_name: event.target.value })} placeholder="e.g. CN3" /></label>
-            <label><span>Teacher</span><select value={form.teacher_id} onChange={(event) => setForm({ ...form, teacher_id: event.target.value })}><option value="">No teacher assigned</option>{teachers.map((teacher) => <option value={teacher.id} key={teacher.id}>{fullName(teacher) || teacher.short_name}</option>)}</select></label>
+            <label><span>Teacher</span><select value={form.teacher_id} onChange={(event) => setForm({ ...form, teacher_id: event.target.value })}><option value="">No teacher assigned</option>{teachers.map((teacher) => <option value={teacher.id} key={teacher.id}>{teacherLabel(teacher)}</option>)}</select></label>
             <label><span>Teacher short name</span><input value={form.teacher_short_name} onChange={(event) => setForm({ ...form, teacher_short_name: event.target.value })} /></label>
             <label><span>Class time</span><select value={form.class_time_id} onChange={(event) => setForm({ ...form, class_time_id: event.target.value })}><option value="">No time selected</option>{classTimes.map((time) => <option value={time.id} key={time.id}>{time.display_time || time.name || time.id}</option>)}</select></label>
             <label><span>Classroom</span><input value={form.classroom} onChange={(event) => setForm({ ...form, classroom: event.target.value })} /></label>
@@ -922,7 +926,7 @@ function TeacherManager({ teachers, onReload, setStatus }) {
   };
   const [form, setForm] = useState(emptyTeacher);
   const [teacherSearch, setTeacherSearch] = useState("");
-  const [formOpen, setFormOpen] = useState(true);
+  const [formOpen, setFormOpen] = useState(false);
   const [busy, setBusy] = useState(false);
 
   const payload = () => ({
@@ -1039,7 +1043,7 @@ function TeacherManager({ teachers, onReload, setStatus }) {
         rows={filteredTeachers.map((teacher) => ({
           id: teacher.id,
           cells: [
-            fullName(teacher) || teacher.short_name || `Teacher ${teacher.id}`,
+            teacherLabel(teacher),
             teacher.short_name || "",
             teacher.phone_1 || "",
             teacher.email_1 || "",
@@ -1108,6 +1112,9 @@ function StaffPortal({ isAdmin }) {
     }
   };
   useEffect(() => { load(); }, [role, teacherId]);
+  useEffect(() => {
+    if (active === "classes") load();
+  }, [active]);
 
   const visibleClassIds = useMemo(() => {
     if (isAdmin) return new Set(classes.map((row) => row.id));
