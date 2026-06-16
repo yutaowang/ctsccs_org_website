@@ -20,14 +20,18 @@ const fullName = (row) => [
   row?.last_name || row?.parent_last_name,
 ].filter(Boolean).join(" ");
 
-const teacherDisplayName = (course, teachers, assignments, fallback = "TBD") => {
+const teacherForCourse = (course, teachers, assignments) => {
   const assignment = assignments.find((row) => row.class_id === course?.id);
   const assignedTeacher = teachers.find((row) => row.id === assignment?.teacher_id);
   const shortNameTeacher = teachers.find((row) => (
     String(row.short_name || "").trim().toLowerCase()
     === String(course?.teacher_short_name || "").trim().toLowerCase()
   ));
-  const teacher = assignedTeacher || shortNameTeacher;
+  return assignedTeacher || shortNameTeacher;
+};
+
+const teacherDisplayName = (course, teachers, assignments, fallback = "TBD") => {
+  const teacher = teacherForCourse(course, teachers, assignments);
   return fullName(teacher) || teacher?.short_name || course?.teacher_short_name || fallback;
 };
 
@@ -556,6 +560,7 @@ function StaffUserManager() {
   const [form, setForm] = useState(emptyForm);
   const [status, setStatus] = useState({ error: "", message: "" });
   const [busy, setBusy] = useState(false);
+  const [formOpen, setFormOpen] = useState(true);
   const [staffSearch, setStaffSearch] = useState("");
 
   const request = async (method = "GET", body) => {
@@ -568,7 +573,7 @@ function StaffUserManager() {
       body: body ? JSON.stringify(body) : undefined,
     });
     const result = await response.json();
-    if (!response.ok) throw new Error(result.error || "Staff account operation failed.");
+    if (!response.ok) throw new Error(result.error || "Admin account operation failed.");
     return result;
   };
 
@@ -586,7 +591,7 @@ function StaffUserManager() {
     event.preventDefault();
     const email = form.email.trim().toLowerCase();
     if (!/^[^\s@]+@ctsccs\.org$/i.test(email)) {
-      setStatus({ error: "Staff email is required and must end with @ctsccs.org.", message: "" });
+      setStatus({ error: "Admin email is required and must end with @ctsccs.org.", message: "" });
       return;
     }
     setBusy(true);
@@ -595,7 +600,7 @@ function StaffUserManager() {
       await request(form.id ? "PATCH" : "POST", { ...form, email });
       setStatus({
         error: "",
-        message: form.id ? "Staff account updated." : "Staff account created.",
+        message: form.id ? "Admin account updated." : "Admin account created.",
       });
       setForm(emptyForm);
       await load();
@@ -607,6 +612,7 @@ function StaffUserManager() {
   };
 
   const edit = (user) => {
+    setFormOpen(true);
     setForm({
       ...emptyForm,
       id: user.id,
@@ -621,11 +627,11 @@ function StaffUserManager() {
   };
 
   const remove = async (user) => {
-    if (!window.confirm(`Delete staff account ${user.email}?`)) return;
+    if (!window.confirm(`Delete admin account ${user.email}?`)) return;
     setBusy(true);
     try {
       await request("DELETE", { id: user.id });
-      setStatus({ error: "", message: "Staff account deleted." });
+      setStatus({ error: "", message: "Admin account deleted." });
       if (form.id === user.id) setForm(emptyForm);
       await load();
     } catch (error) {
@@ -651,28 +657,36 @@ function StaffUserManager() {
   return (
     <div className="portal-panel">
       <div className="panel-heading">
-        <div><span>Staff Management</span><h2>Manage Staff</h2></div>
+        <div><span>Admin Management</span><h2>Manage Admins</h2></div>
       </div>
       <Status status={status} />
       <p className="staff-help">
         Use this page to create, search, update, and delete admin team login accounts.
-        Staff accounts receive <code>sccs_admin_team_role</code>, and email is required to end with <code>@ctsccs.org</code>.
+        Admin accounts receive <code>sccs_admin_team_role</code>, and email is required to end with <code>@ctsccs.org</code>.
       </p>
-      <form className="portal-form staff-user-form" onSubmit={submit}>
-        <label><span>Staff email (@ctsccs.org)</span><input type="email" pattern="^[^@\s]+@ctsccs\.org$" title="Email must end with @ctsccs.org" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></label>
-        <label><span>{form.id ? "New password (optional)" : "Temporary password"}</span><input type="password" minLength="10" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required={!form.id} /></label>
-        <label><span>Role</span><input value="sccs_admin_team_role" disabled /></label>
-        <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
-        <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
-        <label><span>Phone</span><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
-        <label><span>Title</span><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label>
-        <div className="button-row">
-          <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update staff user" : "Create staff user"}</button>
-          {form.id && <button className="outline-link" type="button" onClick={() => setForm(emptyForm)}>Cancel edit</button>}
-        </div>
-      </form>
+      <section className={`collapsible-editor ${formOpen ? "is-open" : ""}`}>
+        <button className="collapsible-editor-toggle" type="button" onClick={() => setFormOpen(!formOpen)} aria-expanded={formOpen}>
+          <span>{form.id ? "Edit admin user" : "Create admin user"}</span>
+          <span aria-hidden="true">{formOpen ? "v" : ">"}</span>
+        </button>
+        {formOpen && (
+          <form className="portal-form staff-user-form" onSubmit={submit}>
+            <label><span>Admin email (@ctsccs.org)</span><input type="email" pattern="^[^@\s]+@ctsccs\.org$" title="Email must end with @ctsccs.org" value={form.email} onChange={(event) => setForm({ ...form, email: event.target.value })} required /></label>
+            <label><span>{form.id ? "New password (optional)" : "Temporary password"}</span><input type="password" minLength="10" value={form.password} onChange={(event) => setForm({ ...form, password: event.target.value })} required={!form.id} /></label>
+            <label><span>Role</span><input value="sccs_admin_team_role" disabled /></label>
+            <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
+            <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
+            <label><span>Phone</span><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
+            <label><span>Title</span><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label>
+            <div className="button-row">
+              <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update admin user" : "Create admin user"}</button>
+              {form.id && <button className="outline-link" type="button" onClick={() => setForm(emptyForm)}>Cancel edit</button>}
+            </div>
+          </form>
+        )}
+      </section>
       <label className="standalone-field staff-search">
-        <span>Search staff</span>
+        <span>Search admins</span>
         <input value={staffSearch} onChange={(event) => setStaffSearch(event.target.value)} placeholder="Email, name, phone, title, or role" />
       </label>
       <ActionTable
@@ -688,7 +702,7 @@ function StaffUserManager() {
           ],
           actions: <RowActions onEdit={() => edit(user)} onDelete={() => remove(user)} disabled={busy} />,
         }))}
-        empty={users.length ? "No staff accounts match this search." : "No admin team member login accounts."}
+        empty={users.length ? "No admin accounts match this search." : "No admin team member login accounts."}
       />
     </div>
   );
@@ -908,6 +922,7 @@ function TeacherManager({ teachers, onReload, setStatus }) {
   };
   const [form, setForm] = useState(emptyTeacher);
   const [teacherSearch, setTeacherSearch] = useState("");
+  const [formOpen, setFormOpen] = useState(true);
   const [busy, setBusy] = useState(false);
 
   const payload = () => ({
@@ -943,6 +958,7 @@ function TeacherManager({ teachers, onReload, setStatus }) {
   };
 
   const editTeacher = (teacher) => {
+    setFormOpen(true);
     setForm({
       ...emptyTeacher,
       id: teacher.id,
@@ -992,20 +1008,28 @@ function TeacherManager({ teachers, onReload, setStatus }) {
         Teacher email can be any valid email address and is not required to use <code>@ctsccs.org</code>.
         Teacher portal login accounts use <code>sccs_teacher_ta_role</code>.
       </p>
-      <form className="portal-form staff-user-form" onSubmit={saveTeacher}>
-        <label><span>Short name</span><input value={form.short_name} onChange={(event) => setForm({ ...form, short_name: event.target.value })} placeholder="e.g. yzhao" /></label>
-        <label><span>Role</span><input value="sccs_teacher_ta_role" disabled /></label>
-        <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
-        <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
-        <label><span>Email 1</span><input type="email" value={form.email_1} onChange={(event) => setForm({ ...form, email_1: event.target.value })} /></label>
-        <label><span>Phone 1</span><input value={form.phone_1} onChange={(event) => setForm({ ...form, phone_1: event.target.value })} /></label>
-        <label><span>Email 2</span><input type="email" value={form.email_2} onChange={(event) => setForm({ ...form, email_2: event.target.value })} /></label>
-        <label><span>Phone 2</span><input value={form.phone_2} onChange={(event) => setForm({ ...form, phone_2: event.target.value })} /></label>
-        <div className="button-row">
-          <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update teacher" : "Create teacher"}</button>
-          {form.id && <button className="outline-link" type="button" onClick={() => setForm(emptyTeacher)}>Cancel edit</button>}
-        </div>
-      </form>
+      <section className={`collapsible-editor ${formOpen ? "is-open" : ""}`}>
+        <button className="collapsible-editor-toggle" type="button" onClick={() => setFormOpen(!formOpen)} aria-expanded={formOpen}>
+          <span>{form.id ? "Edit teacher" : "Create teacher"}</span>
+          <span aria-hidden="true">{formOpen ? "v" : ">"}</span>
+        </button>
+        {formOpen && (
+          <form className="portal-form staff-user-form" onSubmit={saveTeacher}>
+            <label><span>Short name</span><input value={form.short_name} onChange={(event) => setForm({ ...form, short_name: event.target.value })} placeholder="e.g. yzhao" /></label>
+            <label><span>Role</span><input value="sccs_teacher_ta_role" disabled /></label>
+            <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
+            <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
+            <label><span>Email 1</span><input type="email" value={form.email_1} onChange={(event) => setForm({ ...form, email_1: event.target.value })} /></label>
+            <label><span>Phone 1</span><input value={form.phone_1} onChange={(event) => setForm({ ...form, phone_1: event.target.value })} /></label>
+            <label><span>Email 2</span><input type="email" value={form.email_2} onChange={(event) => setForm({ ...form, email_2: event.target.value })} /></label>
+            <label><span>Phone 2</span><input value={form.phone_2} onChange={(event) => setForm({ ...form, phone_2: event.target.value })} /></label>
+            <div className="button-row">
+              <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update teacher" : "Create teacher"}</button>
+              {form.id && <button className="outline-link" type="button" onClick={() => setForm(emptyTeacher)}>Cancel edit</button>}
+            </div>
+          </form>
+        )}
+      </section>
       <label className="standalone-field staff-search">
         <span>Search teachers</span>
         <input value={teacherSearch} onChange={(event) => setTeacherSearch(event.target.value)} placeholder="Name, short name, email, or phone" />
@@ -1092,11 +1116,14 @@ function StaffPortal({ isAdmin }) {
     );
   }, [assignments, classes, isAdmin, teacherId]);
   const visibleClasses = classes.filter((row) => visibleClassIds.has(row.id));
+  const selectedClassId = Number(selectedClass || visibleClasses[0]?.id);
+  const selectedCourse = visibleClasses.find((row) => row.id === selectedClassId);
+  const selectedTeacher = teacherForCourse(selectedCourse, teachers, assignments);
+  const selectedTeacherEmail = selectedTeacher?.email_1 || selectedTeacher?.email_2 || "";
   const rosterRows = useMemo(() => {
-    const classId = Number(selectedClass || visibleClasses[0]?.id);
-    if (!classId) return [];
+    if (!selectedClassId) return [];
     return registrations
-      .filter((row) => [row.session_1, row.session_2, row.session_3].includes(classId))
+      .filter((row) => [row.session_1, row.session_2, row.session_3].includes(selectedClassId))
       .map((registration) => {
         const student = students.find((row) => row.id === registration.student_id);
         const family = families.find((row) => row.id === student?.family_id);
@@ -1110,7 +1137,14 @@ function StaffPortal({ isAdmin }) {
           student_id: student?.id,
         };
       });
-  }, [selectedClass, visibleClasses, registrations, students, families]);
+  }, [selectedClassId, registrations, students, families]);
+  const rosterEmailHref = selectedTeacherEmail ? `mailto:${selectedTeacherEmail}?subject=${encodeURIComponent(`Roster for ${selectedCourse?.name || "Class"}`)}&body=${encodeURIComponent([
+    `Roster for ${selectedCourse?.name || "Class"}`,
+    selectedCourse?.class_times?.display_time ? `Time: ${selectedCourse.class_times.display_time}` : "",
+    selectedCourse?.classroom ? `Room: ${selectedCourse.classroom}` : "",
+    "",
+    ...rosterRows.map((row, index) => `${index + 1}. ${row.student || "Student"} | Parent: ${row.parent || ""} | Email: ${row.email || ""} | Phone: ${row.phone || ""} | Family ID: ${row.family_id || ""}`),
+  ].filter((line) => line !== "").join("\n"))}` : "";
 
   const classRows = visibleClasses.map((course) => {
     const count = registrations.filter((row) => (
@@ -1219,7 +1253,7 @@ function StaffPortal({ isAdmin }) {
     ["registrations", "Registration Summary"], ["payments", "Payment History"],
     ["search", "Family Search"], ["print", "Print Registration"],
   ];
-  if (role === roles.admin) adminTabs.push(["staff", "Staff"], ["settings", "Site Settings"]);
+  if (role === roles.admin) adminTabs.push(["staff", "ADMINS"], ["settings", "Site Settings"]);
   adminTabs.push(["password", "Password"]);
   const teacherTabs = [
     ["classes", "My Classes"], ["rosters", "Roster"], ["attendance", "Attendance"],
@@ -1250,9 +1284,27 @@ function StaffPortal({ isAdmin }) {
       {active === "classes" && (isAdmin ? <ClassManager classes={classes} classTimes={classTimes} teachers={teachers} assignments={assignments} registrations={registrations} onReload={load} setStatus={setStatus} /> : <div className="portal-panel"><div className="panel-heading"><div><span>课程</span><h2>My Classes</h2></div></div><DataTable columns={[["id", "ID"], ["name", "Name"], ["count", "Registered"], ["available", "Available"], ["teacher", "Teacher"], ["room", "Room"], ["time", "Time"]]} rows={classRows} /></div>)}
       {active === "teachers" && <TeacherManager teachers={teachers} onReload={load} setStatus={setStatus} />}
       {["rosters", "attendance", "grades", "email"].includes(active) && (
-        <div className="portal-panel">
-          <div className="panel-heading"><div><span>报名单</span><h2>{active === "rosters" ? "Class Roster" : active[0].toUpperCase() + active.slice(1)}</h2></div></div>
-          <label className="standalone-field"><span>Class</span><select value={selectedClass || visibleClasses[0]?.id || ""} onChange={(event) => setSelectedClass(event.target.value)}>{visibleClasses.map((row) => <option value={row.id} key={row.id}>{row.name}</option>)}</select></label>
+        <div className={`portal-panel ${active === "rosters" ? "print-area" : ""}`}>
+          <div className="panel-heading">
+            <div><span>报名单</span><h2>{active === "rosters" ? "Class Roster" : active[0].toUpperCase() + active.slice(1)}</h2></div>
+            {active === "rosters" && (
+              <div className="button-row no-print">
+                <button className="outline-link" type="button" onClick={() => window.print()}>Print Roster</button>
+                {rosterEmailHref ? (
+                  <a className="button-link" href={rosterEmailHref}>Email to Teacher</a>
+                ) : (
+                  <button className="button-link" type="button" disabled title="No teacher email is available for this class.">Email to Teacher</button>
+                )}
+              </div>
+            )}
+          </div>
+          {active === "rosters" && (
+            <div className="print-heading">
+              <strong>{selectedCourse?.name || "Class Roster"}</strong>
+              <span>{[selectedCourse?.class_times?.display_time, selectedCourse?.classroom, teacherDisplayName(selectedCourse, teachers, assignments, "")].filter(Boolean).join(" · ")}</span>
+            </div>
+          )}
+          <label className="standalone-field no-print"><span>Class</span><select value={selectedClass || visibleClasses[0]?.id || ""} onChange={(event) => setSelectedClass(event.target.value)}>{visibleClasses.map((row) => <option value={row.id} key={row.id}>{row.name}</option>)}</select></label>
           {active === "rosters" && <DataTable columns={[["family_id", "Family ID"], ["student", "Student"], ["parent", "Parent"], ["email", "Email"], ["phone", "Phone"]]} rows={rosterRows} />}
           {active === "attendance" && rosterRows.map((row) => <div className="attendance-row" key={row.id}><strong>{row.student}</strong><select defaultValue="present" onChange={(event) => saveAttendance(row.student_id, Number(selectedClass || visibleClasses[0]?.id), event.target.value)}><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option><option value="excused">Excused</option></select></div>)}
           {active === "grades" && <form className="portal-form compact" onSubmit={saveGrade}><input type="hidden" name="class_id" value={selectedClass || visibleClasses[0]?.id || ""} /><label><span>Student</span><select name="student_id" required>{rosterRows.map((row) => <option value={row.student_id} key={row.id}>{row.student}</option>)}</select></label><label><span>Grading period</span><input name="grading_period" required /></label><label><span>Assignment</span><input name="assignment_name" required /></label><label><span>Score</span><input name="score" type="number" step="0.01" /></label><label><span>Maximum score</span><input name="maximum_score" type="number" step="0.01" /></label><label><span>Letter grade</span><input name="letter_grade" /></label><label className="wide"><span>Comments</span><textarea name="comments" /></label><button className="button-link" type="submit">Save grade</button></form>}
@@ -1275,7 +1327,7 @@ export function AccountPage({ Link, staffOnly = false }) {
   if (loading) return <article className="inner-page"><section className="page-section"><p>Loading...</p></section></article>;
   if (!session) return <article className="inner-page"><section className="page-section"><p>Please log in first.</p><Link className="button-link" to="/login">Log in</Link></section></article>;
   if (staffOnly && role === roles.family) return <article className="inner-page"><section className="page-section"><div className="form-message error">This account is not authorized for the staff portal. Please contact IT.</div></section></article>;
-  if (!staffOnly && role !== roles.family) return <article className="inner-page"><section className="page-section"><div className="form-message">My SCCS Portal is for family accounts. Staff and admin login links are sent separately by email.</div><button className="outline-link" type="button" onClick={signOut}>Log out</button></section></article>;
+  if (!staffOnly && role !== roles.family) return <article className="inner-page"><section className="page-section"><div className="form-message">My SCCS Portal is for family accounts. Teacher and admin login links are sent separately by email.</div><button className="outline-link" type="button" onClick={signOut}>Log out</button></section></article>;
   if (role === roles.family) return <FamilyPortal />;
   if (role === roles.teacher) return <StaffPortal isAdmin={false} />;
   return <StaffPortal isAdmin />;

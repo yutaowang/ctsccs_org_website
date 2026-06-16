@@ -1929,6 +1929,12 @@ footer {
 }
 .registration-selects select { min-width: 0; padding: 10px; border: 1px solid #d6dce5; }
 .button-row { display: flex; margin-top: 16px; gap: 10px; }
+.panel-heading .button-row { margin-top: 0; }
+.button-link:disabled,
+.outline-link:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
 .empty-state {
   padding: 24px;
   color: #657187;
@@ -1987,6 +1993,23 @@ footer {
 .attendance-row select { max-width: 180px; }
 .email-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .email-list a { padding: 12px; color: var(--blue); background: #f5f7fa; font-size: 0.72rem; }
+.print-heading {
+  display: none;
+  margin-bottom: 18px;
+}
+.print-heading strong,
+.print-heading span {
+  display: block;
+}
+.print-heading strong {
+  color: var(--navy);
+  font-size: 1.1rem;
+}
+.print-heading span {
+  margin-top: 4px;
+  color: #58677f;
+  font-size: 0.78rem;
+}
 .role-list > div { align-items: center; }
 .role-list code { color: #5f6d83; font-size: 0.68rem; }
 .role-list span strong, .role-list span code { display: block; }
@@ -2164,4 +2187,5 @@ footer {
   }
   .page-title { padding: 0 0 18px !important; }
   .print-area { padding: 0 !important; }
+  .print-heading { display: block !important; }
 }
