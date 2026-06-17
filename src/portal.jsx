@@ -1962,6 +1962,9 @@ function StaffPortal({ isAdmin }) {
           )}
           {active === "email" && (
             <div className="student-email-panel">
+              <div className="form-message">
+                You need a ctsccs.org teacher email to email students. Messages are sent through SCCS email and CC your teacher email automatically.
+              </div>
               {!rosterRows.length && <div className="empty-state">No students are registered for this class.</div>}
               {rosterRows.map((row) => {
                 const target = `student-${row.student_id}`;
