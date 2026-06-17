@@ -2244,12 +2244,28 @@ footer {
   }
   .site-header, .sidebar, footer, .portal-identity, .portal-tabs,
   .page-title, .no-print, .menu-backdrop { display: none !important; }
-  body, #top, .page-shell, main, .inner-page, .page-section {
+  html,
+  body,
+  #root,
+  #top,
+  .page-shell,
+  .page-shell.admin-shell,
+  main,
+  .inner-page,
+  .page-section {
     width: 100% !important;
+    max-width: none !important;
     margin: 0 !important;
     padding: 0 !important;
     background: #fff !important;
     box-shadow: none !important;
+  }
+  .page-shell,
+  .page-shell.admin-shell,
+  main,
+  .inner-page,
+  .page-section {
+    display: block !important;
   }
   body {
     color: #001f4f !important;
@@ -2258,6 +2274,8 @@ footer {
     print-color-adjust: exact;
   }
   .portal-card, .portal-panel, .print-area {
+    width: 100% !important;
+    max-width: none !important;
     border: 0 !important;
     padding: 0 !important;
     box-shadow: none !important;
@@ -2317,6 +2335,26 @@ footer {
     min-width: 0 !important;
     table-layout: fixed !important;
     border-collapse: collapse !important;
+  }
+  .student-course-table .data-table th:nth-child(1),
+  .student-course-table .data-table td:nth-child(1) {
+    width: 16% !important;
+  }
+  .student-course-table .data-table th:nth-child(2),
+  .student-course-table .data-table td:nth-child(2) {
+    width: 30% !important;
+  }
+  .student-course-table .data-table th:nth-child(3),
+  .student-course-table .data-table td:nth-child(3) {
+    width: 14% !important;
+  }
+  .student-course-table .data-table th:nth-child(4),
+  .student-course-table .data-table td:nth-child(4) {
+    width: 22% !important;
+  }
+  .student-course-table .data-table th:nth-child(5),
+  .student-course-table .data-table td:nth-child(5) {
+    width: 18% !important;
   }
   .data-table th,
   .data-table td {
