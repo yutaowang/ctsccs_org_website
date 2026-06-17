@@ -134,7 +134,7 @@ function FamilyPortal() {
   const load = async () => {
     const [classResult, familyResult, settingResult] = await Promise.all([
       supabase.from("classes")
-        .select("id, name, short_name, type, classroom, teacher_short_name, class_times(display_time)")
+        .select("id, name, short_name, type, classroom, teacher_short_name, class_time_id, class_times(display_time)")
         .eq("is_open", true).order("name"),
       supabase.from("families").select("*")
         .eq("user_id", session.user.id).maybeSingle(),
@@ -393,7 +393,7 @@ function FamilyPortal() {
                         })}
                       >
                         <option value="">No class</option>
-                        {classes.map((course) => (
+                        {classes.filter((course) => Number(course.class_time_id) === number).map((course) => (
                           <option value={course.id} key={course.id}>
                             {course.name}{course.class_times?.display_time ? ` · ${course.class_times.display_time}` : ""}
                           </option>
@@ -924,6 +924,7 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
 }
 
 function TeacherManager({ teachers, onReload, setStatus }) {
+  const { session } = useAuth();
   const emptyTeacher = {
     id: "",
     short_name: "",
@@ -933,6 +934,7 @@ function TeacherManager({ teachers, onReload, setStatus }) {
     phone_1: "",
     email_2: "",
     phone_2: "",
+    temporary_password: "",
   };
   const [form, setForm] = useState(emptyTeacher);
   const [teacherSearch, setTeacherSearch] = useState("");
@@ -958,14 +960,51 @@ function TeacherManager({ teachers, onReload, setStatus }) {
     setBusy(true);
     setStatus({ error: "", message: "" });
     const request = form.id
-      ? supabase.from("teachers").update(payload()).eq("id", form.id)
-      : supabase.from("teachers").insert(payload());
+      ? supabase.from("teachers").update(payload()).eq("id", form.id).select("*").single()
+      : supabase.from("teachers").insert(payload()).select("*").single();
     const result = await request;
     if (result.error) {
       setStatus({ error: result.error.message, message: "" });
     } else {
+      if (form.temporary_password) {
+        const email = (result.data.email_1 || form.email_1 || "").trim();
+        if (!email) {
+          setStatus({ error: "Email 1 is required to create a teacher login.", message: "" });
+          setBusy(false);
+          return;
+        }
+        try {
+          const loginResult = await fetch("/api/teacher-login", {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({
+              teacherId: result.data.id,
+              email,
+              password: form.temporary_password,
+            }),
+          });
+          const loginBody = await loginResult.json();
+          if (!loginResult.ok) {
+            setStatus({ error: loginBody.error || "Could not save teacher login.", message: "" });
+            setBusy(false);
+            return;
+          }
+        } catch (error) {
+          setStatus({ error: error.message || "Could not save teacher login.", message: "" });
+          setBusy(false);
+          return;
+        }
+      }
       setForm(emptyTeacher);
-      setStatus({ error: "", message: form.id ? "Teacher updated." : "Teacher created." });
+      setStatus({
+        error: "",
+        message: form.temporary_password
+          ? "Teacher saved and login updated."
+          : form.id ? "Teacher updated." : "Teacher created.",
+      });
       await onReload();
     }
     setBusy(false);
@@ -1020,7 +1059,7 @@ function TeacherManager({ teachers, onReload, setStatus }) {
       <p className="staff-help">
         Use this page to create, search, update, and delete teacher records.
         Teacher email can be any valid email address and is not required to use <code>@ctsccs.org</code>.
-        Teacher portal login accounts use <code>sccs_teacher_ta_role</code>.
+        Teacher portal login accounts use <code>sccs_teacher_ta_role</code>. Set a temporary password to let a teacher log in at <code>/admin</code>; they can change it on the Password tab after login.
       </p>
       <section className={`collapsible-editor ${formOpen ? "is-open" : ""}`}>
         <button className="collapsible-editor-toggle" type="button" onClick={() => setFormOpen(!formOpen)} aria-expanded={formOpen}>
@@ -1034,6 +1073,7 @@ function TeacherManager({ teachers, onReload, setStatus }) {
             <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
             <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
             <label><span>Email 1</span><input type="email" value={form.email_1} onChange={(event) => setForm({ ...form, email_1: event.target.value })} /></label>
+            <label><span>Temporary password</span><input type="password" minLength="10" value={form.temporary_password} onChange={(event) => setForm({ ...form, temporary_password: event.target.value })} placeholder={form.id ? "Leave blank to keep login unchanged" : "Optional teacher login password"} /></label>
             <label><span>Phone 1</span><input value={form.phone_1} onChange={(event) => setForm({ ...form, phone_1: event.target.value })} /></label>
             <label><span>Email 2</span><input type="email" value={form.email_2} onChange={(event) => setForm({ ...form, email_2: event.target.value })} /></label>
             <label><span>Phone 2</span><input value={form.phone_2} onChange={(event) => setForm({ ...form, phone_2: event.target.value })} /></label>
@@ -1134,8 +1174,13 @@ function StaffPortal({ isAdmin }) {
     );
   }, [assignments, classes, isAdmin, teacherId]);
   const visibleClasses = classes.filter((row) => visibleClassIds.has(row.id));
-  const selectedClassId = Number(selectedClass || visibleClasses[0]?.id);
-  const selectedCourse = visibleClasses.find((row) => row.id === selectedClassId);
+  const rosterClasses = visibleClasses.filter((row) => row.is_open !== false);
+  const activeClassOptions = active === "rosters" ? rosterClasses : visibleClasses;
+  const selectedClassValue = activeClassOptions.some((row) => String(row.id) === String(selectedClass))
+    ? selectedClass
+    : activeClassOptions[0]?.id || "";
+  const selectedClassId = Number(selectedClassValue);
+  const selectedCourse = activeClassOptions.find((row) => row.id === selectedClassId);
   const selectedTeacher = teacherForCourse(selectedCourse, teachers, assignments);
   const selectedTeacherEmail = selectedTeacher?.email_1 || selectedTeacher?.email_2 || "";
   const rosterRows = useMemo(() => {
@@ -1347,6 +1392,7 @@ function StaffPortal({ isAdmin }) {
               </div>
             )}
           </div>
+          <label className="standalone-field no-print"><span>Class</span><select value={selectedClassValue} onChange={(event) => setSelectedClass(event.target.value)}>{activeClassOptions.map((row) => <option value={row.id} key={row.id}>{row.name}</option>)}</select></label>
           {active === "rosters" && (
             <div className="roster-summary">
               <div><span>Class</span><strong>{selectedCourse?.name || "Class Roster"}</strong></div>
@@ -1355,10 +1401,9 @@ function StaffPortal({ isAdmin }) {
               <div><span>Classroom</span><strong>{selectedCourse?.classroom || "Room TBD"}</strong></div>
             </div>
           )}
-          <label className="standalone-field no-print"><span>Class</span><select value={selectedClass || visibleClasses[0]?.id || ""} onChange={(event) => setSelectedClass(event.target.value)}>{visibleClasses.map((row) => <option value={row.id} key={row.id}>{row.name}</option>)}</select></label>
           {active === "rosters" && <DataTable columns={[["family_id", "Family ID"], ["student", "Student"], ["parent", "Parent"], ["email", "Email"], ["phone", "Phone"]]} rows={rosterRows} />}
-          {active === "attendance" && rosterRows.map((row) => <div className="attendance-row" key={row.id}><strong>{row.student}</strong><select defaultValue="present" onChange={(event) => saveAttendance(row.student_id, Number(selectedClass || visibleClasses[0]?.id), event.target.value)}><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option><option value="excused">Excused</option></select></div>)}
-          {active === "grades" && <form className="portal-form compact" onSubmit={saveGrade}><input type="hidden" name="class_id" value={selectedClass || visibleClasses[0]?.id || ""} /><label><span>Student</span><select name="student_id" required>{rosterRows.map((row) => <option value={row.student_id} key={row.id}>{row.student}</option>)}</select></label><label><span>Grading period</span><input name="grading_period" required /></label><label><span>Assignment</span><input name="assignment_name" required /></label><label><span>Score</span><input name="score" type="number" step="0.01" /></label><label><span>Maximum score</span><input name="maximum_score" type="number" step="0.01" /></label><label><span>Letter grade</span><input name="letter_grade" /></label><label className="wide"><span>Comments</span><textarea name="comments" /></label><button className="button-link" type="submit">Save grade</button></form>}
+          {active === "attendance" && rosterRows.map((row) => <div className="attendance-row" key={row.id}><strong>{row.student}</strong><select defaultValue="present" onChange={(event) => saveAttendance(row.student_id, Number(selectedClassValue), event.target.value)}><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option><option value="excused">Excused</option></select></div>)}
+          {active === "grades" && <form className="portal-form compact" onSubmit={saveGrade}><input type="hidden" name="class_id" value={selectedClassValue} /><label><span>Student</span><select name="student_id" required>{rosterRows.map((row) => <option value={row.student_id} key={row.id}>{row.student}</option>)}</select></label><label><span>Grading period</span><input name="grading_period" required /></label><label><span>Assignment</span><input name="assignment_name" required /></label><label><span>Score</span><input name="score" type="number" step="0.01" /></label><label><span>Maximum score</span><input name="maximum_score" type="number" step="0.01" /></label><label><span>Letter grade</span><input name="letter_grade" /></label><label className="wide"><span>Comments</span><textarea name="comments" /></label><button className="button-link" type="submit">Save grade</button></form>}
           {active === "email" && <div className="email-list">{rosterRows.map((row) => <a href={`mailto:${row.email}`} key={row.id}>{row.student} · {row.email}</a>)}</div>}
         </div>
       )}

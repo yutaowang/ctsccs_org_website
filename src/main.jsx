@@ -296,7 +296,7 @@ function Footer() {
           <SiteLink to="/location">Location</SiteLink>
           <SiteLink to="/newsletters">Newsletter</SiteLink>
         </div>
-        <p className="copyright">© 2026–2027 SCCS · East Lyme, Connecticut, USA</p>
+        <p className="copyright">© 2026–2027 SCCS · Waterford, Connecticut, USA</p>
       </div>
     </footer>
   );
