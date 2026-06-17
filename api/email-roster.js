@@ -77,48 +77,124 @@ function pdfEscape(value) {
   return safeText(value).replace(/\\/g, "\\\\").replace(/\(/g, "\\(").replace(/\)/g, "\\)");
 }
 
-function fit(value, width) {
-  const text = safeText(value);
-  return text.length > width ? `${text.slice(0, Math.max(0, width - 1))}.` : text.padEnd(width, " ");
+function number(value) {
+  return Number(value).toFixed(2).replace(/\.00$/, "");
 }
 
-function contentLine(x, y, size, text) {
-  return `BT /F1 ${size} Tf ${x} ${y} Td (${pdfEscape(text)}) Tj ET`;
+function color({ r, g, b }) {
+  return `${number(r)} ${number(g)} ${number(b)}`;
+}
+
+function fillRect(x, y, width, height, fill) {
+  return `q ${color(fill)} rg ${number(x)} ${number(y)} ${number(width)} ${number(height)} re f Q`;
+}
+
+function strokeRect(x, y, width, height, stroke, lineWidth = 0.8) {
+  return `q ${color(stroke)} RG ${number(lineWidth)} w ${number(x)} ${number(y)} ${number(width)} ${number(height)} re S Q`;
+}
+
+function line(x1, y1, x2, y2, stroke, lineWidth = 0.6) {
+  return `q ${color(stroke)} RG ${number(lineWidth)} w ${number(x1)} ${number(y1)} m ${number(x2)} ${number(y2)} l S Q`;
+}
+
+function fitCell(value, width, fontSize) {
+  const text = safeText(value);
+  const maxCharacters = Math.max(4, Math.floor(width / (fontSize * 0.52)));
+  return text.length > maxCharacters ? `${text.slice(0, maxCharacters - 1)}.` : text;
+}
+
+function text(x, y, size, value, options = {}) {
+  const font = options.font || "F1";
+  const fill = options.fill || { r: 0.04, g: 0.15, b: 0.32 };
+  return `BT /${font} ${number(size)} Tf ${color(fill)} rg ${number(x)} ${number(y)} Td (${pdfEscape(value)}) Tj ET`;
+}
+
+function drawInfoBox(commands, x, y, width, label, value) {
+  const border = { r: 0.84, g: 0.88, b: 0.93 };
+  commands.push(fillRect(x, y, width, 42, { r: 0.98, g: 0.99, b: 1 }));
+  commands.push(strokeRect(x, y, width, 42, border, 0.7));
+  commands.push(text(x + 12, y + 25, 7.5, label.toUpperCase(), { font: "F2", fill: { r: 0.42, g: 0.48, b: 0.58 } }));
+  commands.push(text(x + 12, y + 11, 10.5, fitCell(value || "-", width - 24, 10.5), { font: "F2" }));
+}
+
+function addPageHeader(commands, { course, pageIndex, totalPages, totalStudents }) {
+  const navy = { r: 0.04, g: 0.16, b: 0.34 };
+  const gold = { r: 0.94, g: 0.75, b: 0.2 };
+  const slate = { r: 0.35, g: 0.42, b: 0.52 };
+
+  commands.push(fillRect(0, 574, 792, 38, navy));
+  commands.push(fillRect(36, 568, 168, 6, gold));
+  commands.push(text(36, 588, 13, "SCCS Class Roster", { font: "F2", fill: { r: 1, g: 1, b: 1 } }));
+  commands.push(text(692, 588, 8, `Page ${pageIndex + 1} of ${totalPages}`, { fill: { r: 0.9, g: 0.94, b: 1 } }));
+  commands.push(text(36, 539, 21, course.name || "Class", { font: "F2", fill: navy }));
+  commands.push(text(36, 520, 9, "Current registration list for teacher reference", { fill: slate }));
+
+  const gap = 12;
+  const boxWidth = (720 - gap * 3) / 4;
+  const y = 464;
+  drawInfoBox(commands, 36, y, boxWidth, "Time", course.time || "-");
+  drawInfoBox(commands, 36 + (boxWidth + gap), y, boxWidth, "Teacher", course.teacher || "-");
+  drawInfoBox(commands, 36 + (boxWidth + gap) * 2, y, boxWidth, "Room", course.room || "-");
+  drawInfoBox(commands, 36 + (boxWidth + gap) * 3, y, boxWidth, "Students", String(totalStudents));
 }
 
 function buildRosterPdf({ course, rows }) {
   const pageWidth = 792;
   const pageHeight = 612;
   const margin = 36;
-  const rowHeight = 14;
-  const rowsPerPage = 31;
+  const tableWidth = pageWidth - margin * 2;
+  const tableTop = 430;
+  const headerHeight = 27;
+  const rowHeight = 19;
+  const tableBottom = 46;
+  const rowsPerPage = Math.max(1, Math.floor((tableTop - tableBottom - headerHeight) / rowHeight));
+  const columns = [
+    { label: "Family ID", key: "family_id", width: 72 },
+    { label: "Student", key: "student", width: 150 },
+    { label: "Parent", key: "parent", width: 150 },
+    { label: "Email", key: "email", width: 238 },
+    { label: "Phone", key: "phone", width: 110 },
+  ];
+  const navy = { r: 0.04, g: 0.16, b: 0.34 };
+  const goldPale = { r: 0.98, g: 0.91, b: 0.56 };
+  const border = { r: 0.84, g: 0.88, b: 0.93 };
+  const zebra = { r: 0.95, g: 0.96, b: 1 };
   const pages = [];
   const normalizedRows = Array.isArray(rows) ? rows : [];
+  const totalPages = Math.max(1, Math.ceil(normalizedRows.length / rowsPerPage));
 
-  for (let pageIndex = 0; pageIndex === 0 || pageIndex * rowsPerPage < normalizedRows.length; pageIndex += 1) {
-    const yStart = pageHeight - margin;
+  for (let pageIndex = 0; pageIndex < totalPages; pageIndex += 1) {
     const slice = normalizedRows.slice(pageIndex * rowsPerPage, (pageIndex + 1) * rowsPerPage);
-    const lines = [
-      contentLine(margin, yStart, 16, `SCCS Class Roster: ${course.name || ""}`),
-      contentLine(margin, yStart - 22, 10, [
-        course.time ? `Time: ${course.time}` : "",
-        course.teacher ? `Teacher: ${course.teacher}` : "",
-        course.room ? `Room: ${course.room}` : "",
-      ].filter(Boolean).join("    ")),
-      contentLine(margin, yStart - 44, 8, `${fit("Family ID", 10)} ${fit("Student", 22)} ${fit("Parent", 22)} ${fit("Email", 34)} ${fit("Phone", 14)}`),
-      contentLine(margin, yStart - 56, 8, "-".repeat(108)),
-    ];
-    slice.forEach((row, index) => {
-      lines.push(contentLine(margin, yStart - 72 - index * rowHeight, 8, [
-        fit(row.family_id, 10),
-        fit(row.student, 22),
-        fit(row.parent, 22),
-        fit(row.email, 34),
-        fit(row.phone, 14),
-      ].join(" ")));
+    const commands = [];
+    addPageHeader(commands, { course, pageIndex, totalPages, totalStudents: normalizedRows.length });
+
+    commands.push(fillRect(margin, tableTop - headerHeight, tableWidth, headerHeight, goldPale));
+    commands.push(strokeRect(margin, tableTop - headerHeight, tableWidth, headerHeight, border, 0.8));
+
+    let x = margin;
+    columns.forEach((column) => {
+      commands.push(text(x + 10, tableTop - 17, 8.5, column.label, { font: "F2", fill: navy }));
+      x += column.width;
     });
-    lines.push(contentLine(margin, 24, 8, `Page ${pageIndex + 1}`));
-    pages.push(lines.join("\n"));
+
+    slice.forEach((row, index) => {
+      const rowY = tableTop - headerHeight - (index + 1) * rowHeight;
+      if (index % 2 === 0) commands.push(fillRect(margin, rowY, tableWidth, rowHeight, zebra));
+      commands.push(line(margin, rowY, margin + tableWidth, rowY, border, 0.5));
+      let cellX = margin;
+      columns.forEach((column) => {
+        commands.push(text(cellX + 10, rowY + 6, 8.3, fitCell(row[column.key], column.width - 18, 8.3), { fill: { r: 0.19, g: 0.28, b: 0.44 } }));
+        cellX += column.width;
+      });
+    });
+
+    if (slice.length === 0) {
+      commands.push(text(margin + 10, tableTop - headerHeight - 26, 9, "No students are currently registered for this class.", { fill: { r: 0.35, g: 0.42, b: 0.52 } }));
+    }
+
+    commands.push(strokeRect(margin, tableTop - headerHeight - Math.max(slice.length, 1) * rowHeight, tableWidth, headerHeight + Math.max(slice.length, 1) * rowHeight, border, 0.8));
+    commands.push(text(margin, 24, 7.5, `Generated by SCCS Admin Portal`, { fill: { r: 0.42, g: 0.48, b: 0.58 } }));
+    pages.push(commands.join("\n"));
   }
 
   const objects = [
@@ -128,7 +204,7 @@ function buildRosterPdf({ course, rows }) {
   pages.forEach((content, index) => {
     const pageObjectNumber = 3 + index * 2;
     const contentObjectNumber = pageObjectNumber + 1;
-    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Courier >> >> >> /Contents ${contentObjectNumber} 0 R >>`);
+    objects.push(`<< /Type /Page /Parent 2 0 R /MediaBox [0 0 ${pageWidth} ${pageHeight}] /Resources << /Font << /F1 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica >> /F2 << /Type /Font /Subtype /Type1 /BaseFont /Helvetica-Bold >> >> >> /Contents ${contentObjectNumber} 0 R >>`);
     objects.push(`<< /Length ${Buffer.byteLength(content, "latin1")} >>\nstream\n${content}\nendstream`);
   });
 
