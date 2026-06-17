@@ -1619,7 +1619,7 @@ function StaffPortal({ isAdmin }) {
   adminTabs.push(["password", "Password"]);
   const teacherTabs = [
     ["classes", "My Classes"], ["rosters", "Roster"], ["attendance", "Attendance"],
-    ["grades", "Grades"], ["email", "Email Students"], ["password", "Password"],
+    ["grades", "Grades"], ["email", "Students Email"], ["password", "Password"],
   ];
   const tabs = isAdmin ? adminTabs : teacherTabs;
   const query = search.trim().toLowerCase();
@@ -1712,7 +1712,7 @@ function StaffPortal({ isAdmin }) {
       {["rosters", "attendance", "grades", "email"].includes(active) && (
         <div className={`portal-panel ${active === "rosters" ? "print-area" : ""}`}>
           <div className="panel-heading">
-            <div><span>报名单</span><h2>{active === "rosters" ? "Class Roster" : active[0].toUpperCase() + active.slice(1)}</h2></div>
+            <div><span>报名单</span><h2>{active === "rosters" ? "Class Roster" : active === "email" ? "Students Email" : active[0].toUpperCase() + active.slice(1)}</h2></div>
             {active === "rosters" && (
               <div className="button-row no-print">
                 <button className="outline-link" type="button" onClick={() => window.print()}>Print Roster</button>
