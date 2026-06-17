@@ -618,14 +618,65 @@ function ActionTable({ columns, rows, empty = "No records found." }) {
 }
 
 function RowActions({ onEdit, onDelete, disabled = false }) {
+  const [open, setOpen] = useState(false);
+  const [position, setPosition] = useState(null);
+  const buttonRef = React.useRef(null);
+
+  const placeMenu = () => {
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (!rect) return;
+    const menuWidth = 178;
+    const menuHeight = 52;
+    const gap = 8;
+    const viewportPadding = 10;
+    const opensLeft = rect.left >= menuWidth + gap + viewportPadding;
+    const left = opensLeft
+      ? rect.left - menuWidth - gap
+      : Math.min(window.innerWidth - menuWidth - viewportPadding, rect.right + gap);
+    const top = Math.min(
+      window.innerHeight - menuHeight - viewportPadding,
+      Math.max(viewportPadding, rect.top + rect.height / 2 - menuHeight / 2),
+    );
+    setPosition({ left, top });
+  };
+
+  useEffect(() => {
+    if (!open) return undefined;
+    placeMenu();
+    const close = (event) => {
+      if (buttonRef.current?.contains(event.target)) return;
+      setOpen(false);
+    };
+    const update = () => placeMenu();
+    document.addEventListener("pointerdown", close);
+    window.addEventListener("resize", update);
+    window.addEventListener("scroll", update, true);
+    return () => {
+      document.removeEventListener("pointerdown", close);
+      window.removeEventListener("resize", update);
+      window.removeEventListener("scroll", update, true);
+    };
+  }, [open]);
+
   return (
-    <details className="row-actions">
-      <summary aria-label="Row actions">...</summary>
-      <div>
-        <button type="button" onClick={onEdit}>Edit</button>
-        <button className="danger" type="button" onClick={onDelete} disabled={disabled}>Delete</button>
-      </div>
-    </details>
+    <div className="row-actions">
+      <button
+        ref={buttonRef}
+        className={`row-actions-trigger ${open ? "is-open" : ""}`}
+        type="button"
+        aria-label="Row actions"
+        aria-expanded={open}
+        onClick={() => setOpen((current) => !current)}
+      >
+        ...
+      </button>
+      {open && (
+        <div className="row-actions-menu" style={position || undefined}>
+          <button type="button" onClick={() => { setOpen(false); onEdit(); }}>Edit</button>
+          <button className="danger" type="button" onClick={() => { setOpen(false); onDelete(); }} disabled={disabled}>Delete</button>
+        </div>
+      )}
+    </div>
   );
 }
 
