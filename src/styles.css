@@ -2239,8 +2239,11 @@ footer {
 }
 
 @media print {
+  @page {
+    margin: 0.45in;
+  }
   .site-header, .sidebar, footer, .portal-identity, .portal-tabs,
-  .no-print, .menu-backdrop { display: none !important; }
+  .page-title, .no-print, .menu-backdrop { display: none !important; }
   body, #top, .page-shell, main, .inner-page, .page-section {
     width: 100% !important;
     margin: 0 !important;
@@ -2248,7 +2251,98 @@ footer {
     background: #fff !important;
     box-shadow: none !important;
   }
-  .page-title { padding: 0 0 18px !important; }
-  .print-area { padding: 0 !important; }
+  body {
+    color: #001f4f !important;
+    font-size: 10pt !important;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  .portal-card, .portal-panel, .print-area {
+    border: 0 !important;
+    padding: 0 !important;
+    box-shadow: none !important;
+  }
+  .print-area .panel-heading {
+    display: block !important;
+    margin: 0 0 18px !important;
+  }
+  .print-area .panel-heading span {
+    color: #06428c !important;
+    font-size: 9pt !important;
+  }
+  .print-area .panel-heading h2 {
+    margin-top: 4px !important;
+    font-size: 20pt !important;
+  }
+  .summary-grid {
+    margin-bottom: 28px !important;
+    grid-template-columns: repeat(2, 1fr) !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .summary-grid > div {
+    padding: 14px 16px !important;
+  }
+  .summary-grid dt {
+    font-size: 8pt !important;
+  }
+  .summary-grid dd {
+    font-size: 12pt !important;
+  }
+  .print-area h3 {
+    margin: 22px 0 14px !important;
+    font-size: 17pt !important;
+  }
+  .student-summary {
+    display: block !important;
+    padding: 14px 0 20px !important;
+    border-bottom: 1px solid #d9dfea !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  .student-summary-heading {
+    display: block !important;
+    margin-bottom: 12px !important;
+  }
+  .student-summary-heading strong {
+    font-size: 14pt !important;
+  }
+  .data-table-wrap,
+  .student-course-table {
+    overflow: visible !important;
+    border: 1px solid #d9dfea !important;
+  }
+  .data-table {
+    width: 100% !important;
+    min-width: 0 !important;
+    table-layout: fixed !important;
+    border-collapse: collapse !important;
+  }
+  .data-table th,
+  .data-table td {
+    padding: 9px 10px !important;
+    border-bottom: 1px solid #d9dfea !important;
+    font-size: 9.5pt !important;
+    overflow-wrap: anywhere;
+  }
+  .data-table th {
+    background: #f8e8a5 !important;
+    color: #001f4f !important;
+  }
+  .data-table tbody tr,
+  .data-table tbody tr:nth-child(odd),
+  .data-table tbody tr:hover {
+    background: #fff !important;
+  }
+  .student-course-table a {
+    color: #06428c !important;
+    text-decoration: none !important;
+  }
+  .student-no-registration,
+  .empty-state {
+    border: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
   .print-heading { display: block !important; }
 }
