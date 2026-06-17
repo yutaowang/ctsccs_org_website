@@ -1253,6 +1253,7 @@ function StaffPortal({ isAdmin }) {
   const [students, setStudents] = useState([]);
   const [families, setFamilies] = useState([]);
   const [registrations, setRegistrations] = useState([]);
+  const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [payments, setPayments] = useState([]);
   const [userRoles, setUserRoles] = useState([]);
   const [siteSettings, setSiteSettings] = useState([]);
@@ -1261,6 +1262,8 @@ function StaffPortal({ isAdmin }) {
   const [search, setSearch] = useState("");
   const [selectedPrintFamilyId, setSelectedPrintFamilyId] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
+  const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [showAttendanceHistory, setShowAttendanceHistory] = useState(false);
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", message: "" });
   const [rosterEmailBusy, setRosterEmailBusy] = useState(false);
@@ -1274,6 +1277,7 @@ function StaffPortal({ isAdmin }) {
       supabase.from("students").select("*").order("last_name"),
       supabase.from("families").select("*").order("legacy_family_id"),
       supabase.from("class_registrations").select("*"),
+      supabase.from("attendance").select("*").order("class_date", { ascending: false }),
     ];
     if (isAdmin) {
       requests.push(
@@ -1292,10 +1296,11 @@ function StaffPortal({ isAdmin }) {
     setStudents(results[4].data || []);
     setFamilies(results[5].data || []);
     setRegistrations(results[6].data || []);
+    setAttendanceRecords(results[7].data || []);
     if (isAdmin) {
-      setPayments(results[7].data || []);
-      setUserRoles(results[8].data || []);
-      setSiteSettings(results[9].data || []);
+      setPayments(results[8].data || []);
+      setUserRoles(results[9].data || []);
+      setSiteSettings(results[10].data || []);
     }
   };
   useEffect(() => { load(); }, [role, teacherId]);
@@ -1388,17 +1393,50 @@ function StaffPortal({ isAdmin }) {
     };
   });
 
+  const attendanceForSelectedDate = useMemo(() => (
+    Object.fromEntries(
+      attendanceRecords
+        .filter((row) => row.class_id === selectedClassId && row.class_date === attendanceDate)
+        .map((row) => [row.student_id, row]),
+    )
+  ), [attendanceRecords, selectedClassId, attendanceDate]);
+  const attendanceHistoryRows = useMemo(() => (
+    attendanceRecords
+      .filter((row) => row.class_id === selectedClassId)
+      .map((row) => {
+        const student = students.find((item) => item.id === row.student_id);
+        return {
+          id: row.id,
+          date: row.class_date,
+          recorded_at: row.recorded_at ? new Date(row.recorded_at).toLocaleString() : "",
+          student: fullName(student) || row.student_id,
+          status: row.status,
+          notes: row.notes || "",
+        };
+      })
+      .sort((left, right) => (
+        compareValues(right.date, left.date)
+        || compareValues(right.recorded_at, left.recorded_at)
+        || compareValues(left.student, right.student)
+      ))
+  ), [attendanceRecords, selectedClassId, students]);
+
   const saveAttendance = async (studentId, classId, statusValue) => {
+    if (!attendanceDate) {
+      setStatus({ error: "Please select an attendance date.", message: "" });
+      return;
+    }
     const result = await supabase.from("attendance").upsert({
       class_id: classId,
       student_id: studentId,
-      class_date: new Date().toISOString().slice(0, 10),
+      class_date: attendanceDate,
       status: statusValue,
       recorded_by: session.user.id,
     }, { onConflict: "class_id,student_id,class_date" });
     setStatus(result.error
       ? { error: result.error.message, message: "" }
       : { error: "", message: "Attendance saved." });
+    if (!result.error) await load();
   };
 
   const saveGrade = async (event) => {
@@ -1603,7 +1641,48 @@ function StaffPortal({ isAdmin }) {
             </div>
           )}
           {active === "rosters" && <DataTable columns={[["family_id", "Family ID"], ["student", "Student"], ["parent", "Parent"], ["email", "Email"], ["phone", "Phone"]]} rows={rosterRows} />}
-          {active === "attendance" && rosterRows.map((row) => <div className="attendance-row" key={row.id}><strong>{row.student}</strong><select defaultValue="present" onChange={(event) => saveAttendance(row.student_id, Number(selectedClassValue), event.target.value)}><option value="present">Present</option><option value="absent">Absent</option><option value="late">Late</option><option value="excused">Excused</option></select></div>)}
+          {active === "attendance" && (
+            <div className="attendance-panel">
+              <div className="attendance-toolbar">
+                <label className="standalone-field">
+                  <span>Attendance date</span>
+                  <input type="date" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} />
+                </label>
+                <button className="outline-link" type="button" onClick={() => setShowAttendanceHistory((current) => !current)}>
+                  {showAttendanceHistory ? "Hide attendance history" : "Show attendance history"}
+                </button>
+              </div>
+              {!rosterRows.length && <div className="empty-state">No students are registered for this class.</div>}
+              {rosterRows.map((row) => (
+                <div className="attendance-row" key={row.id}>
+                  <div>
+                    <strong>{row.student}</strong>
+                    <span>{attendanceForSelectedDate[row.student_id]?.recorded_at ? `Last saved ${new Date(attendanceForSelectedDate[row.student_id].recorded_at).toLocaleString()}` : "No record for this date"}</span>
+                  </div>
+                  <select
+                    value={attendanceForSelectedDate[row.student_id]?.status || ""}
+                    onChange={(event) => saveAttendance(row.student_id, Number(selectedClassValue), event.target.value)}
+                  >
+                    <option value="" disabled>Select status</option>
+                    <option value="present">Present</option>
+                    <option value="absent">Absent</option>
+                    <option value="late">Late</option>
+                    <option value="excused">Excused</option>
+                  </select>
+                </div>
+              ))}
+              {showAttendanceHistory && (
+                <div className="attendance-history">
+                  <h3>Attendance History</h3>
+                  <DataTable
+                    columns={[["date", "Date"], ["recorded_at", "Recorded"], ["student", "Student"], ["status", "Status"], ["notes", "Notes"]]}
+                    rows={attendanceHistoryRows}
+                    empty="No attendance records for this class."
+                  />
+                </div>
+              )}
+            </div>
+          )}
           {active === "grades" && <form className="portal-form compact" onSubmit={saveGrade}><input type="hidden" name="class_id" value={selectedClassValue} /><label><span>Student</span><select name="student_id" required>{rosterRows.map((row) => <option value={row.student_id} key={row.id}>{row.student}</option>)}</select></label><label><span>Grading period</span><input name="grading_period" required /></label><label><span>Assignment</span><input name="assignment_name" required /></label><label><span>Score</span><input name="score" type="number" step="0.01" /></label><label><span>Maximum score</span><input name="maximum_score" type="number" step="0.01" /></label><label><span>Letter grade</span><input name="letter_grade" /></label><label className="wide"><span>Comments</span><textarea name="comments" /></label><button className="button-link" type="submit">Save grade</button></form>}
           {active === "email" && <div className="email-list">{rosterRows.map((row) => <a href={`mailto:${row.email}`} key={row.id}>{row.student} · {row.email}</a>)}</div>}
         </div>

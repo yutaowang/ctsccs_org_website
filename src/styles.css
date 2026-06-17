@@ -2021,6 +2021,36 @@ footer {
 .action-table .actions-cell { overflow: visible; }
 .standalone-field { max-width: 520px; margin-bottom: 20px; }
 .attendance-row select { max-width: 180px; }
+.attendance-panel {
+  display: grid;
+  gap: 14px;
+}
+.attendance-toolbar {
+  display: flex;
+  align-items: end;
+  justify-content: space-between;
+  gap: 16px;
+}
+.attendance-toolbar .standalone-field {
+  margin-bottom: 0;
+}
+.attendance-row > div {
+  display: grid;
+  gap: 4px;
+}
+.attendance-row span {
+  color: #647087;
+  font-size: 0.66rem;
+}
+.attendance-history {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.attendance-history h3 {
+  margin: 0 0 12px;
+  color: var(--navy);
+}
 .email-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .email-list a { padding: 12px; color: var(--blue); background: #f5f7fa; font-size: 0.72rem; }
 .roster-summary {
@@ -2219,6 +2249,10 @@ footer {
 
 @media (max-width: 680px) {
   .portal-identity, .panel-heading, .student-summary, .attendance-row, .role-list > div {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .attendance-toolbar {
     align-items: stretch;
     flex-direction: column;
   }
