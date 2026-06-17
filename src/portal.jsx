@@ -1254,6 +1254,7 @@ function StaffPortal({ isAdmin }) {
   const [families, setFamilies] = useState([]);
   const [registrations, setRegistrations] = useState([]);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
+  const [gradeRecords, setGradeRecords] = useState([]);
   const [payments, setPayments] = useState([]);
   const [userRoles, setUserRoles] = useState([]);
   const [siteSettings, setSiteSettings] = useState([]);
@@ -1264,6 +1265,9 @@ function StaffPortal({ isAdmin }) {
   const [selectedClass, setSelectedClass] = useState("");
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [expandedAttendanceDates, setExpandedAttendanceDates] = useState({});
+  const [examName, setExamName] = useState("");
+  const [gradeScores, setGradeScores] = useState({});
+  const [expandedGradeExams, setExpandedGradeExams] = useState({});
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", message: "" });
   const [rosterEmailBusy, setRosterEmailBusy] = useState(false);
@@ -1278,6 +1282,7 @@ function StaffPortal({ isAdmin }) {
       supabase.from("families").select("*").order("legacy_family_id"),
       supabase.from("class_registrations").select("*"),
       supabase.from("attendance").select("*").order("class_date", { ascending: false }),
+      supabase.from("student_grades").select("*").order("recorded_at", { ascending: false }),
     ];
     if (isAdmin) {
       requests.push(
@@ -1297,10 +1302,11 @@ function StaffPortal({ isAdmin }) {
     setFamilies(results[5].data || []);
     setRegistrations(results[6].data || []);
     setAttendanceRecords(results[7].data || []);
+    setGradeRecords(results[8].data || []);
     if (isAdmin) {
-      setPayments(results[8].data || []);
-      setUserRoles(results[9].data || []);
-      setSiteSettings(results[10].data || []);
+      setPayments(results[9].data || []);
+      setUserRoles(results[10].data || []);
+      setSiteSettings(results[11].data || []);
     }
   };
   useEffect(() => { load(); }, [role, teacherId]);
@@ -1462,24 +1468,92 @@ function StaffPortal({ isAdmin }) {
     if (!result.error) await load();
   };
 
-  const saveGrade = async (event) => {
+  const gradeHistoryRows = useMemo(() => (
+    gradeRecords
+      .filter((row) => row.class_id === selectedClassId)
+      .map((row) => {
+        const student = students.find((item) => item.id === row.student_id);
+        return {
+          id: row.id,
+          exam: row.assignment_name,
+          recorded_at: row.recorded_at ? new Date(row.recorded_at).toLocaleString() : "",
+          student: fullName(student) || row.student_id,
+          score: row.score ?? "",
+          comments: row.comments || "",
+        };
+      })
+      .sort((left, right) => (
+        compareValues(right.recorded_at, left.recorded_at)
+        || compareValues(left.student, right.student)
+      ))
+  ), [gradeRecords, selectedClassId, students]);
+  const gradeExamGroups = useMemo(() => {
+    const groups = new Map();
+    gradeHistoryRows.forEach((row) => {
+      if (!groups.has(row.exam)) groups.set(row.exam, []);
+      groups.get(row.exam).push(row);
+    });
+    return Array.from(groups.entries())
+      .map(([exam, rows]) => ({
+        exam,
+        rows,
+        recordedAt: rows[0]?.recorded_at || "",
+      }))
+      .sort((left, right) => compareValues(right.recordedAt, left.recordedAt) || compareValues(left.exam, right.exam));
+  }, [gradeHistoryRows]);
+  const toggleGradeExam = (exam) => {
+    setExpandedGradeExams((current) => ({
+      ...current,
+      [exam]: !current[exam],
+    }));
+  };
+
+  const saveGrades = async (event) => {
     event.preventDefault();
-    const values = new FormData(event.currentTarget);
-    const result = await supabase.from("student_grades").upsert({
-      class_id: Number(values.get("class_id")),
-      student_id: Number(values.get("student_id")),
-      grading_period: values.get("grading_period"),
-      assignment_name: values.get("assignment_name"),
-      score: values.get("score") ? Number(values.get("score")) : null,
-      maximum_score: values.get("maximum_score") ? Number(values.get("maximum_score")) : null,
-      letter_grade: values.get("letter_grade") || null,
-      comments: values.get("comments") || null,
-      recorded_by: session.user.id,
-    }, { onConflict: "class_id,student_id,grading_period,assignment_name" });
+    const normalizedExamName = examName.trim();
+    if (!normalizedExamName) {
+      setStatus({ error: "Please enter an exam name.", message: "" });
+      return;
+    }
+    const rows = rosterRows
+      .map((row) => ({
+        class_id: selectedClassId,
+        student_id: row.student_id,
+        grading_period: "Exam",
+        assignment_name: normalizedExamName,
+        score: gradeScores[row.student_id] === "" || gradeScores[row.student_id] == null
+          ? null
+          : Number(gradeScores[row.student_id]),
+        maximum_score: null,
+        letter_grade: null,
+        comments: null,
+        recorded_by: session.user.id,
+      }))
+      .filter((row) => row.score !== null && !Number.isNaN(row.score));
+    if (!rows.length) {
+      setStatus({ error: "Please enter at least one score.", message: "" });
+      return;
+    }
+    const result = await supabase.from("student_grades").upsert(rows, {
+      onConflict: "class_id,student_id,grading_period,assignment_name",
+    });
     setStatus(result.error
       ? { error: result.error.message, message: "" }
-      : { error: "", message: "Grade saved." });
-    if (!result.error) event.currentTarget.reset();
+      : { error: "", message: "Grades saved." });
+    if (!result.error) {
+      setGradeScores({});
+      await load();
+    }
+  };
+
+  const loadExamForEdit = (exam) => {
+    setExamName(exam);
+    setGradeScores(Object.fromEntries(
+      gradeRecords
+        .filter((row) => row.class_id === selectedClassId && row.assignment_name === exam)
+        .map((row) => [row.student_id, row.score ?? ""]),
+    ));
+    setStatus({ error: "", message: `Loaded ${exam}.` });
   };
 
   const updateRole = async (userId, nextRole) => {
@@ -1739,7 +1813,94 @@ function StaffPortal({ isAdmin }) {
               </div>
             </div>
           )}
-          {active === "grades" && <form className="portal-form compact" onSubmit={saveGrade}><input type="hidden" name="class_id" value={selectedClassValue} /><label><span>Student</span><select name="student_id" required>{rosterRows.map((row) => <option value={row.student_id} key={row.id}>{row.student}</option>)}</select></label><label><span>Grading period</span><input name="grading_period" required /></label><label><span>Assignment</span><input name="assignment_name" required /></label><label><span>Score</span><input name="score" type="number" step="0.01" /></label><label><span>Maximum score</span><input name="maximum_score" type="number" step="0.01" /></label><label><span>Letter grade</span><input name="letter_grade" /></label><label className="wide"><span>Comments</span><textarea name="comments" /></label><button className="button-link" type="submit">Save grade</button></form>}
+          {active === "grades" && (
+            <div className="grades-panel">
+              <form className="grades-entry" onSubmit={saveGrades}>
+                <label className="standalone-field">
+                  <span>Exam name</span>
+                  <input value={examName} onChange={(event) => setExamName(event.target.value)} placeholder="e.g. Midterm Exam" required />
+                </label>
+                {!rosterRows.length && <div className="empty-state">No students are registered for this class.</div>}
+                {rosterRows.length > 0 && (
+                  <div className="data-table-wrap grade-entry-table">
+                    <table className="data-table">
+                      <thead>
+                        <tr>
+                          <th>Student</th>
+                          <th>Score</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {rosterRows.map((row) => (
+                          <tr key={row.student_id}>
+                            <td>{row.student}</td>
+                            <td>
+                              <input
+                                type="number"
+                                step="0.01"
+                                value={gradeScores[row.student_id] ?? ""}
+                                onChange={(event) => setGradeScores({
+                                  ...gradeScores,
+                                  [row.student_id]: event.target.value,
+                                })}
+                                placeholder="Score"
+                              />
+                            </td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                )}
+                <button className="button-link" type="submit" disabled={!rosterRows.length}>Save grades</button>
+              </form>
+              <div className="grades-history">
+                <h3>Grades History</h3>
+                {!gradeExamGroups.length && <div className="empty-state">No grade records for this class.</div>}
+                {gradeExamGroups.map((group) => {
+                  const expanded = Boolean(expandedGradeExams[group.exam]);
+                  return (
+                    <section className="grade-history-group" key={group.exam}>
+                      <button className="grade-history-exam" type="button" onClick={() => toggleGradeExam(group.exam)} aria-expanded={expanded}>
+                        <span>{expanded ? "v" : ">"}</span>
+                        <strong>{group.exam}</strong>
+                        <small>{group.rows.length} grades{group.recordedAt ? ` · Last saved ${group.recordedAt}` : ""}</small>
+                      </button>
+                      {expanded && (
+                        <>
+                          <div className="grade-history-actions">
+                            <button className="outline-link" type="button" onClick={() => loadExamForEdit(group.exam)}>Edit this exam</button>
+                          </div>
+                          <div className="data-table-wrap grade-history-table">
+                            <table className="data-table">
+                              <thead>
+                                <tr>
+                                  <th>Student</th>
+                                  <th>Score</th>
+                                  <th>Recorded</th>
+                                  <th>Comments</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {group.rows.map((row) => (
+                                  <tr key={row.id}>
+                                    <td>{row.student}</td>
+                                    <td>{row.score}</td>
+                                    <td>{row.recorded_at}</td>
+                                    <td>{row.comments}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                        </>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
+            </div>
+          )}
           {active === "email" && <div className="email-list">{rosterRows.map((row) => <a href={`mailto:${row.email}`} key={row.id}>{row.student} · {row.email}</a>)}</div>}
         </div>
       )}

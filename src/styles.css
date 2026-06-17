@@ -2091,6 +2091,76 @@ footer {
 .attendance-history-table .data-table {
   min-width: 640px;
 }
+.grades-panel,
+.grades-entry {
+  display: grid;
+  gap: 16px;
+}
+.grade-entry-table .data-table {
+  min-width: 520px;
+}
+.grade-entry-table input {
+  width: 100%;
+  max-width: 180px;
+  padding: 9px 10px;
+  color: var(--navy);
+  background: #fff;
+  border: 1px solid #d6dce5;
+  font: inherit;
+}
+.grades-history {
+  margin-top: 18px;
+  padding-top: 18px;
+  border-top: 1px solid var(--line);
+}
+.grades-history h3 {
+  margin: 0 0 12px;
+  color: var(--navy);
+}
+.grade-history-group {
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.grade-history-group + .grade-history-group {
+  margin-top: 10px;
+}
+.grade-history-exam {
+  display: grid;
+  width: 100%;
+  padding: 12px 14px;
+  grid-template-columns: auto minmax(160px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  color: var(--navy);
+  background: #f8e8a5;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.grade-history-exam span {
+  color: rgba(14, 41, 84, 0.65);
+  font-weight: 900;
+}
+.grade-history-exam strong {
+  font-size: 0.78rem;
+}
+.grade-history-exam small {
+  color: #52627c;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-align: right;
+}
+.grade-history-actions {
+  padding: 10px 12px;
+  border-top: 1px solid var(--line);
+}
+.grade-history-table {
+  border-width: 1px 0 0;
+}
+.grade-history-table .data-table {
+  min-width: 680px;
+}
 .email-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .email-list a { padding: 12px; color: var(--blue); background: #f5f7fa; font-size: 0.72rem; }
 .roster-summary {
@@ -2300,6 +2370,13 @@ footer {
     grid-template-columns: auto 1fr;
   }
   .attendance-history-date small {
+    grid-column: 2;
+    text-align: left;
+  }
+  .grade-history-exam {
+    grid-template-columns: auto 1fr;
+  }
+  .grade-history-exam small {
     grid-column: 2;
     text-align: left;
   }
