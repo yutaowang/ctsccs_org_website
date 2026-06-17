@@ -79,7 +79,7 @@ function PortalLayout({ title, tabs, active, setActive, children }) {
   return (
     <article className="inner-page portal-page">
       <header className="page-title">
-        <span>My SCCS</span>
+        <span>Online Registration</span>
         <h1>{title}</h1>
       </header>
       <section className="page-section portal-card">
@@ -1423,7 +1423,7 @@ export function AccountPage({ Link, staffOnly = false }) {
   if (loading) return <article className="inner-page"><section className="page-section"><p>Loading...</p></section></article>;
   if (!session) return <article className="inner-page"><section className="page-section"><p>Please log in first.</p><Link className="button-link" to="/login">Log in</Link></section></article>;
   if (staffOnly && role === roles.family) return <article className="inner-page"><section className="page-section"><div className="form-message error">This account is not authorized for the staff portal. Please contact IT.</div></section></article>;
-  if (!staffOnly && role !== roles.family) return <article className="inner-page"><section className="page-section"><div className="form-message">My SCCS Portal is for family accounts. Teacher and admin login links are sent separately by email.</div><button className="outline-link" type="button" onClick={signOut}>Log out</button></section></article>;
+  if (!staffOnly && role !== roles.family) return <article className="inner-page"><section className="page-section"><div className="form-message">Online Registration is for family accounts. Teacher and admin login links are sent separately by email.</div><button className="outline-link" type="button" onClick={signOut}>Log out</button></section></article>;
   if (role === roles.family) return <FamilyPortal />;
   if (role === roles.teacher) return <StaffPortal isAdmin={false} />;
   return <StaffPortal isAdmin />;

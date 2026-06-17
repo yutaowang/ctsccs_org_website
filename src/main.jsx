@@ -107,7 +107,7 @@ function Header({ menuOpen, setMenuOpen }) {
             to={isFamilySession ? "/account" : "/login"}
           >
             <span className="portal-icon" aria-hidden="true">人</span>
-            {isFamilySession ? "My SCCS Portal" : "My SCCS"}
+            {isFamilySession ? "My SCCS Portal" : "Online Registration"}
           </SiteLink>
           <button
             className="menu-button"

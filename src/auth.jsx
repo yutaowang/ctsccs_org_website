@@ -73,7 +73,7 @@ export const useAuth = () => useContext(AuthContext);
 function Layout({ title, children }) {
   return (
     <article className="inner-page">
-      <header className="page-title"><span>My SCCS</span><h1>{title}</h1></header>
+      <header className="page-title"><span>Online Registration</span><h1>{title}</h1></header>
       <section className="page-section auth-card">{children}</section>
     </article>
   );
@@ -129,18 +129,18 @@ export function LoginPage({ Link, navigate }) {
     else navigate?.("/account");
   };
 
-  if (!isSupabaseConfigured) return <Layout title="My SCCS"><Message error="Supabase is not configured." /></Layout>;
-  if (loading) return <Layout title="My SCCS"><p>Loading...</p></Layout>;
+  if (!isSupabaseConfigured) return <Layout title="Online Registration"><Message error="Supabase is not configured." /></Layout>;
+  if (loading) return <Layout title="Online Registration"><p>Loading...</p></Layout>;
   if (session) {
     if (role !== FAMILY_ROLE) {
       return (
-        <Layout title="My SCCS">
-          <Message message="My SCCS Portal is for family accounts. Staff and admin login links are sent separately by email." />
+        <Layout title="Online Registration">
+          <Message message="Online Registration is for family accounts. Staff and admin login links are sent separately by email." />
           <button className="outline-link" type="button" onClick={signOut}>Log out</button>
         </Layout>
       );
     }
-    return <Layout title="My SCCS"><p>Opening My SCCS portal...</p></Layout>;
+    return <Layout title="Online Registration"><p>Opening Online Registration...</p></Layout>;
   }
 
   const titles = {
