@@ -1263,7 +1263,7 @@ function StaffPortal({ isAdmin }) {
   const [selectedPrintFamilyId, setSelectedPrintFamilyId] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [showAttendanceHistory, setShowAttendanceHistory] = useState(false);
+  const [expandedAttendanceDates, setExpandedAttendanceDates] = useState({});
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", message: "" });
   const [rosterEmailBusy, setRosterEmailBusy] = useState(false);
@@ -1420,6 +1420,29 @@ function StaffPortal({ isAdmin }) {
         || compareValues(left.student, right.student)
       ))
   ), [attendanceRecords, selectedClassId, students]);
+  const attendanceHistoryGroups = useMemo(() => {
+    const groups = new Map();
+    attendanceHistoryRows.forEach((row) => {
+      if (!groups.has(row.date)) groups.set(row.date, []);
+      groups.get(row.date).push(row);
+    });
+    return Array.from(groups.entries())
+      .map(([date, rows]) => ({
+        date,
+        rows,
+        counts: rows.reduce((summary, row) => ({
+          ...summary,
+          [row.status]: (summary[row.status] || 0) + 1,
+        }), {}),
+      }))
+      .sort((left, right) => compareValues(right.date, left.date));
+  }, [attendanceHistoryRows]);
+  const toggleAttendanceDate = (date) => {
+    setExpandedAttendanceDates((current) => ({
+      ...current,
+      [date]: !current[date],
+    }));
+  };
 
   const saveAttendance = async (studentId, classId, statusValue) => {
     if (!attendanceDate) {
@@ -1648,9 +1671,6 @@ function StaffPortal({ isAdmin }) {
                   <span>Attendance date</span>
                   <input type="date" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} />
                 </label>
-                <button className="outline-link" type="button" onClick={() => setShowAttendanceHistory((current) => !current)}>
-                  {showAttendanceHistory ? "Hide attendance history" : "Show attendance history"}
-                </button>
               </div>
               {!rosterRows.length && <div className="empty-state">No students are registered for this class.</div>}
               {rosterRows.map((row) => (
@@ -1671,16 +1691,52 @@ function StaffPortal({ isAdmin }) {
                   </select>
                 </div>
               ))}
-              {showAttendanceHistory && (
-                <div className="attendance-history">
-                  <h3>Attendance History</h3>
-                  <DataTable
-                    columns={[["date", "Date"], ["recorded_at", "Recorded"], ["student", "Student"], ["status", "Status"], ["notes", "Notes"]]}
-                    rows={attendanceHistoryRows}
-                    empty="No attendance records for this class."
-                  />
-                </div>
-              )}
+              <div className="attendance-history">
+                <h3>Attendance History</h3>
+                {!attendanceHistoryGroups.length && <div className="empty-state">No attendance records for this class.</div>}
+                {attendanceHistoryGroups.map((group) => {
+                  const expanded = Boolean(expandedAttendanceDates[group.date]);
+                  return (
+                    <section className="attendance-history-group" key={group.date}>
+                      <button className="attendance-history-date" type="button" onClick={() => toggleAttendanceDate(group.date)} aria-expanded={expanded}>
+                        <span>{expanded ? "v" : ">"}</span>
+                        <strong>{group.date}</strong>
+                        <small>
+                          {group.rows.length} records
+                          {group.counts.present ? ` · Present ${group.counts.present}` : ""}
+                          {group.counts.absent ? ` · Absent ${group.counts.absent}` : ""}
+                          {group.counts.late ? ` · Late ${group.counts.late}` : ""}
+                          {group.counts.excused ? ` · Excused ${group.counts.excused}` : ""}
+                        </small>
+                      </button>
+                      {expanded && (
+                        <div className="data-table-wrap attendance-history-table">
+                          <table className="data-table">
+                            <thead>
+                              <tr>
+                                <th>Recorded</th>
+                                <th>Student</th>
+                                <th>Status</th>
+                                <th>Notes</th>
+                              </tr>
+                            </thead>
+                            <tbody>
+                              {group.rows.map((row) => (
+                                <tr key={row.id}>
+                                  <td>{row.recorded_at}</td>
+                                  <td>{row.student}</td>
+                                  <td>{row.status}</td>
+                                  <td>{row.notes}</td>
+                                </tr>
+                              ))}
+                            </tbody>
+                          </table>
+                        </div>
+                      )}
+                    </section>
+                  );
+                })}
+              </div>
             </div>
           )}
           {active === "grades" && <form className="portal-form compact" onSubmit={saveGrade}><input type="hidden" name="class_id" value={selectedClassValue} /><label><span>Student</span><select name="student_id" required>{rosterRows.map((row) => <option value={row.student_id} key={row.id}>{row.student}</option>)}</select></label><label><span>Grading period</span><input name="grading_period" required /></label><label><span>Assignment</span><input name="assignment_name" required /></label><label><span>Score</span><input name="score" type="number" step="0.01" /></label><label><span>Maximum score</span><input name="maximum_score" type="number" step="0.01" /></label><label><span>Letter grade</span><input name="letter_grade" /></label><label className="wide"><span>Comments</span><textarea name="comments" /></label><button className="button-link" type="submit">Save grade</button></form>}

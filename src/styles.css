@@ -2051,6 +2051,46 @@ footer {
   margin: 0 0 12px;
   color: var(--navy);
 }
+.attendance-history-group {
+  border: 1px solid var(--line);
+  background: #fff;
+}
+.attendance-history-group + .attendance-history-group {
+  margin-top: 10px;
+}
+.attendance-history-date {
+  display: grid;
+  width: 100%;
+  padding: 12px 14px;
+  grid-template-columns: auto minmax(120px, 1fr) auto;
+  align-items: center;
+  gap: 12px;
+  color: var(--navy);
+  background: #f8e8a5;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.attendance-history-date span {
+  color: rgba(14, 41, 84, 0.65);
+  font-weight: 900;
+}
+.attendance-history-date strong {
+  font-size: 0.78rem;
+}
+.attendance-history-date small {
+  color: #52627c;
+  font-size: 0.66rem;
+  font-weight: 700;
+  text-align: right;
+}
+.attendance-history-table {
+  border-width: 1px 0 0;
+}
+.attendance-history-table .data-table {
+  min-width: 640px;
+}
 .email-list { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px; }
 .email-list a { padding: 12px; color: var(--blue); background: #f5f7fa; font-size: 0.72rem; }
 .roster-summary {
@@ -2255,6 +2295,13 @@ footer {
   .attendance-toolbar {
     align-items: stretch;
     flex-direction: column;
+  }
+  .attendance-history-date {
+    grid-template-columns: auto 1fr;
+  }
+  .attendance-history-date small {
+    grid-column: 2;
+    text-align: left;
   }
   .staff-user-list > div { align-items: stretch; flex-direction: column; }
   .portal-tabs { padding: 0 12px; }
