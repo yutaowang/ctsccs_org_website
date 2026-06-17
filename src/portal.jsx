@@ -1259,6 +1259,7 @@ function StaffPortal({ isAdmin }) {
   const [settingKey, setSettingKey] = useState("");
   const [settingValue, setSettingValue] = useState("");
   const [search, setSearch] = useState("");
+  const [selectedPrintFamilyId, setSelectedPrintFamilyId] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", message: "" });
@@ -1491,6 +1492,7 @@ function StaffPortal({ isAdmin }) {
     const family = families.find((row) => row.id === student.family_id);
     return {
       id: student.id,
+      family_record_id: family?.id,
       family_id: family?.legacy_family_id || family?.id,
       parent: fullName(family),
       student: fullName(student),
@@ -1500,6 +1502,35 @@ function StaffPortal({ isAdmin }) {
   })
     .filter((row) => hasFamilyId(row.family_id))
     .filter((row) => Object.values(row).some((value) => String(value || "").toLowerCase().includes(query)));
+  const printFamilyOptions = Array.from(
+    new Map(
+      searchRows
+        .map((row) => families.find((family) => family.id === row.family_record_id))
+        .filter(Boolean)
+        .map((family) => [family.id, family]),
+    ).values(),
+  );
+  const selectedPrintFamily = families.find((family) => String(family.id) === String(selectedPrintFamilyId))
+    || (printFamilyOptions.length === 1 ? printFamilyOptions[0] : null);
+  const selectedPrintStudents = selectedPrintFamily
+    ? students.filter((student) => student.family_id === selectedPrintFamily.id)
+    : [];
+  const selectedPrintRegistrations = Object.fromEntries(
+    registrations
+      .filter((registration) => selectedPrintStudents.some((student) => student.id === registration.student_id))
+      .map((registration) => [registration.student_id, registration]),
+  );
+  const adminCourseDetails = (id) => {
+    const course = classes.find((row) => row.id === id);
+    if (!course) return null;
+    return {
+      ...course,
+      teacher: teacherDisplayName(course, teachers, assignments),
+      time: course.class_times?.display_time || course.display_time || "Time TBD",
+      classroom: course.classroom || "Room TBD",
+      descriptionLink: courseDescriptionLinkFor(course.name || course.short_name),
+    };
+  };
   const registrationRows = registrations.map((row) => {
     const student = students.find((item) => item.id === row.student_id);
     const family = families.find((item) => item.id === student?.family_id);
@@ -1579,8 +1610,93 @@ function StaffPortal({ isAdmin }) {
       )}
       {active === "registrations" && <div className="portal-panel"><div className="panel-heading"><div><span>所有注册课程信息</span><h2>Registration Summary</h2></div></div><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student_id", "Student ID"], ["student", "Student"], ["session_1", "Session 1"], ["session_2", "Session 2"], ["session_3", "Session 3"]]} rows={registrationRows} /></div>}
       {active === "payments" && <div className="portal-panel"><div className="panel-heading"><div><span>支付记录</span><h2>Payment History</h2></div></div><DataTable columns={[["family_id", "Family ID"], ["email", "Email"], ["name", "Name"], ["due", "Due"], ["paid", "Paid"], ["balance", "Balance"]]} rows={paymentRows} /></div>}
-      {active === "search" && <div className="portal-panel"><div className="panel-heading"><div><span>家庭与学生搜索</span><h2>Search Families</h2></div></div><label className="standalone-field"><span>Family ID, parent/student name, phone, or email</span><input value={search} onChange={(event) => setSearch(event.target.value)} /></label><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"]]} rows={searchRows} empty="Enter a search term." /></div>}
-      {active === "print" && <div className="portal-panel print-area"><div className="panel-heading"><div><span>打印注册信息</span><h2>Print Registration</h2></div><button className="outline-link no-print" type="button" onClick={() => window.print()}>Print</button></div><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"]]} rows={searchRows} empty="Use Family Search first, then return here to print selected information." /></div>}
+      {active === "search" && <div className="portal-panel"><div className="panel-heading"><div><span>家庭与学生搜索</span><h2>Search Families</h2></div></div><label className="standalone-field"><span>Family ID, parent/student name, phone, or email</span><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedPrintFamilyId(""); }} /></label><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"]]} rows={searchRows} empty="Enter a search term." /></div>}
+      {active === "print" && (
+        <div className="portal-panel print-area">
+          <div className="panel-heading">
+            <div><span>打印注册信息</span><h2>Print Registration</h2></div>
+            <button className="outline-link no-print" type="button" onClick={() => window.print()} disabled={!selectedPrintFamily}>Print</button>
+          </div>
+          {!query && <div className="empty-state no-print">Use Family Search first, then return here to print the family summary.</div>}
+          {query && printFamilyOptions.length > 1 && (
+            <label className="standalone-field no-print">
+              <span>Select family to print</span>
+              <select value={selectedPrintFamily?.id || ""} onChange={(event) => setSelectedPrintFamilyId(event.target.value)}>
+                <option value="">Select family</option>
+                {printFamilyOptions.map((family) => (
+                  <option value={family.id} key={family.id}>
+                    {family.legacy_family_id || family.id} · {fullName(family) || family.email || "Family"}
+                  </option>
+                ))}
+              </select>
+            </label>
+          )}
+          {query && !printFamilyOptions.length && <div className="empty-state no-print">No matching family found. Refine Family Search and try again.</div>}
+          {selectedPrintFamily && (
+            <>
+              <div className="panel-heading print-summary-heading">
+                <div><span>账户概览</span><h2>Family Summary</h2></div>
+              </div>
+              <dl className="summary-grid">
+                <div><dt>Family ID</dt><dd>{selectedPrintFamily.legacy_family_id || selectedPrintFamily.id}</dd></div>
+                <div><dt>Parent</dt><dd>{fullName(selectedPrintFamily) || "Not provided"}</dd></div>
+                <div><dt>Email</dt><dd>{selectedPrintFamily.email || "Not provided"}</dd></div>
+                <div><dt>Phone</dt><dd>{selectedPrintFamily.phone || "Not provided"}</dd></div>
+                <div className="wide"><dt>Address</dt><dd>{[selectedPrintFamily.address, selectedPrintFamily.city, selectedPrintFamily.state, selectedPrintFamily.zip].filter(Boolean).join(", ") || "Not provided"}</dd></div>
+              </dl>
+              <h3>Students and registrations</h3>
+              {!selectedPrintStudents.length && <div className="empty-state">No students found for this family.</div>}
+              {selectedPrintStudents.map((student) => {
+                const registration = selectedPrintRegistrations[student.id] || {};
+                const registeredCourses = [1, 2, 3]
+                  .map((number) => adminCourseDetails(registration[`session_${number}`]))
+                  .filter(Boolean);
+                return (
+                  <div className="student-summary" key={student.id}>
+                    <div className="student-summary-heading">
+                      <strong>{fullName(student)} {student.chinese_name && `· ${student.chinese_name}`}</strong>
+                    </div>
+                    {registeredCourses.length ? (
+                      <div className="student-course-table data-table-wrap">
+                        <table className="data-table">
+                          <thead>
+                            <tr>
+                              <th>Time</th>
+                              <th>Course</th>
+                              <th>Classroom</th>
+                              <th>Teacher</th>
+                              <th>Introduction</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {registeredCourses.map((course) => (
+                              <tr key={course.id}>
+                                <td>{course.time}</td>
+                                <td>{course.name || course.short_name}</td>
+                                <td>{course.classroom}</td>
+                                <td>{course.teacher}</td>
+                                <td>
+                                  {course.descriptionLink && (
+                                    <a href={course.descriptionLink} target="_blank" rel="noreferrer">
+                                      Course description
+                                    </a>
+                                  )}
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ) : (
+                      <span className="student-no-registration">No classes selected.</span>
+                    )}
+                  </div>
+                );
+              })}
+            </>
+          )}
+        </div>
+      )}
       {active === "staff" && <StaffUserManager />}
       {active === "settings" && <div className="portal-panel"><div className="panel-heading"><div><span>网站配置</span><h2>Site Settings</h2></div></div><div className="form-message">To set the class change deadline, use key <strong>registration_change_deadline</strong> and value <strong>{"{\"date\":\"2026-09-21\"}"}</strong>.</div><form className="portal-form compact" onSubmit={saveSetting}><label><span>Setting key</span><input value={settingKey} onChange={(event) => setSettingKey(event.target.value)} placeholder="registration_change_deadline" required /></label><label><span>JSON value or text</span><input value={settingValue} onChange={(event) => setSettingValue(event.target.value)} placeholder='{"date":"2026-09-21"}' required /></label><button className="button-link" type="submit">Save setting</button></form><DataTable columns={[["key", "Key"], ["display_value", "Value"], ["updated_at", "Updated"]]} rows={siteSettings.map((row) => ({ ...row, display_value: JSON.stringify(row.value) }))} /></div>}
       {active === "password" && <form className="portal-form compact" onSubmit={changePassword}><div className="panel-heading"><div><span>更改密码</span><h2>Change Password</h2></div></div><label className="wide"><span>New password</span><input type="password" minLength="12" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label><button className="button-link" type="submit">Update password</button></form>}

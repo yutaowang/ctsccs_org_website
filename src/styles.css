@@ -1783,6 +1783,7 @@ footer {
 }
 .panel-heading span { color: var(--blue); font-size: 0.68rem; font-weight: 700; }
 .panel-heading h2 { margin: 3px 0 0; color: var(--navy); font-size: 1.35rem; }
+.print-summary-heading { margin-top: 6px; }
 .summary-grid {
   display: grid;
   margin: 0 0 28px;
