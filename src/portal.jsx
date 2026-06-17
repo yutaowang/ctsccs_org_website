@@ -1093,6 +1093,7 @@ function TeacherManager({ teachers, onReload, setStatus }) {
     }
     setBusy(true);
     setStatus({ error: "", message: "" });
+    const temporaryPassword = form.temporary_password.trim();
     const request = form.id
       ? supabase.from("teachers").update(payload()).eq("id", form.id).select("*").single()
       : supabase.from("teachers").insert(payload()).select("*").single();
@@ -1100,10 +1101,10 @@ function TeacherManager({ teachers, onReload, setStatus }) {
     if (result.error) {
       setStatus({ error: result.error.message, message: "" });
     } else {
-      if (form.temporary_password) {
+      if (temporaryPassword) {
         const email = (result.data.email_1 || form.email_1 || "").trim();
         if (!email) {
-          setStatus({ error: "Email 1 is required to create a teacher login.", message: "" });
+          setStatus({ error: "Teacher record saved, but login was not updated: Email 1 is required.", message: "" });
           setBusy(false);
           return;
         }
@@ -1117,17 +1118,17 @@ function TeacherManager({ teachers, onReload, setStatus }) {
             body: JSON.stringify({
               teacherId: result.data.id,
               email,
-              password: form.temporary_password,
+              password: temporaryPassword,
             }),
           });
           const loginBody = await loginResult.json();
           if (!loginResult.ok) {
-            setStatus({ error: loginBody.error || "Could not save teacher login.", message: "" });
+            setStatus({ error: `Teacher record saved, but login was not updated: ${loginBody.error || "Could not save teacher login."}`, message: "" });
             setBusy(false);
             return;
           }
         } catch (error) {
-          setStatus({ error: error.message || "Could not save teacher login.", message: "" });
+          setStatus({ error: `Teacher record saved, but login was not updated: ${error.message || "Could not save teacher login."}`, message: "" });
           setBusy(false);
           return;
         }
@@ -1135,7 +1136,7 @@ function TeacherManager({ teachers, onReload, setStatus }) {
       setForm(emptyTeacher);
       setStatus({
         error: "",
-        message: form.temporary_password
+        message: temporaryPassword
           ? "Teacher saved and login updated."
           : form.id ? "Teacher updated." : "Teacher created.",
       });
@@ -1207,7 +1208,7 @@ function TeacherManager({ teachers, onReload, setStatus }) {
             <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
             <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
             <label><span>Email 1</span><input type="email" value={form.email_1} onChange={(event) => setForm({ ...form, email_1: event.target.value })} /></label>
-            <label><span>Temporary password</span><input type="password" minLength="10" value={form.temporary_password} onChange={(event) => setForm({ ...form, temporary_password: event.target.value })} placeholder={form.id ? "Leave blank to keep login unchanged" : "Optional teacher login password"} /></label>
+            <label><span>Temporary password</span><input type="password" minLength="10" autoComplete="new-password" value={form.temporary_password} onChange={(event) => setForm({ ...form, temporary_password: event.target.value })} placeholder={form.id ? "Leave blank to keep login unchanged" : "Optional teacher login password"} /></label>
             <label><span>Phone 1</span><input value={form.phone_1} onChange={(event) => setForm({ ...form, phone_1: event.target.value })} /></label>
             <label><span>Email 2</span><input type="email" value={form.email_2} onChange={(event) => setForm({ ...form, email_2: event.target.value })} /></label>
             <label><span>Phone 2</span><input value={form.phone_2} onChange={(event) => setForm({ ...form, phone_2: event.target.value })} /></label>

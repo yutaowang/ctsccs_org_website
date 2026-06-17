@@ -54,8 +54,11 @@ async function requireManager(request, configuration) {
   const roleResult = await supabaseRequest(
     configuration,
     `/rest/v1/user_roles?select=role&user_id=eq.${encodeURIComponent(userResult.data.id)}`,
-    { profile: "sccs", token },
+    { profile: "sccs" },
   );
+  if (!roleResult.ok) {
+    throw new Error(roleResult.data?.message || "Could not verify admin role.");
+  }
   const role = roleResult.data?.[0]?.role;
   return MANAGER_ROLES.has(role) ? { user: userResult.data, role, token } : null;
 }
