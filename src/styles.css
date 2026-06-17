@@ -1884,6 +1884,13 @@ footer {
 }
 .portal-form .panel-heading, .portal-form button { grid-column: 1 / -1; }
 .portal-form.compact { max-width: 760px; }
+.portal-form.embedded {
+  margin-top: 26px;
+  padding: 24px 0 0;
+  border-top: 1px solid var(--line);
+}
+.student-admin-table { margin-bottom: 4px; }
+.student-admin-table .data-table { min-width: 720px; }
 .portal-form label, .standalone-field {
   display: grid;
   gap: 7px;
@@ -1934,6 +1941,24 @@ footer {
 .registration-selects select { min-width: 0; padding: 10px; border: 1px solid #d6dce5; }
 .button-row { display: flex; margin-top: 16px; gap: 10px; }
 .panel-heading .button-row { margin-top: 0; }
+.button-row.compact {
+  margin-top: 0;
+  align-items: center;
+}
+.button-row.compact .outline-link {
+  min-width: 0;
+  padding: 8px 11px;
+  font-size: 0.62rem;
+}
+.outline-link.danger {
+  color: #9b1c1c;
+  border-color: #d9a5a5;
+}
+.outline-link.danger:hover {
+  color: #fff;
+  background: #9b1c1c;
+  border-color: #9b1c1c;
+}
 .button-link:disabled,
 .outline-link:disabled {
   cursor: not-allowed;

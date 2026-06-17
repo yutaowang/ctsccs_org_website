@@ -124,6 +124,7 @@ function FamilyPortal() {
   const [family, setFamily] = useState({ ...blank(familyFields), state: "CT" });
   const [students, setStudents] = useState([]);
   const [student, setStudent] = useState(blank(studentFields));
+  const [editingStudentId, setEditingStudentId] = useState(null);
   const [classes, setClasses] = useState([]);
   const [teachers, setTeachers] = useState([]);
   const [assignments, setAssignments] = useState([]);
@@ -197,24 +198,50 @@ function FamilyPortal() {
     }
   };
 
-  const addStudent = async (event) => {
+  const resetStudentForm = () => {
+    setStudent(blank(studentFields));
+    setEditingStudentId(null);
+  };
+
+  const editStudent = (row) => {
+    setStudent(Object.fromEntries(
+      studentFields.map((field) => [field, row[field] || ""]),
+    ));
+    setEditingStudentId(row.id);
+  };
+
+  const saveStudent = async (event) => {
     event.preventDefault();
     if (!family.id) {
       setStatus({ error: "Please complete the family profile first.", message: "" });
       setActive("profile");
       return;
     }
-    const result = await supabase.from("students").insert({
-      ...student,
+    const payload = {
+      ...Object.fromEntries(studentFields.map((field) => [field, student[field] || null])),
       birth_year: student.birth_year || null,
       family_id: family.id,
-    });
+    };
+    const result = editingStudentId
+      ? await supabase.from("students").update(payload).eq("id", editingStudentId)
+      : await supabase.from("students").insert(payload);
     if (result.error) setStatus({ error: result.error.message, message: "" });
     else {
-      setStudent(blank(studentFields));
-      setStatus({ error: "", message: "Student added." });
+      resetStudentForm();
+      setStatus({ error: "", message: editingStudentId ? "Student updated." : "Student added." });
       await load();
-      setActive("summary");
+    }
+  };
+
+  const deleteStudent = async (row) => {
+    const name = fullName(row) || "this student";
+    if (!window.confirm(`Delete ${name}? This will also remove this student's registration.`)) return;
+    const result = await supabase.from("students").delete().eq("id", row.id);
+    if (result.error) setStatus({ error: result.error.message, message: "" });
+    else {
+      if (editingStudentId === row.id) resetStudentForm();
+      setStatus({ error: "", message: "Student deleted." });
+      await load();
     }
   };
 
@@ -270,7 +297,7 @@ function FamilyPortal() {
   };
   const tabs = [
     ["summary", "Summary"],
-    ["student", "Add Student"],
+    ["student", "Student"],
     ["register", "Register"],
     ["profile", "Profile"],
     ["password", "Password"],
@@ -296,7 +323,7 @@ function FamilyPortal() {
             <div className="wide"><dt>Address</dt><dd>{[family.address, family.city, family.state, family.zip].filter(Boolean).join(", ") || "Not provided"}</dd></div>
           </dl>
           <h3>Students and registrations</h3>
-          {!students.length && <div className="empty-state">No students yet. Use Add Student to begin.</div>}
+          {!students.length && <div className="empty-state">No students yet. Use Student to begin.</div>}
           {students.map((row) => {
             const registration = registrations[row.id] || {};
             const registeredCourses = [1, 2, 3]
@@ -347,22 +374,64 @@ function FamilyPortal() {
         </div>
       )}
       {active === "student" && (
-        <form className="portal-form" onSubmit={addStudent}>
-          <div className="panel-heading"><div><span>添加学生</span><h2>Add Student</h2></div></div>
-          {studentFields.map((field) => (
-            <label key={field}>
-              <span>{field.replaceAll("_", " ")}</span>
-              {field === "gender" ? (
-                <select value={student[field]} onChange={(event) => setStudent({ ...student, [field]: event.target.value })} required>
-                  <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
-                </select>
-              ) : (
-                <input value={student[field]} onChange={(event) => setStudent({ ...student, [field]: event.target.value })} required={["first_name", "last_name", "birth_year"].includes(field)} />
-              )}
-            </label>
-          ))}
-          <button className="button-link" type="submit">Add student</button>
-        </form>
+        <div className="portal-panel">
+          <div className="panel-heading">
+            <div><span>学生信息</span><h2>Student</h2></div>
+            <button className="outline-link" type="button" onClick={resetStudentForm}>Add new student</button>
+          </div>
+          {students.length ? (
+            <div className="data-table-wrap student-admin-table">
+              <table className="data-table">
+                <thead>
+                  <tr>
+                    <th>Student</th>
+                    <th>Chinese Name</th>
+                    <th>Gender</th>
+                    <th>Birth Year</th>
+                    <th>Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {students.map((row) => (
+                    <tr key={row.id}>
+                      <td>{fullName(row) || "Unnamed student"}</td>
+                      <td>{row.chinese_name || ""}</td>
+                      <td>{row.gender || ""}</td>
+                      <td>{row.birth_year || ""}</td>
+                      <td>
+                        <div className="button-row compact">
+                          <button className="outline-link" type="button" onClick={() => editStudent(row)}>Edit</button>
+                          <button className="outline-link danger" type="button" onClick={() => deleteStudent(row)}>Delete</button>
+                        </div>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          ) : (
+            <div className="empty-state">No students yet. Add a student below.</div>
+          )}
+          <form className="portal-form embedded" onSubmit={saveStudent}>
+            <div className="panel-heading"><div><span>{editingStudentId ? "编辑学生" : "添加学生"}</span><h2>{editingStudentId ? "Edit Student" : "Add Student"}</h2></div></div>
+            {studentFields.map((field) => (
+              <label key={field}>
+                <span>{field.replaceAll("_", " ")}</span>
+                {field === "gender" ? (
+                  <select value={student[field]} onChange={(event) => setStudent({ ...student, [field]: event.target.value })} required>
+                    <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
+                  </select>
+                ) : (
+                  <input value={student[field]} onChange={(event) => setStudent({ ...student, [field]: event.target.value })} required={["first_name", "last_name", "birth_year"].includes(field)} />
+                )}
+              </label>
+            ))}
+            <div className="button-row">
+              <button className="button-link" type="submit">{editingStudentId ? "Update student" : "Add student"}</button>
+              {editingStudentId && <button className="outline-link" type="button" onClick={resetStudentForm}>Cancel edit</button>}
+            </div>
+          </form>
+        </div>
       )}
       {active === "register" && (
         <div className="portal-panel">
