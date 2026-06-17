@@ -621,6 +621,7 @@ function RowActions({ onEdit, onDelete, disabled = false }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState(null);
   const buttonRef = React.useRef(null);
+  const menuRef = React.useRef(null);
 
   const placeMenu = () => {
     const rect = buttonRef.current?.getBoundingClientRect();
@@ -645,6 +646,7 @@ function RowActions({ onEdit, onDelete, disabled = false }) {
     placeMenu();
     const close = (event) => {
       if (buttonRef.current?.contains(event.target)) return;
+      if (menuRef.current?.contains(event.target)) return;
       setOpen(false);
     };
     const update = () => placeMenu();
@@ -671,7 +673,7 @@ function RowActions({ onEdit, onDelete, disabled = false }) {
         ...
       </button>
       {open && (
-        <div className="row-actions-menu" style={position || undefined}>
+        <div ref={menuRef} className="row-actions-menu" style={position || undefined}>
           <button type="button" onClick={() => { setOpen(false); onEdit(); }}>Edit</button>
           <button className="danger" type="button" onClick={() => { setOpen(false); onDelete(); }} disabled={disabled}>Delete</button>
         </div>
