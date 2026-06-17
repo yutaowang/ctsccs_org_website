@@ -35,6 +35,7 @@ const teacherForCourse = (course, teachers, assignments) => {
 };
 
 const teacherDisplayName = (course, teachers, assignments, fallback = "TBD") => {
+  if (course?.teacher_name) return course.teacher_name;
   const teacher = teacherForCourse(course, teachers, assignments);
   return fullName(teacher) || teacher?.short_name || course?.teacher_short_name || fallback;
 };
@@ -133,8 +134,8 @@ function FamilyPortal() {
 
   const load = async () => {
     const [classResult, familyResult, settingResult] = await Promise.all([
-      supabase.from("classes")
-        .select("id, name, short_name, type, classroom, teacher_short_name, class_time_id, class_times(display_time)")
+      supabase.from("public_course_schedule")
+        .select("id, name, short_name, type, classroom, teacher_short_name, teacher_name, class_time_id, display_time")
         .eq("is_open", true).order("name"),
       supabase.from("families").select("*")
         .eq("user_id", session.user.id).maybeSingle(),
@@ -262,7 +263,7 @@ function FamilyPortal() {
     return {
       ...course,
       teacher: teacherDisplayName(course, teachers, assignments),
-      time: course.class_times?.display_time || "Time TBD",
+      time: course.class_times?.display_time || course.display_time || "Time TBD",
       classroom: course.classroom || "Room TBD",
       descriptionLink,
     };
@@ -395,7 +396,7 @@ function FamilyPortal() {
                         <option value="">No class</option>
                         {classes.filter((course) => Number(course.class_time_id) === number).map((course) => (
                           <option value={course.id} key={course.id}>
-                            {course.name}{course.class_times?.display_time ? ` · ${course.class_times.display_time}` : ""}
+                            {course.name}{course.class_times?.display_time || course.display_time ? ` · ${course.class_times?.display_time || course.display_time}` : ""}
                           </option>
                         ))}
                       </select>
