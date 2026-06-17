@@ -44,6 +44,7 @@ export function AuthProvider({ children }) {
       setLoading(false);
     });
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
+      setLoading(true);
       setSession(nextSession);
       if (event === "PASSWORD_RECOVERY") setRecovering(true);
       if (event === "SIGNED_OUT") setRecovering(false);
