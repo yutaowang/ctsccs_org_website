@@ -1268,6 +1268,9 @@ function StaffPortal({ isAdmin }) {
   const [examName, setExamName] = useState("");
   const [gradeScores, setGradeScores] = useState({});
   const [expandedGradeExams, setExpandedGradeExams] = useState({});
+  const [emailTarget, setEmailTarget] = useState("");
+  const [emailDrafts, setEmailDrafts] = useState({});
+  const [emailBusyTarget, setEmailBusyTarget] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", message: "" });
   const [rosterEmailBusy, setRosterEmailBusy] = useState(false);
@@ -1381,6 +1384,62 @@ function StaffPortal({ isAdmin }) {
       setStatus({ error: error.message, message: "" });
     } finally {
       setRosterEmailBusy(false);
+    }
+  };
+
+  const updateEmailDraft = (target, field, value) => {
+    setEmailDrafts((current) => ({
+      ...current,
+      [target]: {
+        subject: "",
+        message: "",
+        ...current[target],
+        [field]: value,
+      },
+    }));
+  };
+
+  const sendStudentEmail = async (target, recipients) => {
+    const draft = emailDrafts[target] || {};
+    const cleanRecipients = Array.from(new Set(recipients.filter(Boolean)));
+    if (!selectedTeacherEmail) {
+      setStatus({ error: "This class does not have a teacher email for CC.", message: "" });
+      return;
+    }
+    if (!cleanRecipients.length) {
+      setStatus({ error: "No valid student email is available.", message: "" });
+      return;
+    }
+    if (!draft.subject?.trim() || !draft.message?.trim()) {
+      setStatus({ error: "Please enter both Title and Content.", message: "" });
+      return;
+    }
+    setEmailBusyTarget(target);
+    setStatus({ error: "", message: "" });
+    try {
+      const result = await fetch("/api/email-students", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({
+          recipients: cleanRecipients,
+          teacherEmail: selectedTeacherEmail,
+          teacherName: teacherDisplayName(selectedCourse, teachers, assignments, "SCCS Teacher"),
+          subject: draft.subject,
+          message: draft.message,
+        }),
+      });
+      const body = await result.json();
+      if (!result.ok) throw new Error(body.error || "Could not send email.");
+      setEmailTarget("");
+      setEmailDrafts((current) => ({ ...current, [target]: { subject: "", message: "" } }));
+      setStatus({ error: "", message: body.message || "Email sent." });
+    } catch (error) {
+      setStatus({ error: error.message, message: "" });
+    } finally {
+      setEmailBusyTarget("");
     }
   };
 
@@ -1619,7 +1678,7 @@ function StaffPortal({ isAdmin }) {
   adminTabs.push(["password", "Password"]);
   const teacherTabs = [
     ["classes", "My Classes"], ["rosters", "Roster"], ["attendance", "Attendance"],
-    ["grades", "Grades"], ["email", "Students Email"], ["password", "Password"],
+    ["grades", "Grades"], ["email", "Email Students"], ["password", "Password"],
   ];
   const tabs = isAdmin ? adminTabs : teacherTabs;
   const query = search.trim().toLowerCase();
@@ -1712,7 +1771,7 @@ function StaffPortal({ isAdmin }) {
       {["rosters", "attendance", "grades", "email"].includes(active) && (
         <div className={`portal-panel ${active === "rosters" ? "print-area" : ""}`}>
           <div className="panel-heading">
-            <div><span>报名单</span><h2>{active === "rosters" ? "Class Roster" : active === "email" ? "Students Email" : active[0].toUpperCase() + active.slice(1)}</h2></div>
+            <div><span>报名单</span><h2>{active === "rosters" ? "Class Roster" : active === "email" ? "Email Students" : active[0].toUpperCase() + active.slice(1)}</h2></div>
             {active === "rosters" && (
               <div className="button-row no-print">
                 <button className="outline-link" type="button" onClick={() => window.print()}>Print Roster</button>
@@ -1901,7 +1960,91 @@ function StaffPortal({ isAdmin }) {
               </div>
             </div>
           )}
-          {active === "email" && <div className="email-list">{rosterRows.map((row) => <a href={`mailto:${row.email}`} key={row.id}>{row.student} · {row.email}</a>)}</div>}
+          {active === "email" && (
+            <div className="student-email-panel">
+              {!rosterRows.length && <div className="empty-state">No students are registered for this class.</div>}
+              {rosterRows.map((row) => {
+                const target = `student-${row.student_id}`;
+                const draft = emailDrafts[target] || {};
+                const expanded = emailTarget === target;
+                return (
+                  <section className="student-email-card" key={row.id}>
+                    <div className="student-email-row">
+                      <div>
+                        <strong>{row.student}</strong>
+                        <span>{row.email || "No email available"}</span>
+                      </div>
+                      <button
+                        className="outline-link"
+                        type="button"
+                        onClick={() => setEmailTarget(expanded ? "" : target)}
+                        disabled={!row.email}
+                      >
+                        Email
+                      </button>
+                    </div>
+                    {expanded && (
+                      <div className="student-email-form">
+                        <input
+                          value={draft.subject || ""}
+                          onChange={(event) => updateEmailDraft(target, "subject", event.target.value)}
+                          placeholder="Title"
+                        />
+                        <textarea
+                          value={draft.message || ""}
+                          onChange={(event) => updateEmailDraft(target, "message", event.target.value)}
+                          placeholder="Content"
+                        />
+                        <button
+                          className="button-link"
+                          type="button"
+                          onClick={() => sendStudentEmail(target, [row.email])}
+                          disabled={emailBusyTarget === target}
+                        >
+                          {emailBusyTarget === target ? "Sending..." : "Send"}
+                        </button>
+                      </div>
+                    )}
+                  </section>
+                );
+              })}
+              {rosterRows.length > 0 && (
+                <section className="student-email-card email-all-card">
+                  <div className="student-email-row">
+                    <div>
+                      <strong>Email to All</strong>
+                      <span>{Array.from(new Set(rosterRows.map((row) => row.email).filter(Boolean))).length} available emails</span>
+                    </div>
+                    <button className="outline-link" type="button" onClick={() => setEmailTarget(emailTarget === "all" ? "" : "all")}>
+                      Email to All
+                    </button>
+                  </div>
+                  {emailTarget === "all" && (
+                    <div className="student-email-form">
+                      <input
+                        value={emailDrafts.all?.subject || ""}
+                        onChange={(event) => updateEmailDraft("all", "subject", event.target.value)}
+                        placeholder="Title"
+                      />
+                      <textarea
+                        value={emailDrafts.all?.message || ""}
+                        onChange={(event) => updateEmailDraft("all", "message", event.target.value)}
+                        placeholder="Content"
+                      />
+                      <button
+                        className="button-link"
+                        type="button"
+                        onClick={() => sendStudentEmail("all", Array.from(new Set(rosterRows.map((row) => row.email).filter(Boolean))))}
+                        disabled={emailBusyTarget === "all"}
+                      >
+                        {emailBusyTarget === "all" ? "Sending..." : "Send"}
+                      </button>
+                    </div>
+                  )}
+                </section>
+              )}
+            </div>
+          )}
         </div>
       )}
       {active === "registrations" && <div className="portal-panel"><div className="panel-heading"><div><span>所有注册课程信息</span><h2>Registration Summary</h2></div></div><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student_id", "Student ID"], ["student", "Student"], ["session_1", "Session 1"], ["session_2", "Session 2"], ["session_3", "Session 3"]]} rows={registrationRows} /></div>}
