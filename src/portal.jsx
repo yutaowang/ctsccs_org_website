@@ -19,6 +19,7 @@ const fullName = (row) => [
   row?.first_name || row?.parent_first_name,
   row?.last_name || row?.parent_last_name,
 ].filter(Boolean).join(" ");
+const hasFamilyId = (value) => String(value ?? "").trim() !== "";
 
 const teacherLabel = (teacher) => (
   fullName(teacher) || teacher?.short_name || teacher?.email_1 || `Teacher ${teacher?.id || ""}`.trim()
@@ -377,7 +378,6 @@ function FamilyPortal() {
         <div className="portal-panel">
           <div className="panel-heading">
             <div><span>学生信息</span><h2>Student</h2></div>
-            <button className="outline-link" type="button" onClick={resetStudentForm}>Add new student</button>
           </div>
           {students.length ? (
             <div className="data-table-wrap student-admin-table">
@@ -422,7 +422,18 @@ function FamilyPortal() {
                     <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
                   </select>
                 ) : (
-                  <input value={student[field]} onChange={(event) => setStudent({ ...student, [field]: event.target.value })} required={["first_name", "last_name", "birth_year"].includes(field)} />
+                  <input
+                    value={student[field]}
+                    onChange={(event) => setStudent({ ...student, [field]: event.target.value })}
+                    required={["first_name", "last_name", "birth_year"].includes(field)}
+                    {...(field === "birth_year" ? {
+                      inputMode: "numeric",
+                      maxLength: 4,
+                      pattern: "\\d{4}",
+                      placeholder: "YYYY",
+                      title: "Enter a 4-digit year, e.g. 2016",
+                    } : {})}
+                  />
                 )}
               </label>
             ))}
@@ -1269,7 +1280,8 @@ function StaffPortal({ isAdmin }) {
           phone: family?.phone,
           student_id: student?.id,
         };
-      });
+      })
+      .filter((row) => hasFamilyId(row.family_id));
   }, [selectedClassId, registrations, students, families]);
   const sendRosterEmail = async () => {
     if (!selectedTeacherEmail) {
@@ -1431,7 +1443,41 @@ function StaffPortal({ isAdmin }) {
       email: family?.email,
       phone: family?.phone,
     };
-  }).filter((row) => Object.values(row).some((value) => String(value || "").toLowerCase().includes(query)));
+  })
+    .filter((row) => hasFamilyId(row.family_id))
+    .filter((row) => Object.values(row).some((value) => String(value || "").toLowerCase().includes(query)));
+  const registrationRows = registrations.map((row) => {
+    const student = students.find((item) => item.id === row.student_id);
+    const family = families.find((item) => item.id === student?.family_id);
+    return {
+      id: row.id,
+      family_id: family?.legacy_family_id || family?.id,
+      parent: fullName(family),
+      student_id: student?.legacy_student_id || student?.id,
+      student: fullName(student),
+      session_1: classes.find((item) => item.id === row.session_1)?.short_name,
+      session_2: classes.find((item) => item.id === row.session_2)?.short_name,
+      session_3: classes.find((item) => item.id === row.session_3)?.short_name,
+    };
+  }).filter((row) => hasFamilyId(row.family_id));
+  const paymentRows = payments.map((row) => {
+    const family = families.find((item) => item.id === row.family_id);
+    const due = Number(row.registration_fee || 0) + Number(row.late_fee || 0);
+    const paid = [
+      row.pay_1_cash, row.pay_1_check, row.pay_2_cash, row.pay_2_check,
+      row.pay_3_cash, row.pay_3_check, row.pay_4_cash, row.pay_4_check,
+      row.pay_5_cash, row.pay_5_check,
+    ].reduce((sum, value) => sum + Number(value || 0), 0);
+    return {
+      id: row.id,
+      family_id: family?.legacy_family_id || family?.id,
+      email: family?.email,
+      name: fullName(family),
+      due,
+      paid,
+      balance: due - paid,
+    };
+  }).filter((row) => hasFamilyId(row.family_id));
 
   return (
     <PortalLayout
@@ -1477,8 +1523,8 @@ function StaffPortal({ isAdmin }) {
           {active === "email" && <div className="email-list">{rosterRows.map((row) => <a href={`mailto:${row.email}`} key={row.id}>{row.student} · {row.email}</a>)}</div>}
         </div>
       )}
-      {active === "registrations" && <div className="portal-panel"><div className="panel-heading"><div><span>所有注册课程信息</span><h2>Registration Summary</h2></div></div><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student_id", "Student ID"], ["student", "Student"], ["session_1", "Session 1"], ["session_2", "Session 2"], ["session_3", "Session 3"]]} rows={registrations.map((row) => { const student = students.find((item) => item.id === row.student_id); const family = families.find((item) => item.id === student?.family_id); return { id: row.id, family_id: family?.legacy_family_id || family?.id, parent: fullName(family), student_id: student?.legacy_student_id || student?.id, student: fullName(student), session_1: classes.find((item) => item.id === row.session_1)?.short_name, session_2: classes.find((item) => item.id === row.session_2)?.short_name, session_3: classes.find((item) => item.id === row.session_3)?.short_name }; })} /></div>}
-      {active === "payments" && <div className="portal-panel"><div className="panel-heading"><div><span>支付记录</span><h2>Payment History</h2></div></div><DataTable columns={[["family_id", "Family ID"], ["email", "Email"], ["name", "Name"], ["due", "Due"], ["paid", "Paid"], ["balance", "Balance"]]} rows={payments.map((row) => { const family = families.find((item) => item.id === row.family_id); const due = Number(row.registration_fee || 0) + Number(row.late_fee || 0); const paid = [row.pay_1_cash, row.pay_1_check, row.pay_2_cash, row.pay_2_check, row.pay_3_cash, row.pay_3_check, row.pay_4_cash, row.pay_4_check, row.pay_5_cash, row.pay_5_check].reduce((sum, value) => sum + Number(value || 0), 0); return { id: row.id, family_id: family?.legacy_family_id || family?.id, email: family?.email, name: fullName(family), due, paid, balance: due - paid }; })} /></div>}
+      {active === "registrations" && <div className="portal-panel"><div className="panel-heading"><div><span>所有注册课程信息</span><h2>Registration Summary</h2></div></div><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student_id", "Student ID"], ["student", "Student"], ["session_1", "Session 1"], ["session_2", "Session 2"], ["session_3", "Session 3"]]} rows={registrationRows} /></div>}
+      {active === "payments" && <div className="portal-panel"><div className="panel-heading"><div><span>支付记录</span><h2>Payment History</h2></div></div><DataTable columns={[["family_id", "Family ID"], ["email", "Email"], ["name", "Name"], ["due", "Due"], ["paid", "Paid"], ["balance", "Balance"]]} rows={paymentRows} /></div>}
       {active === "search" && <div className="portal-panel"><div className="panel-heading"><div><span>家庭与学生搜索</span><h2>Search Families</h2></div></div><label className="standalone-field"><span>Family ID, parent/student name, phone, or email</span><input value={search} onChange={(event) => setSearch(event.target.value)} /></label><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"]]} rows={searchRows} empty="Enter a search term." /></div>}
       {active === "print" && <div className="portal-panel print-area"><div className="panel-heading"><div><span>打印注册信息</span><h2>Print Registration</h2></div><button className="outline-link no-print" type="button" onClick={() => window.print()}>Print</button></div><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"]]} rows={searchRows} empty="Use Family Search first, then return here to print selected information." /></div>}
       {active === "staff" && <StaffUserManager />}
