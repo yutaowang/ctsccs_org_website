@@ -193,6 +193,7 @@ function Slideshow() {
       <div className="hero-copy">
         <p>Welcome to SCCS</p>
         <h1>在语言里认识文化<br />在社区中一起成长</h1>
+        <p className="hero-subtitle">Discover culture through language. Grow together in community.</p>
         <SiteLink className="hero-button" to="/registration">
           课程注册 <span aria-hidden="true">→</span>
         </SiteLink>

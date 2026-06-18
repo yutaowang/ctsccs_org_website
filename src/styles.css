@@ -348,6 +348,15 @@ main {
   text-shadow: 0 3px 22px rgba(0, 0, 0, 0.18);
 }
 
+.hero-copy .hero-subtitle {
+  max-width: 520px;
+  margin: 18px 0 0;
+  color: rgba(255, 255, 255, 0.92);
+  font: 600 1rem/1.55 "Noto Sans SC", sans-serif;
+  letter-spacing: 0;
+  text-transform: none;
+}
+
 .hero-button {
   display: inline-flex;
   margin-top: 28px;
