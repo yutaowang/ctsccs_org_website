@@ -1173,10 +1173,22 @@ function TeacherManager({ teachers, onReload, setStatus }) {
 
   const deleteTeacher = async (teacher) => {
     if (!window.confirm(`Delete teacher ${fullName(teacher) || teacher.short_name || teacher.id}?`)) return;
+    if (assignments.some((assignment) => assignment.teacher_id === teacher.id)) {
+      setStatus({
+        error: "Please remove all classes assigned to this teacher before deleting this teacher account.",
+        message: "",
+      });
+      return;
+    }
     setBusy(true);
     const result = await supabase.from("teachers").delete().eq("id", teacher.id);
     if (result.error) {
-      setStatus({ error: result.error.message, message: "" });
+      const message = result.error.code === "23503"
+        ? "Please remove all classes assigned to this teacher before deleting this teacher account."
+        : result.error.code === "23514"
+          ? "Please remove all classes assigned to this teacher before deleting this teacher account."
+        : result.error.message;
+      setStatus({ error: message, message: "" });
     } else {
       if (form.id === teacher.id) setForm(emptyTeacher);
       setStatus({ error: "", message: "Teacher deleted." });
