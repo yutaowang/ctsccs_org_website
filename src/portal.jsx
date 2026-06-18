@@ -1067,7 +1067,7 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
   );
 }
 
-function TeacherManager({ teachers, onReload, setStatus }) {
+function TeacherManager({ teachers, assignments = [], onReload, setStatus }) {
   const { session } = useAuth();
   const emptyTeacher = {
     id: "",
@@ -1795,7 +1795,7 @@ function StaffPortal({ isAdmin }) {
     >
       <Status status={status} />
       {active === "classes" && (isAdmin ? <ClassManager classes={classes} classTimes={classTimes} teachers={teachers} assignments={assignments} registrations={registrations} onReload={load} setStatus={setStatus} /> : <div className="portal-panel"><div className="panel-heading"><div><span>课程</span><h2>My Classes</h2></div></div><DataTable columns={[["id", "ID"], ["name", "Name"], ["count", "Registered"], ["available", "Available"], ["teacher", "Teacher"], ["room", "Room"], ["time", "Time"]]} rows={classRows} /></div>)}
-      {active === "teachers" && <TeacherManager teachers={teachers} onReload={load} setStatus={setStatus} />}
+      {active === "teachers" && <TeacherManager teachers={teachers} assignments={assignments} onReload={load} setStatus={setStatus} />}
       {["rosters", "attendance", "grades", "email"].includes(active) && (
         <div className={`portal-panel ${active === "rosters" ? "print-area" : ""}`}>
           <div className="panel-heading">
