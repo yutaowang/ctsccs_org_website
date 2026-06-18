@@ -8,7 +8,8 @@ const STAFF_ROLES = new Set([
   "sccs_admin_team_role",
   "sccs_teacher_ta_role",
 ]);
-const ADMIN_EMAIL = "ywang@ctsccs.org";
+const ADMIN_USERNAME = "admin";
+const DEFAULT_ADMIN_EMAIL = "superadmin@ctsccs.org";
 
 function AdminShell({ children }) {
   return (
@@ -51,7 +52,16 @@ export function AdminPage({ Link }) {
     setChecking(true);
     setError("");
     const normalized = identifier.trim().toLowerCase();
-    const email = normalized === "admin" ? ADMIN_EMAIL : normalized;
+    let email = normalized;
+    if (normalized === ADMIN_USERNAME) {
+      try {
+        const response = await fetch(`/api/admin-profile?username=${encodeURIComponent(ADMIN_USERNAME)}`);
+        const body = await response.json();
+        email = response.ok ? body.email || DEFAULT_ADMIN_EMAIL : DEFAULT_ADMIN_EMAIL;
+      } catch {
+        email = DEFAULT_ADMIN_EMAIL;
+      }
+    }
     if (!email.endsWith("@ctsccs.org")) {
       setChecking(false);
       setError("Staff access requires a ctsccs.org email address. Please contact IT.");
@@ -67,6 +77,12 @@ export function AdminPage({ Link }) {
       .select("role")
       .eq("user_id", result.data.user.id)
       .maybeSingle();
+    if (roleResult.data?.role === "admin" && normalized !== ADMIN_USERNAME) {
+      await supabase.auth.signOut();
+      setChecking(false);
+      setError("Administrator must sign in with username admin.");
+      return;
+    }
     if (!STAFF_ROLES.has(roleResult.data?.role)) {
       await supabase.auth.signOut();
       setChecking(false);

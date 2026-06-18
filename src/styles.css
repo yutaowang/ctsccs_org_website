@@ -2220,6 +2220,11 @@ footer {
   min-height: 140px;
   resize: vertical;
 }
+
+.password-panel-stack {
+  display: grid;
+  gap: 18px;
+}
 .roster-summary {
   display: grid;
   margin-bottom: 20px;
