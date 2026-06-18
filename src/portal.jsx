@@ -61,6 +61,10 @@ const compareValues = (left, right) => {
   });
 };
 
+const sortedByLabel = (items, labelFor) => (
+  [...items].sort((left, right) => compareValues(labelFor(left), labelFor(right)))
+);
+
 const classStatusRank = (course) => (course?.is_open === false ? 1 : 0);
 
 function settingDate(value) {
@@ -419,7 +423,8 @@ function FamilyPortal() {
                 <span>{field.replaceAll("_", " ")}</span>
                 {field === "gender" ? (
                   <select value={student[field]} onChange={(event) => setStudent({ ...student, [field]: event.target.value })} required>
-                    <option value="">Select</option><option>Male</option><option>Female</option><option>Other</option>
+                    <option value="">Select</option>
+                    {["Female", "Male", "Other"].map((option) => <option key={option}>{option}</option>)}
                   </select>
                 ) : (
                   <input
@@ -474,7 +479,10 @@ function FamilyPortal() {
                         })}
                       >
                         <option value="">No class</option>
-                        {classes.filter((course) => Number(course.class_time_id) === number).map((course) => (
+                        {sortedByLabel(
+                          classes.filter((course) => Number(course.class_time_id) === number),
+                          (course) => course.name || course.short_name || "",
+                        ).map((course) => (
                           <option value={course.id} key={course.id}>
                             {course.name}{course.class_times?.display_time || course.display_time ? ` · ${course.class_times?.display_time || course.display_time}` : ""}
                           </option>
@@ -981,6 +989,8 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
     || compareValues(left.class_times?.display_time || "", right.class_times?.display_time || "")
     || compareValues(left.name || left.short_name || "", right.name || right.short_name || "")
   ));
+  const teacherOptions = sortedByLabel(teachers, teacherLabel);
+  const classTimeOptions = sortedByLabel(classTimes, (time) => time.display_time || time.name || time.id);
 
   return (
     <div className="portal-panel">
@@ -1000,16 +1010,16 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
           <form className="portal-form staff-user-form" onSubmit={saveClass}>
             <label><span>Class name</span><input value={form.name} onChange={(event) => setForm({ ...form, name: event.target.value })} required /></label>
             <label><span>Short name</span><input value={form.short_name} onChange={(event) => setForm({ ...form, short_name: event.target.value })} placeholder="e.g. CN3" /></label>
-            <label><span>Teacher</span><select value={form.teacher_id} onChange={(event) => updateClassTeacher(event.target.value)}><option value="">No teacher assigned</option>{teachers.map((teacher) => <option value={teacher.id} key={teacher.id}>{teacherLabel(teacher)}</option>)}</select></label>
+            <label><span>Teacher</span><select value={form.teacher_id} onChange={(event) => updateClassTeacher(event.target.value)}><option value="">No teacher assigned</option>{teacherOptions.map((teacher) => <option value={teacher.id} key={teacher.id}>{teacherLabel(teacher)}</option>)}</select></label>
             <label><span>Teacher short name</span><input value={form.teacher_short_name} readOnly /></label>
-            <label><span>Class time</span><select value={form.class_time_id} onChange={(event) => setForm({ ...form, class_time_id: event.target.value })}><option value="">No time selected</option>{classTimes.map((time) => <option value={time.id} key={time.id}>{time.display_time || time.name || time.id}</option>)}</select></label>
+            <label><span>Class time</span><select value={form.class_time_id} onChange={(event) => setForm({ ...form, class_time_id: event.target.value })}><option value="">No time selected</option>{classTimeOptions.map((time) => <option value={time.id} key={time.id}>{time.display_time || time.name || time.id}</option>)}</select></label>
             <label><span>Classroom</span><input value={form.classroom} onChange={(event) => setForm({ ...form, classroom: event.target.value })} /></label>
             <label><span>Type</span><input value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} /></label>
             <label><span>Maximum seats</span><input type="number" min="0" value={form.maximum} onChange={(event) => setForm({ ...form, maximum: event.target.value })} /></label>
             <label><span>Tuition / donation</span><input type="number" min="0" value={form.donation} onChange={(event) => setForm({ ...form, donation: event.target.value })} /></label>
             <label><span>Equivalent</span><input value={form.equivalent} onChange={(event) => setForm({ ...form, equivalent: event.target.value })} /></label>
             <label className="wide"><span>Textbook</span><input value={form.textbook} onChange={(event) => setForm({ ...form, textbook: event.target.value })} /></label>
-            <label><span>Status</span><select value={form.is_open ? "open" : "closed"} onChange={(event) => setForm({ ...form, is_open: event.target.value === "open" })}><option value="open">Open</option><option value="closed">Closed</option></select></label>
+            <label><span>Status</span><select value={form.is_open ? "open" : "closed"} onChange={(event) => setForm({ ...form, is_open: event.target.value === "open" })}><option value="closed">Closed</option><option value="open">Open</option></select></label>
             <div className="button-row">
               <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update class" : "Create class"}</button>
               {form.id && <button className="outline-link" type="button" onClick={() => setForm(emptyClass)}>Cancel edit</button>}
@@ -1323,7 +1333,10 @@ function StaffPortal({ isAdmin }) {
       assignments.filter((row) => row.teacher_id === teacherId).map((row) => row.class_id),
     );
   }, [assignments, classes, isAdmin, teacherId]);
-  const visibleClasses = classes.filter((row) => visibleClassIds.has(row.id));
+  const visibleClasses = sortedByLabel(
+    classes.filter((row) => visibleClassIds.has(row.id)),
+    (course) => course.name || course.short_name || "",
+  );
   const rosterClasses = visibleClasses.filter((row) => row.is_open !== false);
   const activeClassOptions = active === "rosters" ? rosterClasses : visibleClasses;
   const selectedClassValue = activeClassOptions.some((row) => String(row.id) === String(selectedClass))
@@ -1696,14 +1709,17 @@ function StaffPortal({ isAdmin }) {
   })
     .filter((row) => hasFamilyId(row.family_id))
     .filter((row) => Object.values(row).some((value) => String(value || "").toLowerCase().includes(query)));
-  const printFamilyOptions = Array.from(
+  const printFamilyLabel = (family) => (
+    `${family.legacy_family_id || family.id} ${fullName(family) || family.email || ""}`
+  );
+  const printFamilyOptions = sortedByLabel(Array.from(
     new Map(
       searchRows
         .map((row) => families.find((family) => family.id === row.family_record_id))
         .filter(Boolean)
         .map((family) => [family.id, family]),
     ).values(),
-  );
+  ), printFamilyLabel);
   const selectedPrintFamily = families.find((family) => String(family.id) === String(selectedPrintFamilyId))
     || (printFamilyOptions.length === 1 ? printFamilyOptions[0] : null);
   const selectedPrintStudents = selectedPrintFamily
@@ -1817,10 +1833,10 @@ function StaffPortal({ isAdmin }) {
                     onChange={(event) => saveAttendance(row.student_id, Number(selectedClassValue), event.target.value)}
                   >
                     <option value="" disabled>Select status</option>
-                    <option value="present">Present</option>
                     <option value="absent">Absent</option>
-                    <option value="late">Late</option>
                     <option value="excused">Excused</option>
+                    <option value="late">Late</option>
+                    <option value="present">Present</option>
                   </select>
                 </div>
               ))}
