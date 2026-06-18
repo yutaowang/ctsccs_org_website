@@ -1,5 +1,4 @@
 const ADMIN_USERNAME = "admin";
-const DEFAULT_ADMIN_EMAIL = "superadmin@ctsccs.org";
 const STAFF_EMAIL = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@ctsccs\.org$/i;
 
 function json(response, status, body) {
@@ -104,18 +103,18 @@ export default async function handler(request, response) {
 
   try {
     const configuration = config();
+    const administrator = await requireRootAdmin(request, configuration);
+    if (!administrator) return json(response, 403, { error: "Administrator access required." });
+
     if (request.method === "GET") {
       const username = String(request.query?.username || request.body?.username || ADMIN_USERNAME).trim().toLowerCase();
       if (username !== ADMIN_USERNAME) return json(response, 404, { error: "Admin profile not found." });
       const profile = await getAdminProfile(configuration);
       return json(response, 200, {
         username: ADMIN_USERNAME,
-        email: profile?.email || DEFAULT_ADMIN_EMAIL,
+        email: profile?.email || administrator.user.email || "",
       });
     }
-
-    const administrator = await requireRootAdmin(request, configuration);
-    if (!administrator) return json(response, 403, { error: "Administrator access required." });
 
     const email = String(request.body?.email || "").trim().toLowerCase();
     if (!STAFF_EMAIL.test(email)) {

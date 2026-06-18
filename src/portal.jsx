@@ -1323,7 +1323,9 @@ function StaffPortal({ isAdmin }) {
     let cancelled = false;
     const loadAdminEmail = async () => {
       try {
-        const response = await fetch("/api/admin-profile?username=admin");
+        const response = await fetch("/api/admin-profile?username=admin", {
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
         const body = await response.json();
         if (!cancelled && response.ok) setAdminEmail(body.email || session.user.email || "");
       } catch {
