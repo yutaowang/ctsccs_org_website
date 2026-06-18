@@ -7,7 +7,7 @@ const roles = {
   family: "sccs_family_role",
   teacher: "sccs_teacher_ta_role",
   team: "sccs_admin_team_role",
-  admin: "admin",
+  superadmin: "sccs_superadmin_role",
 };
 const familyFields = [
   "family_name", "parent_first_name", "parent_last_name", "parent_chinese_name",
@@ -1272,8 +1272,6 @@ function StaffPortal({ isAdmin }) {
   const [emailDrafts, setEmailDrafts] = useState({});
   const [emailBusyTarget, setEmailBusyTarget] = useState("");
   const [newPassword, setNewPassword] = useState("");
-  const [adminEmail, setAdminEmail] = useState(session.user.email || "");
-  const [adminEmailBusy, setAdminEmailBusy] = useState(false);
   const [status, setStatus] = useState({ error: "", message: "" });
   const [rosterEmailBusy, setRosterEmailBusy] = useState(false);
 
@@ -1318,23 +1316,6 @@ function StaffPortal({ isAdmin }) {
   useEffect(() => {
     if (active === "classes") load();
   }, [active]);
-  useEffect(() => {
-    if (role !== roles.admin || active !== "password") return;
-    let cancelled = false;
-    const loadAdminEmail = async () => {
-      try {
-        const response = await fetch("/api/admin-profile?username=admin", {
-          headers: { Authorization: `Bearer ${session.access_token}` },
-        });
-        const body = await response.json();
-        if (!cancelled && response.ok) setAdminEmail(body.email || session.user.email || "");
-      } catch {
-        if (!cancelled) setAdminEmail(session.user.email || "");
-      }
-    };
-    loadAdminEmail();
-    return () => { cancelled = true; };
-  }, [active, role, session.user.email]);
 
   const visibleClassIds = useMemo(() => {
     if (isAdmin) return new Set(classes.map((row) => row.id));
@@ -1688,36 +1669,12 @@ function StaffPortal({ isAdmin }) {
     if (!result.error) setNewPassword("");
   };
 
-  const changeAdminEmail = async (event) => {
-    event.preventDefault();
-    setAdminEmailBusy(true);
-    setStatus({ error: "", message: "" });
-    try {
-      const response = await fetch("/api/admin-profile", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${session.access_token}`,
-        },
-        body: JSON.stringify({ email: adminEmail }),
-      });
-      const body = await response.json();
-      if (!response.ok) throw new Error(body.error || "Could not update admin recovery email.");
-      setAdminEmail(body.email || adminEmail);
-      setStatus({ error: "", message: body.message || "Admin recovery email updated." });
-    } catch (error) {
-      setStatus({ error: error.message, message: "" });
-    } finally {
-      setAdminEmailBusy(false);
-    }
-  };
-
   const adminTabs = [
     ["classes", "Classes"], ["teachers", "Teachers"], ["rosters", "Rosters"],
     ["registrations", "Registration Summary"], ["payments", "Payment History"],
     ["search", "Family Search"], ["print", "Print Registration"],
   ];
-  if (role === roles.admin) adminTabs.push(["staff", "ADMINS"], ["settings", "Site Settings"]);
+  if (role === roles.superadmin) adminTabs.push(["staff", "ADMINS"], ["settings", "Site Settings"]);
   adminTabs.push(["password", "Password"]);
   const teacherTabs = [
     ["classes", "My Classes"], ["rosters", "Roster"], ["attendance", "Attendance"],
@@ -1803,7 +1760,7 @@ function StaffPortal({ isAdmin }) {
 
   return (
     <PortalLayout
-      title={role === roles.admin ? "Administrator Portal" : isAdmin ? "Management Team Portal" : "Teacher / TA Portal"}
+      title={role === roles.superadmin ? "Administrator Portal" : isAdmin ? "Management Team Portal" : "Teacher / TA Portal"}
       tabs={tabs}
       active={active}
       setActive={setActive}
@@ -2191,17 +2148,6 @@ function StaffPortal({ isAdmin }) {
             <label className="wide"><span>New password</span><input type="password" minLength="12" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} required /></label>
             <button className="button-link" type="submit">Update password</button>
           </form>
-          {role === roles.admin && (
-            <form className="portal-form compact" onSubmit={changeAdminEmail}>
-              <div className="panel-heading"><div><span>恢复邮箱</span><h2>Admin Recovery Email</h2></div></div>
-              <div className="form-message">Root admin still signs in with username <strong>admin</strong>. This email is used behind the scenes for password recovery.</div>
-              <label className="wide">
-                <span>Recovery email</span>
-                <input type="email" pattern="^[^@\s]+@ctsccs\.org$" value={adminEmail} onChange={(event) => setAdminEmail(event.target.value)} required />
-              </label>
-              <button className="button-link" type="submit" disabled={adminEmailBusy}>{adminEmailBusy ? "Updating..." : "Update recovery email"}</button>
-            </form>
-          )}
         </div>
       )}
     </PortalLayout>

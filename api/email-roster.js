@@ -1,6 +1,6 @@
 import nodemailer from "nodemailer";
 
-const ALLOWED_ROLES = new Set(["admin", "sccs_admin_team_role", "sccs_teacher_ta_role"]);
+const ALLOWED_ROLES = new Set(["sccs_superadmin_role", "sccs_admin_team_role", "sccs_teacher_ta_role"]);
 const EMAIL_PATTERN =
   /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/;
 

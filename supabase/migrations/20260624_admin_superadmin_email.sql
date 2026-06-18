@@ -1,2 +1,0 @@
--- Root admin signs in with username "admin"; the backing Supabase Auth email
--- is stored in sccs.admins.email and can be changed from the Password page.

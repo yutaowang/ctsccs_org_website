@@ -1,4 +1,5 @@
 const STAFF_ROLE = "sccs_admin_team_role";
+const SUPERADMIN_ROLE = "sccs_superadmin_role";
 const STAFF_EMAIL = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@ctsccs\.org$/i;
 const ROLE_ALIASES = {
   saas_admin_team_role: STAFF_ROLE,
@@ -62,7 +63,7 @@ async function requireAdministrator(request, configuration) {
     `/rest/v1/user_roles?select=role&user_id=eq.${encodeURIComponent(userResult.data.id)}`,
     { profile: "sccs", token },
   );
-  if (!roleResult.ok || roleResult.data?.[0]?.role !== "admin") return null;
+  if (!roleResult.ok || roleResult.data?.[0]?.role !== SUPERADMIN_ROLE) return null;
   return { user: userResult.data, token };
 }
 

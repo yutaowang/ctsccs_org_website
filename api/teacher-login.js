@@ -1,5 +1,5 @@
 const TEACHER_ROLE = "sccs_teacher_ta_role";
-const MANAGER_ROLES = new Set(["admin", "sccs_admin_team_role"]);
+const MANAGER_ROLES = new Set(["sccs_superadmin_role", "sccs_admin_team_role"]);
 const EMAIL_PATTERN =
   /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@(?:[A-Za-z0-9](?:[A-Za-z0-9-]{0,61}[A-Za-z0-9])?\.)+[A-Za-z]{2,63}$/;
 

@@ -1,14 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import { useAuth } from "./auth";
 import { AccountPage } from "./portal";
 import { isSupabaseConfigured, supabase } from "./supabase";
 
 const STAFF_ROLES = new Set([
-  "admin",
+  "sccs_superadmin_role",
   "sccs_admin_team_role",
   "sccs_teacher_ta_role",
 ]);
-const ADMIN_USERNAME = "admin";
 
 function AdminShell({ children }) {
   return (
@@ -26,60 +25,14 @@ export function AdminPage({ Link }) {
   const { session, loading, role, signOut, refreshRole } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
-  const [newPassword, setNewPassword] = useState("");
-  const [mustChangePassword, setMustChangePassword] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
-
-  useEffect(() => {
-    const checkAdministrator = async () => {
-      if (!session || role !== "admin") {
-        setMustChangePassword(false);
-        return;
-      }
-      const { data } = await supabase.from("admins")
-        .select("must_change_password")
-        .eq("user_id", session.user.id)
-        .maybeSingle();
-      setMustChangePassword(Boolean(data?.must_change_password));
-    };
-    checkAdministrator();
-  }, [session, role]);
 
   const login = async (event) => {
     event.preventDefault();
     setChecking(true);
     setError("");
-    const normalized = identifier.trim().toLowerCase();
-    if (normalized === ADMIN_USERNAME) {
-      try {
-        const response = await fetch("/api/admin-login", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ username: ADMIN_USERNAME, password }),
-        });
-        const body = await response.json();
-        if (!response.ok) throw new Error(body.error || "Admin sign in failed.");
-        const sessionResult = await supabase.auth.setSession({
-          access_token: body.session.access_token,
-          refresh_token: body.session.refresh_token,
-        });
-        if (sessionResult.error) throw sessionResult.error;
-        await refreshRole(sessionResult.data.session);
-        setPassword("");
-      } catch (loginError) {
-        setError(loginError.message);
-      } finally {
-        setChecking(false);
-      }
-      return;
-    }
-    const email = normalized;
-    if (email === ADMIN_USERNAME || email.includes("@") && !email.endsWith("@ctsccs.org")) {
-      setChecking(false);
-      setError("Staff access requires a ctsccs.org email address. Please contact IT.");
-      return;
-    }
+    const email = identifier.trim().toLowerCase();
     if (!email.endsWith("@ctsccs.org")) {
       setChecking(false);
       setError("Staff access requires a ctsccs.org email address. Please contact IT.");
@@ -95,12 +48,6 @@ export function AdminPage({ Link }) {
       .select("role")
       .eq("user_id", result.data.user.id)
       .maybeSingle();
-    if (roleResult.data?.role === "admin" && normalized !== ADMIN_USERNAME) {
-      await supabase.auth.signOut();
-      setChecking(false);
-      setError("Administrator must sign in with username admin.");
-      return;
-    }
     if (!STAFF_ROLES.has(roleResult.data?.role)) {
       await supabase.auth.signOut();
       setChecking(false);
@@ -109,29 +56,6 @@ export function AdminPage({ Link }) {
     }
     await refreshRole(result.data.session);
     setPassword("");
-    setChecking(false);
-  };
-
-  const changeInitialPassword = async (event) => {
-    event.preventDefault();
-    setChecking(true);
-    setError("");
-    const result = await supabase.auth.updateUser({ password: newPassword });
-    if (result.error) {
-      setChecking(false);
-      setError(result.error.message);
-      return;
-    }
-    const profileResult = await supabase.from("admins")
-      .update({ must_change_password: false })
-      .eq("user_id", session.user.id);
-    if (profileResult.error) {
-      setChecking(false);
-      setError(profileResult.error.message);
-      return;
-    }
-    setMustChangePassword(false);
-    setNewPassword("");
     setChecking(false);
   };
 
@@ -149,8 +73,8 @@ export function AdminPage({ Link }) {
         </div>
         <form className="auth-form admin-login-form" onSubmit={login}>
           <label>
-            <span>Username or ctsccs.org email</span>
-            <input value={identifier} onChange={(event) => setIdentifier(event.target.value)} autoComplete="username" required />
+            <span>ctsccs.org email</span>
+            <input type="email" value={identifier} onChange={(event) => setIdentifier(event.target.value)} autoComplete="username" required />
           </label>
           <label>
             <span>Password</span>
@@ -174,27 +98,6 @@ export function AdminPage({ Link }) {
           This account is not authorized for the staff portal. Please contact IT.
         </div>
         <button className="outline-link" type="button" onClick={signOut}>Sign out</button>
-      </AdminShell>
-    );
-  }
-
-  if (role === "admin" && mustChangePassword) {
-    return (
-      <AdminShell>
-        <div className="admin-login-intro">
-          <h2>Change initial password</h2>
-          <p>You must replace the temporary password before using administrator tools.</p>
-        </div>
-        <form className="auth-form admin-login-form" onSubmit={changeInitialPassword}>
-          <label>
-            <span>New password</span>
-            <input type="password" minLength="12" value={newPassword} onChange={(event) => setNewPassword(event.target.value)} autoComplete="new-password" required />
-          </label>
-          {error && <div className="form-message error">{error}</div>}
-          <button className="button-link" type="submit" disabled={checking}>
-            {checking ? "Updating..." : "Set new password"}
-          </button>
-        </form>
       </AdminShell>
     );
   }
