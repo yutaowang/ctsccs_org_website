@@ -1,3 +1,5 @@
+import { mailConfig, portalAccountTemplate, sendMail } from "./mail.js";
+
 const STAFF_ROLE = "sccs_admin_team_role";
 const SUPERADMIN_ROLE = "sccs_superadmin_role";
 const STAFF_EMAIL = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@ctsccs\.org$/i;
@@ -180,6 +182,17 @@ async function createStaff(configuration, administratorToken, body) {
     );
     if (!roleResult.ok) throw new Error(roleResult.data?.message || "Could not assign role.");
     await saveTeamProfile(configuration, administratorToken, userId, email, body);
+    const emailConfig = mailConfig("Admin account email service");
+    await sendMail(emailConfig, {
+      to: email,
+      ...portalAccountTemplate({
+        title: "SCCS Admin Team Account",
+        loginUrl: `${emailConfig.siteUrl}/admin`,
+        email,
+        password,
+        roleName: "admin team",
+      }),
+    });
     return { id: userId };
   } catch (error) {
     await supabaseRequest(configuration, `/auth/v1/admin/users/${userId}`, { method: "DELETE" });

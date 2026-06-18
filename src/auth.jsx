@@ -103,11 +103,19 @@ export function LoginPage({ Link, navigate }) {
     setBusy(true);
     setError("");
     setMessage("");
-    const options = { emailRedirectTo: `${window.location.origin}/account` };
     let result;
 
     if (mode === "signup") {
-      result = await supabase.auth.signUp({ email, password, options });
+      const response = await fetch("/api/create-account", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email, password }),
+      });
+      const body = await response.json();
+      result = response.ok ? { data: body, error: null } : {
+        data: null,
+        error: new Error(body.error || "Account creation failed."),
+      };
     } else if (mode === "reset") {
       const response = await fetch("/api/forgot-password", {
         method: "POST",
@@ -125,7 +133,7 @@ export function LoginPage({ Link, navigate }) {
 
     setBusy(false);
     if (result.error) setError(result.error.message);
-    else if (mode === "signup") setMessage("Account created. Please confirm your email.");
+    else if (mode === "signup") setMessage(result.data.message);
     else if (mode === "reset") setMessage(result.data.message);
     else navigate?.("/account");
   };

@@ -1,3 +1,5 @@
+import { mailConfig, portalAccountTemplate, sendMail } from "./mail.js";
+
 const TEACHER_ROLE = "sccs_teacher_ta_role";
 const MANAGER_ROLES = new Set(["sccs_superadmin_role", "sccs_admin_team_role"]);
 const EMAIL_PATTERN =
@@ -142,6 +144,17 @@ export default async function handler(request, response) {
     }
 
     await saveTeacherRole(configuration, userId, teacherId);
+    const emailConfig = mailConfig("Teacher account email service");
+    await sendMail(emailConfig, {
+      to: email,
+      ...portalAccountTemplate({
+        title: "SCCS Teacher / TA Account",
+        loginUrl: `${emailConfig.siteUrl}/admin`,
+        email,
+        password,
+        roleName: "teacher / TA",
+      }),
+    });
     return json(response, 200, { message: "Teacher login saved." });
   } catch (error) {
     console.error("Teacher login operation failed.", error?.message || error);
