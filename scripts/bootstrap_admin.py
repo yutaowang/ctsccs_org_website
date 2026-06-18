@@ -17,8 +17,7 @@ from import_supabase import ROOT, connection_candidates, load_env_file, require_
 
 def parse_args() -> argparse.Namespace:
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--email", default="ywang@ctsccs.org")
-    parser.add_argument("--username", default="admin")
+    parser.add_argument("--email", default="superadmin@ctsccs.org")
     return parser.parse_args()
 
 
@@ -121,11 +120,12 @@ def main() -> int:
             with connection.cursor() as cursor:
                 cursor.execute(
                     """
-                    update sccs.user_roles
-                    set role = 'admin',
+                    insert into sccs.user_roles (user_id, role, teacher_id)
+                    values (%s, 'sccs_superadmin_role'::sccs.app_role, null)
+                    on conflict (user_id) do update
+                    set role = excluded.role,
                         teacher_id = null,
                         updated_at = now()
-                    where user_id = %s
                     """,
                     (user_id,),
                 )
@@ -141,9 +141,9 @@ def main() -> int:
                         must_change_password = true,
                         updated_at = now()
                     """,
-                    (user_id, args.username, email),
+                    (user_id, "superadmin", email),
                 )
-        print(f"Administrator initialized: {email} ({args.username})")
+        print(f"Superadmin initialized: {email}")
         return 0
     finally:
         connection.close()

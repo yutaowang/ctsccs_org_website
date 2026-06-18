@@ -154,6 +154,16 @@ async function saveTeamProfile(configuration, administratorToken, userId, email,
   if (!profileResult.ok) throw new Error(profileResult.data?.message || "Could not save team profile.");
 }
 
+async function saveStaffRole(configuration, userId) {
+  const roleResult = await supabaseRequest(configuration, "/rest/v1/user_roles", {
+    method: "POST",
+    profile: "sccs",
+    prefer: "resolution=merge-duplicates,return=minimal",
+    body: { user_id: userId, role: STAFF_ROLE, teacher_id: null },
+  });
+  if (!roleResult.ok) throw new Error(roleResult.data?.message || "Could not assign role.");
+}
+
 async function createStaff(configuration, administratorToken, body) {
   const { email, password } = validateStaffPayload(body);
   const created = await supabaseRequest(configuration, "/auth/v1/admin/users", {
@@ -169,18 +179,7 @@ async function createStaff(configuration, administratorToken, body) {
   const userId = created.data.id;
 
   try {
-    const roleResult = await supabaseRequest(
-      configuration,
-      `/rest/v1/user_roles?user_id=eq.${encodeURIComponent(userId)}`,
-      {
-        method: "PATCH",
-        profile: "sccs",
-        token: administratorToken,
-        prefer: "return=minimal",
-        body: { role: STAFF_ROLE, teacher_id: null },
-      },
-    );
-    if (!roleResult.ok) throw new Error(roleResult.data?.message || "Could not assign role.");
+    await saveStaffRole(configuration, userId);
     await saveTeamProfile(configuration, administratorToken, userId, email, body);
     const emailConfig = mailConfig("Admin account email service");
     await sendMail(emailConfig, {
@@ -213,18 +212,7 @@ async function updateStaff(configuration, administratorToken, body) {
   });
   if (!authResult.ok) throw new Error(authResult.data?.message || "Could not update Auth user.");
 
-  const roleResult = await supabaseRequest(
-    configuration,
-    `/rest/v1/user_roles?user_id=eq.${encodeURIComponent(userId)}`,
-    {
-      method: "PATCH",
-      profile: "sccs",
-      token: administratorToken,
-      prefer: "return=minimal",
-      body: { role: STAFF_ROLE, teacher_id: null },
-    },
-  );
-  if (!roleResult.ok) throw new Error(roleResult.data?.message || "Could not update role.");
+  await saveStaffRole(configuration, userId);
   await saveTeamProfile(configuration, administratorToken, userId, email, body);
 }
 
