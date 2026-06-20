@@ -1835,101 +1835,86 @@ footer {
 }
 .donation-summary {
   display: grid;
-  margin-top: 20px;
-  padding: 16px 18px;
-  gap: 8px;
+  margin-top: 12px;
+  padding: 0;
+  gap: 4px;
   color: var(--navy);
-  background: #fff8dc;
-  border: 1px solid #ead891;
-  font-weight: 800;
+  background: transparent;
+  border: 0;
+  font-weight: 700;
 }
 .donation-summary > div {
   display: flex;
   align-items: center;
   justify-content: flex-end;
-  gap: 18px;
+  gap: 12px;
 }
 .donation-summary span {
   color: #62718b;
-  font-size: 0.74rem;
+  font-size: 0.66rem;
   text-transform: uppercase;
 }
 .donation-summary strong {
-  min-width: 90px;
+  min-width: 78px;
+  font-size: 0.78rem;
   text-align: right;
 }
 .donation-total-row {
-  padding-top: 8px;
-  border-top: 1px solid #ead891;
+  padding-top: 4px;
+  border-top: 1px solid var(--line);
 }
 .donation-total-row strong {
-  font-size: 1.2rem;
+  font-size: 0.9rem;
 }
 .registration-notes {
-  margin-top: 14px;
-  padding: 14px 16px;
+  margin-top: 12px;
+  padding: 0;
   color: var(--navy);
-  background: #f8f9fb;
-  border: 1px solid var(--line);
+  background: transparent;
+  border: 0;
 }
 .registration-notes strong {
   display: block;
-  margin-bottom: 8px;
-  font-size: 0.8rem;
+  margin-bottom: 5px;
+  font-size: 0.68rem;
 }
 .registration-notes p {
-  margin: 5px 0 0;
-  font-size: 0.78rem;
+  margin: 3px 0 0;
+  font-size: 0.66rem;
+  line-height: 1.35;
 }
 .office-use {
-  margin-top: 42px;
-  padding-top: 24px;
+  margin-top: 26px;
+  padding-top: 14px;
   color: var(--navy);
-  border-top: 2px solid var(--line);
+  border-top: 1px solid var(--line);
 }
 .office-use h3 {
-  margin: 0 0 22px;
-  font-size: 1rem;
+  margin: 0 0 12px;
+  font-size: 0.78rem;
   text-decoration: underline;
 }
 .office-use-grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
-  gap: 22px 34px;
+  gap: 10px 24px;
 }
 .office-use-grid > div {
-  font-weight: 700;
-}
-.office-line::after {
-  content: "";
-  display: inline-block;
-  width: 150px;
-  margin-left: 8px;
-  border-bottom: 2px solid currentColor;
-  transform: translateY(-3px);
-}
-.office-signatures {
-  display: grid;
-  margin-top: 26px;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 60px;
-}
-.office-signatures h4 {
-  margin: 0 0 18px;
-  font-size: 0.9rem;
-  font-style: italic;
-}
-.office-signatures p {
   display: flex;
-  margin: 18px 0 0;
   align-items: baseline;
-  gap: 12px;
+  gap: 6px;
+  min-width: 0;
+  font-size: 0.68rem;
   font-weight: 700;
 }
-.office-signatures p span {
+.office-use-grid strong,
+.office-use-grid i {
   flex: 1;
-  min-width: 120px;
-  border-bottom: 2px solid currentColor;
+  min-width: 54px;
+  min-height: 1em;
+  border-bottom: 1px solid currentColor;
+  font-style: normal;
+  overflow-wrap: anywhere;
 }
 .student-course-list {
   display: grid;
@@ -2548,8 +2533,7 @@ footer {
   .portal-tabs { padding: 0 12px; }
   .summary-grid, .portal-form { grid-template-columns: 1fr; }
   .summary-grid .wide, .portal-form label.wide { grid-column: auto; }
-  .office-use-grid,
-  .office-signatures {
+  .office-use-grid {
     grid-template-columns: 1fr;
   }
   .student-summary span { text-align: left; }
@@ -2664,27 +2648,23 @@ footer {
   }
   .student-course-table .data-table th:nth-child(1),
   .student-course-table .data-table td:nth-child(1) {
-    width: 15% !important;
+    width: 17% !important;
   }
   .student-course-table .data-table th:nth-child(2),
   .student-course-table .data-table td:nth-child(2) {
-    width: 27% !important;
+    width: 31% !important;
   }
   .student-course-table .data-table th:nth-child(3),
   .student-course-table .data-table td:nth-child(3) {
-    width: 12% !important;
+    width: 13% !important;
   }
   .student-course-table .data-table th:nth-child(4),
   .student-course-table .data-table td:nth-child(4) {
-    width: 19% !important;
+    width: 25% !important;
   }
   .student-course-table .data-table th:nth-child(5),
   .student-course-table .data-table td:nth-child(5) {
-    width: 10% !important;
-  }
-  .student-course-table .data-table th:nth-child(6),
-  .student-course-table .data-table td:nth-child(6) {
-    width: 17% !important;
+    width: 14% !important;
   }
   .data-table th,
   .data-table td {
@@ -2707,45 +2687,53 @@ footer {
     text-decoration: none !important;
   }
   .donation-summary {
-    margin-top: 18px !important;
-    padding: 12px 14px !important;
-    border: 1px solid #d9dfea !important;
-    background: #fff8dc !important;
+    margin-top: 12px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
     break-inside: avoid;
     page-break-inside: avoid;
   }
   .donation-summary > div {
-    gap: 14px !important;
+    gap: 10px !important;
+  }
+  .donation-summary span,
+  .donation-summary strong {
+    font-size: 9pt !important;
   }
   .donation-total-row strong {
-    font-size: 15pt !important;
+    font-size: 10.5pt !important;
   }
   .registration-notes {
-    margin-top: 12px !important;
-    padding: 10px 12px !important;
-    border: 1px solid #d9dfea !important;
-    background: #fff !important;
+    margin-top: 10px !important;
+    padding: 0 !important;
+    border: 0 !important;
+    background: transparent !important;
     break-inside: avoid;
     page-break-inside: avoid;
   }
+  .registration-notes strong {
+    font-size: 9pt !important;
+  }
   .registration-notes p {
-    font-size: 9.5pt !important;
+    font-size: 8.5pt !important;
   }
   .office-use {
-    margin-top: 34px !important;
-    padding-top: 18px !important;
+    margin-top: 22px !important;
+    padding-top: 12px !important;
     break-inside: avoid;
     page-break-inside: avoid;
   }
   .office-use h3 {
-    margin-bottom: 18px !important;
-    font-size: 15pt !important;
+    margin-bottom: 10px !important;
+    font-size: 10pt !important;
   }
   .office-use-grid {
-    gap: 20px 28px !important;
+    gap: 8px 18px !important;
+    grid-template-columns: repeat(3, 1fr) !important;
   }
-  .office-signatures {
-    gap: 54px !important;
+  .office-use-grid > div {
+    font-size: 8.5pt !important;
   }
   .student-no-registration,
   .empty-state {

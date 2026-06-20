@@ -343,12 +343,10 @@ function FamilyPortal() {
           {students.map((row) => {
             const registration = registrations[row.id] || {};
             const registeredCourses = registeredCoursesFor(registration);
-            const studentDonationTotal = donationTotal(registeredCourses);
             return (
               <div className="student-summary" key={row.id}>
                 <div className="student-summary-heading">
                   <strong>{fullName(row)} {row.chinese_name && `· ${row.chinese_name}`}</strong>
-                  {registeredCourses.length > 0 && <span>Donation subtotal: {formatDonation(studentDonationTotal)}</span>}
                 </div>
                 {registeredCourses.length ? (
                   <div className="student-course-table data-table-wrap">
@@ -360,7 +358,6 @@ function FamilyPortal() {
                           <th>Classroom</th>
                           <th>Teacher</th>
                           <th>Donation</th>
-                          <th>Introduction</th>
                         </tr>
                       </thead>
                       <tbody>
@@ -371,13 +368,6 @@ function FamilyPortal() {
                             <td>{course.classroom}</td>
                             <td>{course.teacher}</td>
                             <td>{formatDonation(course.donation)}</td>
-                            <td>
-                              {course.descriptionLink && (
-                                <a href={course.descriptionLink} target="_blank" rel="noreferrer">
-                                  Course description
-                                </a>
-                              )}
-                            </td>
                           </tr>
                         ))}
                       </tbody>
@@ -396,30 +386,25 @@ function FamilyPortal() {
           </div>
           <div className="registration-notes">
             <strong>Notes</strong>
-            <p>Safety Patrol Deposit: $40 will be refunded after parents participate in school safety patrol duty.</p>
-            <p>Safety Patrol Deposit: $40 将在家长参与学校值日后退还。</p>
+            <p>1. 填写付款信息 Fill out payment information on both copies;</p>
+            <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
+            <p>3. Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty.</p>
           </div>
           <section className="office-use">
             <h3>For Office Use Only</h3>
             <div className="office-use-grid">
-              <div><span>FamID:</span> <strong>{family.legacy_family_id || family.id || "New"}</strong></div>
-              <div><span>Name:</span> <strong>{fullName(family) || "Not provided"}</strong></div>
-              <div><span>Email:</span> <strong>{session.user.email}</strong></div>
-              <div className="office-line"><span>Total Amount Received $</span></div>
-              <div className="office-line"><span>Check #</span></div>
-              <div className="office-line"><span>Cash $</span></div>
-            </div>
-            <div className="office-signatures">
-              <div>
-                <h4>Payment Received By:</h4>
-                <p>Print Name: <span /></p>
-                <p>Signature: <span /></p>
-              </div>
-              <div>
-                <h4>Paid By:</h4>
-                <p>Print Name: <span /></p>
-                <p>Signature: <span /></p>
-              </div>
+              <div><span>FamID:</span><strong>{family.legacy_family_id || family.id || "New"}</strong></div>
+              <div><span>Name:</span><strong>{fullName(family) || "Not provided"}</strong></div>
+              <div><span>Email:</span><strong>{session.user.email}</strong></div>
+              <div><span>Total Amount Received $</span><i /></div>
+              <div><span>Check #</span><i /></div>
+              <div><span>Cash $</span><i /></div>
+              <div><span>Payment Received By:</span><i /></div>
+              <div><span>Paid By:</span><i /></div>
+              <div><span>Print Name:</span><i /></div>
+              <div><span>Signature:</span><i /></div>
+              <div><span>Print Name:</span><i /></div>
+              <div><span>Signature:</span><i /></div>
             </div>
           </section>
         </div>
@@ -2171,12 +2156,10 @@ function StaffPortal({ isAdmin }) {
               {selectedPrintStudents.map((student) => {
                 const registration = selectedPrintRegistrations[student.id] || {};
                 const registeredCourses = adminRegisteredCoursesFor(registration);
-                const studentDonationTotal = donationTotal(registeredCourses);
                 return (
                   <div className="student-summary" key={student.id}>
                     <div className="student-summary-heading">
                       <strong>{fullName(student)} {student.chinese_name && `· ${student.chinese_name}`}</strong>
-                      {registeredCourses.length > 0 && <span>Donation subtotal: {formatDonation(studentDonationTotal)}</span>}
                     </div>
                     {registeredCourses.length ? (
                       <div className="student-course-table data-table-wrap">
@@ -2188,7 +2171,6 @@ function StaffPortal({ isAdmin }) {
                               <th>Classroom</th>
                               <th>Teacher</th>
                               <th>Donation</th>
-                              <th>Introduction</th>
                             </tr>
                           </thead>
                           <tbody>
@@ -2199,13 +2181,6 @@ function StaffPortal({ isAdmin }) {
                                 <td>{course.classroom}</td>
                                 <td>{course.teacher}</td>
                                 <td>{formatDonation(course.donation)}</td>
-                                <td>
-                                  {course.descriptionLink && (
-                                    <a href={course.descriptionLink} target="_blank" rel="noreferrer">
-                                      Course description
-                                    </a>
-                                  )}
-                                </td>
                               </tr>
                             ))}
                           </tbody>
@@ -2224,30 +2199,25 @@ function StaffPortal({ isAdmin }) {
               </div>
               <div className="registration-notes">
                 <strong>Notes</strong>
-                <p>Safety Patrol Deposit: $40 will be refunded after parents participate in school safety patrol duty.</p>
-                <p>Safety Patrol Deposit: $40 将在家长参与学校值日后退还。</p>
+                <p>1. 填写付款信息 Fill out payment information on both copies;</p>
+                <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
+                <p>3. Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty.</p>
               </div>
               <section className="office-use">
                 <h3>For Office Use Only</h3>
                 <div className="office-use-grid">
-                  <div><span>FamID:</span> <strong>{selectedPrintFamily.legacy_family_id || selectedPrintFamily.id}</strong></div>
-                  <div><span>Name:</span> <strong>{fullName(selectedPrintFamily) || "Not provided"}</strong></div>
-                  <div><span>Email:</span> <strong>{selectedPrintFamily.email || "Not provided"}</strong></div>
-                  <div className="office-line"><span>Total Amount Received $</span></div>
-                  <div className="office-line"><span>Check #</span></div>
-                  <div className="office-line"><span>Cash $</span></div>
-                </div>
-                <div className="office-signatures">
-                  <div>
-                    <h4>Payment Received By:</h4>
-                    <p>Print Name: <span /></p>
-                    <p>Signature: <span /></p>
-                  </div>
-                  <div>
-                    <h4>Paid By:</h4>
-                    <p>Print Name: <span /></p>
-                    <p>Signature: <span /></p>
-                  </div>
+                  <div><span>FamID:</span><strong>{selectedPrintFamily.legacy_family_id || selectedPrintFamily.id}</strong></div>
+                  <div><span>Name:</span><strong>{fullName(selectedPrintFamily) || "Not provided"}</strong></div>
+                  <div><span>Email:</span><strong>{selectedPrintFamily.email || "Not provided"}</strong></div>
+                  <div><span>Total Amount Received $</span><i /></div>
+                  <div><span>Check #</span><i /></div>
+                  <div><span>Cash $</span><i /></div>
+                  <div><span>Payment Received By:</span><i /></div>
+                  <div><span>Paid By:</span><i /></div>
+                  <div><span>Print Name:</span><i /></div>
+                  <div><span>Signature:</span><i /></div>
+                  <div><span>Print Name:</span><i /></div>
+                  <div><span>Signature:</span><i /></div>
                 </div>
               </section>
             </>
