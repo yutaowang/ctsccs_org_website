@@ -1823,6 +1823,8 @@ footer {
 .student-summary {
   display: grid;
   width: 100%;
+  padding-right: 0;
+  padding-left: 0;
   grid-template-columns: minmax(0, 1fr);
   align-items: stretch;
   background: #fff;
@@ -1832,6 +1834,7 @@ footer {
   align-items: center;
   justify-content: space-between;
   gap: 18px;
+  padding: 0 16px;
 }
 .donation-summary {
   display: grid;
