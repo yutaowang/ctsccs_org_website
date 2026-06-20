@@ -351,14 +351,9 @@ function FamilyPortal() {
         <div className="portal-panel print-area">
           <div className="panel-heading">
             <div><span>账户概览</span><h2>Family Summary</h2></div>
-            <div className="button-row no-print">
-              <button className="outline-link" type="button" onClick={() => window.print()}>
-                Print registration summary
-              </button>
-              <button className="button-link" type="button" onClick={startOnlinePayment} disabled={!paymentTotal || paymentBusy}>
-                {paymentBusy ? "Opening payment..." : "Pay online"}
-              </button>
-            </div>
+            <button className="outline-link no-print" type="button" onClick={() => window.print()}>
+              Print registration summary
+            </button>
           </div>
           <dl className="summary-grid">
             <div><dt>Family ID</dt><dd>{family.legacy_family_id || family.id || "New"}</dd></div>
@@ -412,6 +407,11 @@ function FamilyPortal() {
             <div><span>Donation subtotal</span><strong>{formatDonation(familyDonationTotal)}</strong></div>
             <div><span>Safety Patrol Deposit</span><strong>{formatDonation(SAFETY_PATROL_DEPOSIT)}</strong></div>
             <div className="donation-total-row"><span>Total</span><strong>{formatDonation(paymentTotal || familyDonationTotal + SAFETY_PATROL_DEPOSIT)}</strong></div>
+          </div>
+          <div className="payment-action no-print">
+            <button className="button-link" type="button" onClick={startOnlinePayment} disabled={!paymentTotal || paymentBusy}>
+              {paymentBusy ? "Opening payment..." : "Pay online"}
+            </button>
           </div>
           <div className="registration-notes">
             <strong>Notes</strong>

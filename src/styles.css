@@ -1869,6 +1869,11 @@ footer {
 .donation-total-row strong {
   font-size: 0.9rem;
 }
+.payment-action {
+  display: flex;
+  margin-top: 12px;
+  justify-content: flex-end;
+}
 .registration-notes {
   margin-top: 12px;
   padding: 0;
