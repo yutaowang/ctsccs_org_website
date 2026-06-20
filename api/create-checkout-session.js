@@ -29,7 +29,9 @@ async function supabaseRequest(configuration, path, options = {}) {
       Authorization: `Bearer ${options.token || configuration.serviceKey}`,
       "Content-Type": "application/json",
       ...(options.profile ? { "Accept-Profile": options.profile, "Content-Profile": options.profile } : {}),
+      ...(options.prefer ? { Prefer: options.prefer } : {}),
     },
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
   });
   const text = await response.text();
   let data = null;
@@ -41,6 +43,40 @@ async function supabaseRequest(configuration, path, options = {}) {
     }
   }
   return { ok: response.ok, status: response.status, data };
+}
+
+async function loadFamilyForUser(configuration, user) {
+  const byUser = await supabaseRequest(
+    configuration,
+    `/rest/v1/families?select=*&user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
+    { profile: "sccs" },
+  );
+  if (!byUser.ok) throw new Error(byUser.data?.message || "Could not load family profile.");
+  if (byUser.data?.[0]) return byUser.data[0];
+
+  const byEmail = await supabaseRequest(
+    configuration,
+    `/rest/v1/families?select=*&email=ilike.${encodeURIComponent(user.email)}&limit=2`,
+    { profile: "sccs" },
+  );
+  if (!byEmail.ok) throw new Error(byEmail.data?.message || "Could not load family profile.");
+  const candidates = byEmail.data || [];
+  const family = candidates.find((row) => !row.user_id || row.user_id === user.id);
+  if (!family) return null;
+  if (family.user_id === user.id) return family;
+
+  const linked = await supabaseRequest(
+    configuration,
+    `/rest/v1/families?id=eq.${encodeURIComponent(family.id)}`,
+    {
+      method: "PATCH",
+      profile: "sccs",
+      prefer: "return=representation",
+      body: { user_id: user.id },
+    },
+  );
+  if (!linked.ok) throw new Error(linked.data?.message || "Could not link family profile.");
+  return linked.data?.[0] || { ...family, user_id: user.id };
 }
 
 function idsForRegistration(registration) {
@@ -106,13 +142,8 @@ export default async function handler(request, response) {
     }
     const user = userResult.data;
 
-    const familyResult = await supabaseRequest(
-      configuration,
-      `/rest/v1/families?select=*&user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
-      { profile: "sccs" },
-    );
-    const family = familyResult.data?.[0];
-    if (!familyResult.ok || !family) {
+    const family = await loadFamilyForUser(configuration, user);
+    if (!family) {
       return json(response, 400, { error: "Please complete the family profile before paying online." });
     }
 
