@@ -68,6 +68,16 @@ const sortedByLabel = (items, labelFor) => (
 const donationAmount = (course) => Number(course?.donation || 0);
 const donationTotal = (courses) => courses.reduce((sum, course) => sum + donationAmount(course), 0);
 const formatDonation = (value) => `$${Number(value || 0).toLocaleString()}`;
+const formatPaymentAmount = (cents, currency = "usd") => new Intl.NumberFormat("en-US", {
+  style: "currency",
+  currency: String(currency || "usd").toUpperCase(),
+}).format(Number(cents || 0) / 100);
+const formatTimestamp = (value) => {
+  if (!value) return "";
+  const date = new Date(value);
+  if (Number.isNaN(date.getTime())) return "";
+  return date.toLocaleString();
+};
 const SAFETY_PATROL_DEPOSIT = 40;
 
 const classStatusRank = (course) => (course?.is_open === false ? 1 : 0);
@@ -1338,6 +1348,13 @@ function StaffPortal({ isAdmin }) {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [gradeRecords, setGradeRecords] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [paymentForm, setPaymentForm] = useState({
+    family_id: "",
+    method: "cash",
+    amount: "",
+    check_number: "",
+    notes: "",
+  });
   const [userRoles, setUserRoles] = useState([]);
   const [siteSettings, setSiteSettings] = useState([]);
   const [settingKey, setSettingKey] = useState("");
@@ -1371,7 +1388,7 @@ function StaffPortal({ isAdmin }) {
     ];
     if (isAdmin) {
       requests.push(
-        supabase.from("family_registrations").select("*"),
+        supabase.from("payments").select("*").order("paid_at", { ascending: false }),
         supabase.from("user_roles").select("*").order("created_at"),
         supabase.from("site_settings").select("*").order("key"),
       );
@@ -1398,6 +1415,37 @@ function StaffPortal({ isAdmin }) {
   useEffect(() => {
     if (active === "classes") load();
   }, [active]);
+
+  const paymentFamilyOptions = sortedByLabel(
+    families.filter((family) => hasFamilyId(family.legacy_family_id || family.id)),
+    (family) => `${family.legacy_family_id || family.id} ${fullName(family) || family.email || ""}`,
+  );
+  const savePayment = async (event) => {
+    event.preventDefault();
+    const amountCents = Math.round(Number(paymentForm.amount) * 100);
+    if (!paymentForm.family_id || !Number.isFinite(amountCents) || amountCents <= 0) {
+      setStatus({ error: "Please select a family and enter a valid payment amount.", message: "" });
+      return;
+    }
+    const { error } = await supabase.from("payments").insert({
+      family_id: Number(paymentForm.family_id),
+      method: paymentForm.method,
+      amount_cents: amountCents,
+      currency: "usd",
+      paid_at: new Date().toISOString(),
+      status: "paid",
+      check_number: paymentForm.method === "check" ? paymentForm.check_number.trim() || null : null,
+      notes: paymentForm.notes.trim() || null,
+      created_by: session.user.id,
+    });
+    if (error) {
+      setStatus({ error: error.message, message: "" });
+      return;
+    }
+    setPaymentForm({ family_id: "", method: "cash", amount: "", check_number: "", notes: "" });
+    setStatus({ error: "", message: "Payment recorded." });
+    load();
+  };
 
   const visibleClassIds = useMemo(() => {
     if (isAdmin) return new Set(classes.map((row) => row.id));
@@ -1835,20 +1883,19 @@ function StaffPortal({ isAdmin }) {
   }).filter((row) => hasFamilyId(row.family_id));
   const paymentRows = payments.map((row) => {
     const family = families.find((item) => item.id === row.family_id);
-    const due = Number(row.registration_fee || 0) + Number(row.late_fee || 0);
-    const paid = [
-      row.pay_1_cash, row.pay_1_check, row.pay_2_cash, row.pay_2_check,
-      row.pay_3_cash, row.pay_3_check, row.pay_4_cash, row.pay_4_check,
-      row.pay_5_cash, row.pay_5_check,
-    ].reduce((sum, value) => sum + Number(value || 0), 0);
     return {
       id: row.id,
       family_id: family?.legacy_family_id || family?.id,
       email: family?.email,
       name: fullName(family),
-      due,
-      paid,
-      balance: due - paid,
+      method: row.method ? row.method[0].toUpperCase() + row.method.slice(1) : "",
+      amount: formatPaymentAmount(row.amount_cents, row.currency),
+      paid_at: formatTimestamp(row.paid_at),
+      status: row.status,
+      check_number: row.check_number || "",
+      card: row.card_last4 ? `${row.card_brand || "card"} ending ${row.card_last4}` : "",
+      stripe: row.stripe_checkout_session_id || "",
+      notes: row.notes || "",
     };
   }).filter((row) => hasFamilyId(row.family_id));
 
@@ -2145,7 +2192,60 @@ function StaffPortal({ isAdmin }) {
         </div>
       )}
       {active === "registrations" && <div className="portal-panel"><div className="panel-heading"><div><span>所有注册课程信息</span><h2>Registration Summary</h2></div></div><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student_id", "Student ID"], ["student", "Student"], ["session_1", "Session 1"], ["session_2", "Session 2"], ["session_3", "Session 3"]]} rows={registrationRows} /></div>}
-      {active === "payments" && <div className="portal-panel"><div className="panel-heading"><div><span>支付记录</span><h2>Payment History</h2></div></div><DataTable columns={[["family_id", "Family ID"], ["email", "Email"], ["name", "Name"], ["due", "Due"], ["paid", "Paid"], ["balance", "Balance"]]} rows={paymentRows} /></div>}
+      {active === "payments" && (
+        <div className="portal-panel">
+          <div className="panel-heading"><div><span>支付记录</span><h2>Payment History</h2></div></div>
+          <form className="portal-form compact payment-record-form" onSubmit={savePayment}>
+            <label>
+              <span>Family</span>
+              <select value={paymentForm.family_id} onChange={(event) => setPaymentForm({ ...paymentForm, family_id: event.target.value })} required>
+                <option value="">Select family</option>
+                {paymentFamilyOptions.map((family) => (
+                  <option value={family.id} key={family.id}>
+                    {family.legacy_family_id || family.id} · {fullName(family) || family.email || "Family"}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label>
+              <span>Method</span>
+              <select value={paymentForm.method} onChange={(event) => setPaymentForm({ ...paymentForm, method: event.target.value })}>
+                <option value="cash">Cash</option>
+                <option value="check">Check</option>
+              </select>
+            </label>
+            <label>
+              <span>Amount</span>
+              <input type="number" min="0.01" step="0.01" value={paymentForm.amount} onChange={(event) => setPaymentForm({ ...paymentForm, amount: event.target.value })} placeholder="0.00" required />
+            </label>
+            <label>
+              <span>Check #</span>
+              <input value={paymentForm.check_number} onChange={(event) => setPaymentForm({ ...paymentForm, check_number: event.target.value })} disabled={paymentForm.method !== "check"} />
+            </label>
+            <label className="wide">
+              <span>Notes</span>
+              <input value={paymentForm.notes} onChange={(event) => setPaymentForm({ ...paymentForm, notes: event.target.value })} />
+            </label>
+            <button className="button-link" type="submit">Record payment</button>
+          </form>
+          <DataTable
+            columns={[
+              ["family_id", "Family ID"],
+              ["email", "Email"],
+              ["name", "Name"],
+              ["method", "Method"],
+              ["amount", "Amount"],
+              ["paid_at", "Paid At"],
+              ["status", "Status"],
+              ["check_number", "Check #"],
+              ["card", "Card"],
+              ["stripe", "Stripe Session"],
+              ["notes", "Notes"],
+            ]}
+            rows={paymentRows}
+          />
+        </div>
+      )}
       {active === "search" && <div className="portal-panel"><div className="panel-heading"><div><span>家庭与学生搜索</span><h2>Search Families</h2></div></div><label className="standalone-field"><span>Family ID, parent/student name, phone, or email</span><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedPrintFamilyId(""); }} /></label><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"]]} rows={searchRows} empty="Enter a search term." /></div>}
       {active === "print" && (
         <div className="portal-panel print-area">

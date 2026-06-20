@@ -45,11 +45,11 @@ async function supabaseRequest(configuration, path, options = {}) {
   return { ok: response.ok, status: response.status, data };
 }
 
-async function loadFamilyForUser(configuration, user) {
+async function loadFamilyForUser(configuration, user, token) {
   const byUser = await supabaseRequest(
     configuration,
     `/rest/v1/families?select=*&user_id=eq.${encodeURIComponent(user.id)}&limit=1`,
-    { profile: "sccs" },
+    { profile: "sccs", token },
   );
   if (!byUser.ok) throw new Error(byUser.data?.message || "Could not load family profile.");
   if (byUser.data?.[0]) return byUser.data[0];
@@ -57,26 +57,11 @@ async function loadFamilyForUser(configuration, user) {
   const byEmail = await supabaseRequest(
     configuration,
     `/rest/v1/families?select=*&email=ilike.${encodeURIComponent(user.email)}&limit=2`,
-    { profile: "sccs" },
+    { profile: "sccs", token },
   );
   if (!byEmail.ok) throw new Error(byEmail.data?.message || "Could not load family profile.");
   const candidates = byEmail.data || [];
-  const family = candidates.find((row) => !row.user_id || row.user_id === user.id);
-  if (!family) return null;
-  if (family.user_id === user.id) return family;
-
-  const linked = await supabaseRequest(
-    configuration,
-    `/rest/v1/families?id=eq.${encodeURIComponent(family.id)}`,
-    {
-      method: "PATCH",
-      profile: "sccs",
-      prefer: "return=representation",
-      body: { user_id: user.id },
-    },
-  );
-  if (!linked.ok) throw new Error(linked.data?.message || "Could not link family profile.");
-  return linked.data?.[0] || { ...family, user_id: user.id };
+  return candidates.find((row) => row.user_id === user.id) || null;
 }
 
 function idsForRegistration(registration) {
@@ -142,7 +127,7 @@ export default async function handler(request, response) {
     }
     const user = userResult.data;
 
-    const family = await loadFamilyForUser(configuration, user);
+    const family = await loadFamilyForUser(configuration, user, token);
     if (!family) {
       return json(response, 400, { error: "Please complete the family profile before paying online." });
     }
@@ -150,7 +135,7 @@ export default async function handler(request, response) {
     const studentsResult = await supabaseRequest(
       configuration,
       `/rest/v1/students?select=id,first_name,last_name&family_id=eq.${encodeURIComponent(family.id)}`,
-      { profile: "sccs" },
+      { profile: "sccs", token },
     );
     if (!studentsResult.ok) throw new Error(studentsResult.data?.message || "Could not load students.");
     const students = studentsResult.data || [];
@@ -162,7 +147,7 @@ export default async function handler(request, response) {
     const registrationsResult = await supabaseRequest(
       configuration,
       `/rest/v1/class_registrations?select=student_id,session_1,session_2,session_3&student_id=in.(${studentIds.join(",")})`,
-      { profile: "sccs" },
+      { profile: "sccs", token },
     );
     if (!registrationsResult.ok) throw new Error(registrationsResult.data?.message || "Could not load registrations.");
     const registrations = registrationsResult.data || [];
@@ -174,7 +159,7 @@ export default async function handler(request, response) {
     const classesResult = await supabaseRequest(
       configuration,
       `/rest/v1/classes?select=id,name,donation&id=in.(${classIds.join(",")})`,
-      { profile: "sccs" },
+      { profile: "sccs", token },
     );
     if (!classesResult.ok) throw new Error(classesResult.data?.message || "Could not load classes.");
     const classesById = new Map((classesResult.data || []).map((course) => [course.id, course]));
@@ -217,6 +202,7 @@ export default async function handler(request, response) {
 
     const session = await createStripeCheckoutSession(configuration, {
       mode: "payment",
+      client_reference_id: String(family.id),
       customer_email: family.email || user.email,
       success_url: `${configuration.siteUrl}/account?payment=success`,
       cancel_url: `${configuration.siteUrl}/account?payment=cancelled`,

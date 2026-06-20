@@ -1989,6 +1989,13 @@ footer {
 }
 .portal-form .panel-heading, .portal-form button { grid-column: 1 / -1; }
 .portal-form.compact { max-width: 760px; }
+.portal-form.payment-record-form {
+  max-width: none;
+  margin-bottom: 24px;
+  padding: 20px;
+  background: #f5f7fa;
+  border: 1px solid var(--line);
+}
 .portal-form.embedded {
   margin-top: 26px;
   padding: 24px 0 0;
