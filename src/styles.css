@@ -1836,11 +1836,7 @@ footer {
 .donation-summary {
   display: grid;
   margin-top: 12px;
-  margin-left: auto;
   padding: 0;
-  width: max-content;
-  min-width: 280px;
-  max-width: 100%;
   gap: 4px;
   color: var(--navy);
   background: transparent;
@@ -1962,6 +1958,10 @@ footer {
   width: 100%;
   min-width: 100%;
   table-layout: fixed;
+}
+.student-course-table .data-table th:last-child,
+.student-course-table .data-table td:last-child {
+  text-align: right;
 }
 .student-course-table .data-table tbody tr,
 .student-course-table .data-table tbody tr:nth-child(odd),
@@ -2692,10 +2692,6 @@ footer {
   }
   .donation-summary {
     margin-top: 12px !important;
-    margin-left: auto !important;
-    width: max-content !important;
-    min-width: 250px !important;
-    max-width: 100% !important;
     padding: 0 !important;
     border: 0 !important;
     background: transparent !important;
