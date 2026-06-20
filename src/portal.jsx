@@ -142,6 +142,7 @@ function FamilyPortal() {
   const [registrationDeadline, setRegistrationDeadline] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", message: "" });
+  const [paymentBusy, setPaymentBusy] = useState(false);
 
   const load = async () => {
     const [classResult, familyResult, settingResult] = await Promise.all([
@@ -311,6 +312,10 @@ function FamilyPortal() {
   const familyDonationTotal = students.reduce((sum, row) => (
     sum + donationTotal(registeredCoursesFor(registrations[row.id] || {}))
   ), 0);
+  const hasRegisteredCourses = students.some((row) => (
+    registeredCoursesFor(registrations[row.id] || {}).length > 0
+  ));
+  const paymentTotal = hasRegisteredCourses ? familyDonationTotal + SAFETY_PATROL_DEPOSIT : 0;
   const tabs = [
     ["summary", "Summary"],
     ["student", "Student"],
@@ -319,6 +324,25 @@ function FamilyPortal() {
     ["password", "Password"],
   ];
   const registrationChangeOpen = isDateOpenThrough(registrationDeadline);
+  const startOnlinePayment = async () => {
+    setPaymentBusy(true);
+    setStatus({ error: "", message: "" });
+    try {
+      const result = await fetch("/api/create-checkout-session", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+      });
+      const body = await result.json();
+      if (!result.ok) throw new Error(body.error || "Could not start online payment.");
+      window.location.href = body.url;
+    } catch (error) {
+      setPaymentBusy(false);
+      setStatus({ error: error.message, message: "" });
+    }
+  };
 
   return (
     <PortalLayout title="Family Account" tabs={tabs} active={active} setActive={setActive}>
@@ -327,9 +351,14 @@ function FamilyPortal() {
         <div className="portal-panel print-area">
           <div className="panel-heading">
             <div><span>账户概览</span><h2>Family Summary</h2></div>
-            <button className="outline-link no-print" type="button" onClick={() => window.print()}>
-              Print registration summary
-            </button>
+            <div className="button-row no-print">
+              <button className="outline-link" type="button" onClick={() => window.print()}>
+                Print registration summary
+              </button>
+              <button className="button-link" type="button" onClick={startOnlinePayment} disabled={!paymentTotal || paymentBusy}>
+                {paymentBusy ? "Opening payment..." : "Pay online"}
+              </button>
+            </div>
           </div>
           <dl className="summary-grid">
             <div><dt>Family ID</dt><dd>{family.legacy_family_id || family.id || "New"}</dd></div>
@@ -382,7 +411,7 @@ function FamilyPortal() {
           <div className="donation-summary">
             <div><span>Donation subtotal</span><strong>{formatDonation(familyDonationTotal)}</strong></div>
             <div><span>Safety Patrol Deposit</span><strong>{formatDonation(SAFETY_PATROL_DEPOSIT)}</strong></div>
-            <div className="donation-total-row"><span>Total</span><strong>{formatDonation(familyDonationTotal + SAFETY_PATROL_DEPOSIT)}</strong></div>
+            <div className="donation-total-row"><span>Total</span><strong>{formatDonation(paymentTotal || familyDonationTotal + SAFETY_PATROL_DEPOSIT)}</strong></div>
           </div>
           <div className="registration-notes">
             <strong>Notes</strong>
