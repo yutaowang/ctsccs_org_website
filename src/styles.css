@@ -959,6 +959,12 @@ footer {
 .button-link:hover {
   background: #ffd45d;
 }
+.button-link.is-paid,
+.button-link.is-paid:disabled {
+  color: #fff !important;
+  background: #23835c;
+  opacity: 1;
+}
 
 .outline-link {
   color: var(--blue);
@@ -1995,6 +2001,32 @@ footer {
   padding: 20px;
   background: #f5f7fa;
   border: 1px solid var(--line);
+}
+.payment-history-table { min-width: 1120px; }
+.payment-transactions-row td {
+  background: #f8f9fb;
+}
+.payment-transactions-row > td:first-child {
+  width: 82px;
+  color: #5f6d83;
+  font-size: 0.7rem;
+  font-weight: 700;
+}
+.payment-transactions-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.74rem;
+}
+.payment-transactions-table th,
+.payment-transactions-table td {
+  padding: 8px 10px;
+  text-align: left;
+  border-bottom: 1px solid #dfe5ee;
+}
+.payment-transactions-table th {
+  color: #5f6d83;
+  background: #eef2f7;
+  font-weight: 700;
 }
 .portal-form.embedded {
   margin-top: 26px;

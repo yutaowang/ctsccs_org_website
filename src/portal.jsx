@@ -67,6 +67,9 @@ const sortedByLabel = (items, labelFor) => (
 
 const donationAmount = (course) => Number(course?.donation || 0);
 const donationTotal = (courses) => courses.reduce((sum, course) => sum + donationAmount(course), 0);
+const registeredClassIds = (registration) => [1, 2, 3]
+  .map((number) => registration?.[`session_${number}`])
+  .filter(Boolean);
 const formatDonation = (value) => `$${Number(value || 0).toLocaleString()}`;
 const formatPaymentAmount = (cents, currency = "usd") => new Intl.NumberFormat("en-US", {
   style: "currency",
@@ -77,6 +80,10 @@ const formatTimestamp = (value) => {
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleString();
+};
+const csvEscape = (value) => {
+  const text = String(value ?? "");
+  return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 const SAFETY_PATROL_DEPOSIT = 40;
 
@@ -149,6 +156,7 @@ function FamilyPortal() {
   const [teachers, setTeachers] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [registrations, setRegistrations] = useState({});
+  const [familyPayments, setFamilyPayments] = useState([]);
   const [registrationDeadline, setRegistrationDeadline] = useState("");
   const [newPassword, setNewPassword] = useState("");
   const [status, setStatus] = useState({ error: "", message: "" });
@@ -176,10 +184,22 @@ function FamilyPortal() {
       setStatus({ error: familyResult.error.message, message: "" });
       return;
     }
-    if (!familyResult.data) return;
+    if (!familyResult.data) {
+      setFamilyPayments([]);
+      return;
+    }
     setFamily(familyResult.data);
-    const studentResult = await supabase.from("students")
-      .select("*").eq("family_id", familyResult.data.id).order("created_at");
+    const [studentResult, paymentResult] = await Promise.all([
+      supabase.from("students")
+        .select("*").eq("family_id", familyResult.data.id).order("created_at"),
+      supabase.from("payments")
+        .select("*").eq("family_id", familyResult.data.id).order("paid_at", { ascending: false }),
+    ]);
+    if (paymentResult.error) {
+      setStatus({ error: paymentResult.error.message, message: "" });
+      return;
+    }
+    setFamilyPayments(paymentResult.data || []);
     if (studentResult.error) {
       setStatus({ error: studentResult.error.message, message: "" });
       return;
@@ -326,6 +346,10 @@ function FamilyPortal() {
     registeredCoursesFor(registrations[row.id] || {}).length > 0
   ));
   const paymentTotal = hasRegisteredCourses ? familyDonationTotal + SAFETY_PATROL_DEPOSIT : 0;
+  const paidTotalCents = familyPayments
+    .filter((row) => row.status === "paid")
+    .reduce((sum, row) => sum + Number(row.amount_cents || 0), 0);
+  const isPaid = paymentTotal > 0 && paidTotalCents >= Math.round(paymentTotal * 100);
   const tabs = [
     ["summary", "Summary"],
     ["student", "Student"],
@@ -419,8 +443,13 @@ function FamilyPortal() {
             <div className="donation-total-row"><span>Total</span><strong>{formatDonation(paymentTotal || familyDonationTotal + SAFETY_PATROL_DEPOSIT)}</strong></div>
           </div>
           <div className="payment-action no-print">
-            <button className="button-link" type="button" onClick={startOnlinePayment} disabled={!paymentTotal || paymentBusy}>
-              {paymentBusy ? "Opening payment..." : "Pay online"}
+            <button
+              className={`button-link ${isPaid ? "is-paid" : ""}`}
+              type="button"
+              onClick={startOnlinePayment}
+              disabled={!paymentTotal || paymentBusy || isPaid}
+            >
+              {isPaid ? "Paid" : paymentBusy ? "Opening payment..." : "Pay online"}
             </button>
           </div>
           <div className="registration-notes">
@@ -1348,6 +1377,7 @@ function StaffPortal({ isAdmin }) {
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [gradeRecords, setGradeRecords] = useState([]);
   const [payments, setPayments] = useState([]);
+  const [familyPaymentRecords, setFamilyPaymentRecords] = useState([]);
   const [paymentForm, setPaymentForm] = useState({
     family_id: "",
     method: "cash",
@@ -1389,6 +1419,7 @@ function StaffPortal({ isAdmin }) {
     if (isAdmin) {
       requests.push(
         supabase.from("payments").select("*").order("paid_at", { ascending: false }),
+        supabase.from("family_registrations").select("*"),
         supabase.from("user_roles").select("*").order("created_at"),
         supabase.from("site_settings").select("*").order("key"),
       );
@@ -1407,8 +1438,9 @@ function StaffPortal({ isAdmin }) {
     setGradeRecords(results[8].data || []);
     if (isAdmin) {
       setPayments(results[9].data || []);
-      setUserRoles(results[10].data || []);
-      setSiteSettings(results[11].data || []);
+      setFamilyPaymentRecords(results[10].data || []);
+      setUserRoles(results[11].data || []);
+      setSiteSettings(results[12].data || []);
     }
   };
   useEffect(() => { load(); }, [role, teacherId]);
@@ -1881,23 +1913,119 @@ function StaffPortal({ isAdmin }) {
       session_3: classes.find((item) => item.id === row.session_3)?.short_name,
     };
   }).filter((row) => hasFamilyId(row.family_id));
-  const paymentRows = payments.map((row) => {
-    const family = families.find((item) => item.id === row.family_id);
+  const registrationByStudentId = new Map(registrations.map((row) => [row.student_id, row]));
+  const paymentsByFamilyId = payments.reduce((groups, row) => {
+    const familyPayments = groups.get(row.family_id) || [];
+    familyPayments.push(row);
+    groups.set(row.family_id, familyPayments);
+    return groups;
+  }, new Map());
+  const paymentNumber = (value) => {
+    const number = Number(value || 0);
+    return Number.isFinite(number) ? number : 0;
+  };
+  const legacyPaymentForFamily = (family) => familyPaymentRecords.find((row) => (
+    row.family_id === family.id
+    || row.legacy_family_id === family.legacy_family_id
+    || row.legacy_family_id === family.id
+  ));
+  const legacyPaidTotal = (row) => [
+    row?.pay_1_cash, row?.pay_1_check, row?.pay_2_cash, row?.pay_2_check,
+    row?.pay_3_cash, row?.pay_3_check, row?.pay_4_cash, row?.pay_4_check,
+    row?.pay_5_cash, row?.pay_5_check,
+  ].reduce((sum, value) => sum + paymentNumber(value), 0);
+  const legacyRefundTotal = (row) => [
+    row?.pay_3_refund, row?.day_3_refund, row?.day_2_refund, row?.pay_4_refund, row?.pay_5_refund,
+  ].reduce((sum, value) => sum + paymentNumber(value), 0);
+  const legacyMethods = (row) => {
+    const methods = [];
+    if ([row?.pay_1_cash, row?.pay_2_cash, row?.pay_3_cash, row?.pay_4_cash, row?.pay_5_cash]
+      .some((value) => paymentNumber(value) > 0)) methods.push("cash");
+    if ([row?.pay_1_check, row?.pay_2_check, row?.pay_3_check, row?.pay_4_check, row?.pay_5_check]
+      .some((value) => paymentNumber(value) > 0)) methods.push("check");
+    return methods;
+  };
+  const paymentRows = families.map((family) => {
+    const familyStudents = students.filter((student) => student.family_id === family.id);
+    const familyCourses = familyStudents.flatMap((student) => (
+      registeredClassIds(registrationByStudentId.get(student.id))
+        .map((classId) => classes.find((course) => course.id === classId))
+        .filter(Boolean)
+    ));
+    const legacyPayment = legacyPaymentForFamily(family);
+    const tuition = familyCourses.length
+      ? donationTotal(familyCourses)
+      : paymentNumber(legacyPayment?.registration_fee);
+    const pta = familyCourses.length ? SAFETY_PATROL_DEPOSIT : paymentNumber(legacyPayment?.patrol_deposit);
+    const adjust = paymentNumber(legacyPayment?.late_fee);
+    const due = tuition + pta + adjust;
+    const refund = legacyRefundTotal(legacyPayment);
+    const importedPaid = legacyPaidTotal(legacyPayment);
+    const familyPayments = paymentsByFamilyId.get(family.id) || [];
+    const paidCents = familyPayments
+      .filter((payment) => payment.status === "paid")
+      .reduce((sum, payment) => sum + Number(payment.amount_cents || 0), 0);
+    const transactionPaid = paidCents / 100;
+    const paid = importedPaid + transactionPaid;
+    const methods = Array.from(new Set([
+      ...legacyMethods(legacyPayment),
+      ...familyPayments
+        .filter((payment) => payment.status === "paid")
+        .map((payment) => payment.method)
+        .filter(Boolean),
+    ]));
     return {
-      id: row.id,
-      family_id: family?.legacy_family_id || family?.id,
-      email: family?.email,
+      id: family.id,
+      fam_id: family.legacy_family_id || family.id,
+      email: family.email,
       name: fullName(family),
-      method: row.method ? row.method[0].toUpperCase() + row.method.slice(1) : "",
-      amount: formatPaymentAmount(row.amount_cents, row.currency),
-      paid_at: formatTimestamp(row.paid_at),
-      status: row.status,
-      check_number: row.check_number || "",
-      card: row.card_last4 ? `${row.card_brand || "card"} ending ${row.card_last4}` : "",
-      stripe: row.stripe_checkout_session_id || "",
-      notes: row.notes || "",
+      tuition: formatDonation(tuition),
+      pta: formatDonation(pta),
+      adjust: formatDonation(adjust),
+      due: formatDonation(due),
+      refund: formatDonation(refund),
+      paid: formatDonation(paid),
+      balance: formatDonation(due - paid + refund),
+      method: methods.join(", "),
+      transactions: familyPayments.map((payment) => ({
+        id: payment.id,
+        method: payment.method || "",
+        amount: formatPaymentAmount(payment.amount_cents, payment.currency),
+        paid_at: formatTimestamp(payment.paid_at),
+        status: payment.status || "",
+        detail: payment.check_number
+          ? `Check #${payment.check_number}`
+          : payment.card_last4
+            ? `${payment.card_brand || "card"} ending ${payment.card_last4}`
+            : payment.stripe_checkout_session_id || payment.notes || "",
+      })),
+      sort_due: due,
+      sort_paid: paid,
+      sort_balance: due - paid + refund,
     };
-  }).filter((row) => hasFamilyId(row.family_id));
+  }).filter((row) => hasFamilyId(row.fam_id) && (row.sort_due > 0 || row.sort_paid > 0));
+  const exportPaymentHistory = () => {
+    const rows = [
+      [
+        "FamID", "Email", "Name", "Tuition", "PTA", "Adjust", "Due", "Refund", "Paid", "Balance",
+        "Method", "Transaction Status", "Transaction Timestamp", "Transaction Detail",
+      ],
+      ...paymentRows.flatMap((row) => [
+        [row.fam_id, row.email, row.name, row.tuition, row.pta, row.adjust, row.due, row.refund, row.paid, row.balance, row.method, "", "", ""],
+        ...row.transactions.map((payment) => [
+          row.fam_id, "", `Payment ${payment.id}`, "", "", "", "", "", payment.amount, "", payment.method,
+          payment.status, payment.paid_at, payment.detail,
+        ]),
+      ]),
+    ];
+    const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `payment-history-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <PortalLayout
@@ -2194,7 +2322,10 @@ function StaffPortal({ isAdmin }) {
       {active === "registrations" && <div className="portal-panel"><div className="panel-heading"><div><span>所有注册课程信息</span><h2>Registration Summary</h2></div></div><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student_id", "Student ID"], ["student", "Student"], ["session_1", "Session 1"], ["session_2", "Session 2"], ["session_3", "Session 3"]]} rows={registrationRows} /></div>}
       {active === "payments" && (
         <div className="portal-panel">
-          <div className="panel-heading"><div><span>支付记录</span><h2>Payment History</h2></div></div>
+          <div className="panel-heading">
+            <div><span>支付记录</span><h2>Payment History</h2></div>
+            <button className="outline-link" type="button" onClick={exportPaymentHistory}>Export to CSV</button>
+          </div>
           <form className="portal-form compact payment-record-form" onSubmit={savePayment}>
             <label>
               <span>Family</span>
@@ -2228,22 +2359,79 @@ function StaffPortal({ isAdmin }) {
             </label>
             <button className="button-link" type="submit">Record payment</button>
           </form>
-          <DataTable
-            columns={[
-              ["family_id", "Family ID"],
-              ["email", "Email"],
-              ["name", "Name"],
-              ["method", "Method"],
-              ["amount", "Amount"],
-              ["paid_at", "Paid At"],
-              ["status", "Status"],
-              ["check_number", "Check #"],
-              ["card", "Card"],
-              ["stripe", "Stripe Session"],
-              ["notes", "Notes"],
-            ]}
-            rows={paymentRows}
-          />
+          {!paymentRows.length ? (
+            <div className="empty-state">No payment records.</div>
+          ) : (
+            <div className="data-table-wrap">
+              <table className="data-table payment-history-table">
+                <thead>
+                  <tr>
+                    <th>FamID</th>
+                    <th>Email</th>
+                    <th>Name</th>
+                    <th>Tuition</th>
+                    <th>PTA</th>
+                    <th>Adjust</th>
+                    <th>Due</th>
+                    <th>Refund</th>
+                    <th>Paid</th>
+                    <th>Balance</th>
+                    <th>Method</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {paymentRows.map((row) => (
+                    <React.Fragment key={row.id}>
+                      <tr>
+                        <td>{row.fam_id}</td>
+                        <td>{row.email}</td>
+                        <td>{row.name}</td>
+                        <td>{row.tuition}</td>
+                        <td>{row.pta}</td>
+                        <td>{row.adjust}</td>
+                        <td>{row.due}</td>
+                        <td>{row.refund}</td>
+                        <td>{row.paid}</td>
+                        <td>{row.balance}</td>
+                        <td>{row.method}</td>
+                      </tr>
+                      {row.transactions.length > 0 && (
+                        <tr className="payment-transactions-row">
+                          <td aria-label="FamID">{row.fam_id}</td>
+                          <td colSpan="10">
+                            <table className="payment-transactions-table">
+                              <thead>
+                                <tr>
+                                  <th>Payment</th>
+                                  <th>Method</th>
+                                  <th>Amount</th>
+                                  <th>Status</th>
+                                  <th>Timestamp</th>
+                                  <th>Detail</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {row.transactions.map((payment) => (
+                                  <tr key={payment.id}>
+                                    <td>#{payment.id}</td>
+                                    <td>{payment.method}</td>
+                                    <td>{payment.amount}</td>
+                                    <td>{payment.status}</td>
+                                    <td>{payment.paid_at}</td>
+                                    <td>{payment.detail}</td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </td>
+                        </tr>
+                      )}
+                    </React.Fragment>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
       )}
       {active === "search" && <div className="portal-panel"><div className="panel-heading"><div><span>家庭与学生搜索</span><h2>Search Families</h2></div></div><label className="standalone-field"><span>Family ID, parent/student name, phone, or email</span><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedPrintFamilyId(""); }} /></label><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"]]} rows={searchRows} empty="Enter a search term." /></div>}
