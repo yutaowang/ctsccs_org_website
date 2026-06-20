@@ -65,6 +65,11 @@ const sortedByLabel = (items, labelFor) => (
   [...items].sort((left, right) => compareValues(labelFor(left), labelFor(right)))
 );
 
+const donationAmount = (course) => Number(course?.donation || 0);
+const donationTotal = (courses) => courses.reduce((sum, course) => sum + donationAmount(course), 0);
+const formatDonation = (value) => `$${Number(value || 0).toLocaleString()}`;
+const SAFETY_PATROL_DEPOSIT = 40;
+
 const classStatusRank = (course) => (course?.is_open === false ? 1 : 0);
 
 function settingDate(value) {
@@ -141,7 +146,7 @@ function FamilyPortal() {
   const load = async () => {
     const [classResult, familyResult, settingResult] = await Promise.all([
       supabase.from("public_course_schedule")
-        .select("id, name, short_name, type, classroom, teacher_short_name, teacher_name, class_time_id, display_time")
+        .select("id, name, short_name, type, classroom, teacher_short_name, teacher_name, class_time_id, display_time, donation")
         .eq("is_open", true).order("name"),
       supabase.from("families").select("*")
         .eq("user_id", session.user.id).maybeSingle(),
@@ -300,6 +305,12 @@ function FamilyPortal() {
       descriptionLink,
     };
   };
+  const registeredCoursesFor = (registration) => [1, 2, 3]
+    .map((number) => courseDetails(registration?.[`session_${number}`]))
+    .filter(Boolean);
+  const familyDonationTotal = students.reduce((sum, row) => (
+    sum + donationTotal(registeredCoursesFor(registrations[row.id] || {}))
+  ), 0);
   const tabs = [
     ["summary", "Summary"],
     ["student", "Student"],
@@ -331,13 +342,13 @@ function FamilyPortal() {
           {!students.length && <div className="empty-state">No students yet. Use Student to begin.</div>}
           {students.map((row) => {
             const registration = registrations[row.id] || {};
-            const registeredCourses = [1, 2, 3]
-              .map((number) => courseDetails(registration[`session_${number}`]))
-              .filter(Boolean);
+            const registeredCourses = registeredCoursesFor(registration);
+            const studentDonationTotal = donationTotal(registeredCourses);
             return (
               <div className="student-summary" key={row.id}>
                 <div className="student-summary-heading">
                   <strong>{fullName(row)} {row.chinese_name && `· ${row.chinese_name}`}</strong>
+                  {registeredCourses.length > 0 && <span>Donation subtotal: {formatDonation(studentDonationTotal)}</span>}
                 </div>
                 {registeredCourses.length ? (
                   <div className="student-course-table data-table-wrap">
@@ -348,6 +359,7 @@ function FamilyPortal() {
                           <th>Course</th>
                           <th>Classroom</th>
                           <th>Teacher</th>
+                          <th>Donation</th>
                           <th>Introduction</th>
                         </tr>
                       </thead>
@@ -358,6 +370,7 @@ function FamilyPortal() {
                             <td>{course.name || course.short_name}</td>
                             <td>{course.classroom}</td>
                             <td>{course.teacher}</td>
+                            <td>{formatDonation(course.donation)}</td>
                             <td>
                               {course.descriptionLink && (
                                 <a href={course.descriptionLink} target="_blank" rel="noreferrer">
@@ -376,6 +389,39 @@ function FamilyPortal() {
               </div>
             );
           })}
+          <div className="donation-summary">
+            <div><span>Donation subtotal</span><strong>{formatDonation(familyDonationTotal)}</strong></div>
+            <div><span>Safety Patrol Deposit</span><strong>{formatDonation(SAFETY_PATROL_DEPOSIT)}</strong></div>
+            <div className="donation-total-row"><span>Total</span><strong>{formatDonation(familyDonationTotal + SAFETY_PATROL_DEPOSIT)}</strong></div>
+          </div>
+          <div className="registration-notes">
+            <strong>Notes</strong>
+            <p>Safety Patrol Deposit: $40 will be refunded after parents participate in school safety patrol duty.</p>
+            <p>Safety Patrol Deposit: $40 将在家长参与学校值日后退还。</p>
+          </div>
+          <section className="office-use">
+            <h3>For Office Use Only</h3>
+            <div className="office-use-grid">
+              <div><span>FamID:</span> <strong>{family.legacy_family_id || family.id || "New"}</strong></div>
+              <div><span>Name:</span> <strong>{fullName(family) || "Not provided"}</strong></div>
+              <div><span>Email:</span> <strong>{session.user.email}</strong></div>
+              <div className="office-line"><span>Total Amount Received $</span></div>
+              <div className="office-line"><span>Check #</span></div>
+              <div className="office-line"><span>Cash $</span></div>
+            </div>
+            <div className="office-signatures">
+              <div>
+                <h4>Payment Received By:</h4>
+                <p>Print Name: <span /></p>
+                <p>Signature: <span /></p>
+              </div>
+              <div>
+                <h4>Paid By:</h4>
+                <p>Print Name: <span /></p>
+                <p>Signature: <span /></p>
+              </div>
+            </div>
+          </section>
         </div>
       )}
       {active === "student" && (
@@ -1753,6 +1799,12 @@ function StaffPortal({ isAdmin }) {
       descriptionLink: courseDescriptionLinkFor(course.name || course.short_name),
     };
   };
+  const adminRegisteredCoursesFor = (registration) => [1, 2, 3]
+    .map((number) => adminCourseDetails(registration?.[`session_${number}`]))
+    .filter(Boolean);
+  const selectedPrintDonationTotal = selectedPrintStudents.reduce((sum, student) => (
+    sum + donationTotal(adminRegisteredCoursesFor(selectedPrintRegistrations[student.id] || {}))
+  ), 0);
   const registrationRows = registrations.map((row) => {
     const student = students.find((item) => item.id === row.student_id);
     const family = families.find((item) => item.id === student?.family_id);
@@ -2118,13 +2170,13 @@ function StaffPortal({ isAdmin }) {
               {!selectedPrintStudents.length && <div className="empty-state">No students found for this family.</div>}
               {selectedPrintStudents.map((student) => {
                 const registration = selectedPrintRegistrations[student.id] || {};
-                const registeredCourses = [1, 2, 3]
-                  .map((number) => adminCourseDetails(registration[`session_${number}`]))
-                  .filter(Boolean);
+                const registeredCourses = adminRegisteredCoursesFor(registration);
+                const studentDonationTotal = donationTotal(registeredCourses);
                 return (
                   <div className="student-summary" key={student.id}>
                     <div className="student-summary-heading">
                       <strong>{fullName(student)} {student.chinese_name && `· ${student.chinese_name}`}</strong>
+                      {registeredCourses.length > 0 && <span>Donation subtotal: {formatDonation(studentDonationTotal)}</span>}
                     </div>
                     {registeredCourses.length ? (
                       <div className="student-course-table data-table-wrap">
@@ -2135,6 +2187,7 @@ function StaffPortal({ isAdmin }) {
                               <th>Course</th>
                               <th>Classroom</th>
                               <th>Teacher</th>
+                              <th>Donation</th>
                               <th>Introduction</th>
                             </tr>
                           </thead>
@@ -2145,6 +2198,7 @@ function StaffPortal({ isAdmin }) {
                                 <td>{course.name || course.short_name}</td>
                                 <td>{course.classroom}</td>
                                 <td>{course.teacher}</td>
+                                <td>{formatDonation(course.donation)}</td>
                                 <td>
                                   {course.descriptionLink && (
                                     <a href={course.descriptionLink} target="_blank" rel="noreferrer">
@@ -2163,6 +2217,39 @@ function StaffPortal({ isAdmin }) {
                   </div>
                 );
               })}
+              <div className="donation-summary">
+                <div><span>Donation subtotal</span><strong>{formatDonation(selectedPrintDonationTotal)}</strong></div>
+                <div><span>Safety Patrol Deposit</span><strong>{formatDonation(SAFETY_PATROL_DEPOSIT)}</strong></div>
+                <div className="donation-total-row"><span>Total</span><strong>{formatDonation(selectedPrintDonationTotal + SAFETY_PATROL_DEPOSIT)}</strong></div>
+              </div>
+              <div className="registration-notes">
+                <strong>Notes</strong>
+                <p>Safety Patrol Deposit: $40 will be refunded after parents participate in school safety patrol duty.</p>
+                <p>Safety Patrol Deposit: $40 将在家长参与学校值日后退还。</p>
+              </div>
+              <section className="office-use">
+                <h3>For Office Use Only</h3>
+                <div className="office-use-grid">
+                  <div><span>FamID:</span> <strong>{selectedPrintFamily.legacy_family_id || selectedPrintFamily.id}</strong></div>
+                  <div><span>Name:</span> <strong>{fullName(selectedPrintFamily) || "Not provided"}</strong></div>
+                  <div><span>Email:</span> <strong>{selectedPrintFamily.email || "Not provided"}</strong></div>
+                  <div className="office-line"><span>Total Amount Received $</span></div>
+                  <div className="office-line"><span>Check #</span></div>
+                  <div className="office-line"><span>Cash $</span></div>
+                </div>
+                <div className="office-signatures">
+                  <div>
+                    <h4>Payment Received By:</h4>
+                    <p>Print Name: <span /></p>
+                    <p>Signature: <span /></p>
+                  </div>
+                  <div>
+                    <h4>Paid By:</h4>
+                    <p>Print Name: <span /></p>
+                    <p>Signature: <span /></p>
+                  </div>
+                </div>
+              </section>
             </>
           )}
         </div>

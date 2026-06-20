@@ -1,5 +1,42 @@
 # SCCS Website Change Log
 
+## 2026-06-19
+
+- Updated `/admin` to use unified email-based staff login.
+- Added `sccs_superadmin_role` for superadmin access and limited the `ADMINS` page to superadmins.
+- Removed the legacy `admin` username login flow and aligned the bootstrap script with the superadmin role model.
+- Added admin team account creation emails with login links and temporary passwords.
+- Fixed admin team role provisioning to upsert `sccs_admin_team_role` reliably when creating or updating admin users.
+- Added teacher temporary-password login setup and teacher account emails with login links.
+- Added family account email validation for new accounts created from the public login page.
+- Ensured system-generated emails use `MAIL_FROM_ADDRESS` from environment configuration.
+- Sorted portal dropdown lists alphabetically.
+- Added collapsible editor panels for Classes, Teachers, and Admins.
+- Added sortable admin tables and default Classes sorting by open status and time.
+- Added roster printing and roster email-to-teacher support with improved PDF table formatting.
+- Filtered registration and roster class lists to open classes only.
+- Added selected-class details to the ROSTERS page above roster records.
+- Updated Classes teacher selection to fill the read-only teacher short-name field automatically.
+- Added Family Portal student CRUD and renamed `Add Student` to `Student`.
+- Restricted student birth year input to `YYYY`.
+- Hid records with missing Family ID from relevant admin/family views.
+- Fixed row action menus so Edit/Delete remain visible for short tables and close after use.
+- Updated Family Summary and Courses views to show teacher full names instead of short names.
+- Added course description PDF links and course descriptions on the Courses page.
+- Updated Courses category display/order to Chinese, Math, Art&PE, then SAT.
+- Added Admin Portal `Print Registration` search flow for printing a selected family's Family Summary.
+- Fixed Family Summary print layout so registration tables use the printable page width.
+- Added Attendance page date selection, attendance saving, and expandable attendance history by date.
+- Added Grades page exam entry, score saving, and expandable grade history by exam.
+- Renamed teacher email page back to `Email Students`.
+- Added teacher-to-student email sending with single-student and email-all workflows, CC'ing the teacher.
+- Added the `ctsccs.org` teacher email requirement note to Email Students.
+- Updated the homepage hero text with English translations for the Chinese slogan.
+- Changed admin navigation label from `Staff` to `ADMINS`.
+- Updated portal labels to use `Online Registration` before login and `My SCCS Portal` after login.
+- Fixed teacher deletion behavior, including role cleanup when teacher accounts are removed.
+- Improved the delete-teacher error when classes are still assigned to the teacher.
+
 ## 2026-06-15 22:33:35 -0400
 
 - Added full CRUD management for `Classes` in the admin portal.

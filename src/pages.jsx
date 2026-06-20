@@ -1,5 +1,5 @@
 ﻿import React, { useEffect, useState } from "react";
-import { publicSupabase, supabase } from "./supabase";
+import { supabase } from "./supabase";
 
 const oldSite = "https://ctsccs.org/";
 
@@ -574,16 +574,24 @@ function Feedback() {
     setBusy(true);
     setError("");
     const form = new FormData(event.currentTarget);
-    const result = await publicSupabase?.from("feedback").insert({
-      name: form.get("name"),
-      email: form.get("email"),
-      phone: form.get("phone") || null,
-      message: form.get("message"),
+    const response = await fetch("/api/feedback", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        name: form.get("name"),
+        email: form.get("email"),
+        phone: form.get("phone") || "",
+        message: form.get("message"),
+      }),
     });
+    const result = await response.json();
     setBusy(false);
-    if (!publicSupabase) setError("Supabase is not configured.");
-    else if (result.error) setError(result.error.message);
-    else setSubmitted(true);
+    if (!response.ok) {
+      setError(result.error || "Feedback submission failed.");
+      return;
+    }
+    setSubmitted(true);
+    event.currentTarget.reset();
   };
 
   return (
@@ -591,7 +599,7 @@ function Feedback() {
       <Section>
         <p className="lead">Thank you for visiting the SCCS website. If you have any difficulties, questions, ideas or suggestions, please send us a message. Your feedback helps make this site better.</p>
         {submitted ? (
-          <div className="success-message"><strong>谢谢您的反馈！</strong><p>此演示站已接收表单内容。正式上线时可连接学校邮箱或后端服务。</p></div>
+          <div className="success-message"><strong>谢谢您的反馈！</strong><p>We received your feedback and sent it to the SCCS team.</p></div>
         ) : (
           <form className="feedback-form" onSubmit={submitFeedback}>
             <label><span>Your Name *</span><input name="name" required /></label>
