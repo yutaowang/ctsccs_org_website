@@ -71,11 +71,11 @@ export function AuthProvider({ children }) {
 
 export const useAuth = () => useContext(AuthContext);
 
-function Layout({ title, children }) {
+function Layout({ title, children, wide = false }) {
   return (
     <article className="inner-page">
       <header className="page-title"><span>Online Registration</span><h1>{title}</h1></header>
-      <section className="page-section auth-card">{children}</section>
+      <section className={`page-section auth-card ${wide ? "wide" : ""}`}>{children}</section>
     </article>
   );
 }
@@ -90,6 +90,18 @@ export function LoginPage({ Link, navigate }) {
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [signupProfile, setSignupProfile] = useState({
+    family_name: "",
+    parent_first_name: "",
+    parent_last_name: "",
+    parent_chinese_name: "",
+    address: "",
+    city: "",
+    state: "CT",
+    zip: "",
+    phone: "",
+    wechat: "",
+  });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
   const [error, setError] = useState("");
@@ -142,7 +154,7 @@ export function LoginPage({ Link, navigate }) {
       const response = await fetch("/api/create-account", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ email, password }),
+        body: JSON.stringify({ email, password, profile: signupProfile }),
       });
       const body = await response.json();
       result = response.ok ? { data: body, error: null } : {
@@ -192,9 +204,23 @@ export function LoginPage({ Link, navigate }) {
   };
 
   return (
-    <Layout title={titles[mode]}>
-      <form className="auth-form" onSubmit={submit}>
-        <label><span>Email</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
+    <Layout title={titles[mode]} wide={mode === "signup"}>
+      <form className={`auth-form ${mode === "signup" ? "signup-form" : ""}`} onSubmit={submit}>
+        {mode === "signup" && (
+          <>
+            <label><span>Family Name</span><input value={signupProfile.family_name} onChange={(e) => setSignupProfile({ ...signupProfile, family_name: e.target.value })} /></label>
+            <label><span>Parent First Name</span><input value={signupProfile.parent_first_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_first_name: e.target.value })} required /></label>
+            <label><span>Parent Last Name</span><input value={signupProfile.parent_last_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_last_name: e.target.value })} required /></label>
+            <label><span>Parent Chinese Name</span><input value={signupProfile.parent_chinese_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_chinese_name: e.target.value })} /></label>
+            <label className="wide"><span>Address</span><input value={signupProfile.address} onChange={(e) => setSignupProfile({ ...signupProfile, address: e.target.value })} required /></label>
+            <label><span>City</span><input value={signupProfile.city} onChange={(e) => setSignupProfile({ ...signupProfile, city: e.target.value })} /></label>
+            <label><span>State</span><input value={signupProfile.state} onChange={(e) => setSignupProfile({ ...signupProfile, state: e.target.value })} /></label>
+            <label><span>Zip</span><input value={signupProfile.zip} onChange={(e) => setSignupProfile({ ...signupProfile, zip: e.target.value })} /></label>
+            <label><span>Phone</span><input type="tel" value={signupProfile.phone} onChange={(e) => setSignupProfile({ ...signupProfile, phone: e.target.value })} required /></label>
+            <label><span>Wechat</span><input value={signupProfile.wechat} onChange={(e) => setSignupProfile({ ...signupProfile, wechat: e.target.value })} /></label>
+          </>
+        )}
+        <label className={mode === "signup" ? "wide" : ""}><span>{mode === "signup" ? "Email / Username" : "Email"}</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
         {mode !== "reset" && (
           <label><span>Password</span><input type="password" minLength="8" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
         )}
