@@ -1373,6 +1373,7 @@ function StaffPortal({ isAdmin }) {
   const [assignments, setAssignments] = useState([]);
   const [students, setStudents] = useState([]);
   const [families, setFamilies] = useState([]);
+  const [familyAccounts, setFamilyAccounts] = useState([]);
   const [registrations, setRegistrations] = useState([]);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [gradeRecords, setGradeRecords] = useState([]);
@@ -1443,6 +1444,15 @@ function StaffPortal({ isAdmin }) {
       setFamilyPaymentRecords(results[10].data || []);
       setUserRoles(results[11].data || []);
       setSiteSettings(results[12].data || []);
+      const accountResult = await fetch("/api/family-accounts", {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      if (accountResult.ok) {
+        const body = await accountResult.json();
+        setFamilyAccounts(body.accounts || []);
+      } else {
+        setFamilyAccounts([]);
+      }
     }
   };
   useEffect(() => { load(); }, [role, teacherId]);
@@ -1913,19 +1923,43 @@ function StaffPortal({ isAdmin }) {
   ];
   const tabs = isAdmin ? adminTabs : teacherTabs;
   const query = search.trim().toLowerCase();
-  const searchRows = !query ? [] : students.map((student) => {
-    const family = families.find((row) => row.id === student.family_id);
-    return {
-      id: student.id,
-      family_record_id: family?.id,
-      family_id: family?.legacy_family_id || family?.id,
-      parent: fullName(family),
-      student: fullName(student),
-      email: family?.email,
-      phone: family?.phone,
-    };
-  })
-    .filter((row) => hasFamilyId(row.family_id))
+  const studentsByFamilyId = students.reduce((groups, student) => {
+    const rows = groups.get(student.family_id) || [];
+    rows.push(student);
+    groups.set(student.family_id, rows);
+    return groups;
+  }, new Map());
+  const familySearchRows = families
+    .filter((family) => hasFamilyId(family.legacy_family_id || family.id))
+    .map((family) => {
+      const familyStudents = studentsByFamilyId.get(family.id) || [];
+      return {
+        id: `family-${family.id}`,
+        family_record_id: family.id,
+        family_id: family.legacy_family_id || family.id,
+        parent: fullName(family) || "Not provided",
+        student: familyStudents.length ? familyStudents.map(fullName).filter(Boolean).join(", ") : "No students yet",
+        email: family.email,
+        phone: family.phone,
+        status: familyStudents.length ? "Family profile" : "Family profile, no students",
+      };
+    });
+  const familyIdsWithProfile = new Set(families.map((family) => family.id));
+  const familyEmailsWithProfile = new Set(families.map((family) => String(family.email || "").toLowerCase()).filter(Boolean));
+  const authOnlyRows = familyAccounts
+    .filter((account) => !account.family_id || !familyIdsWithProfile.has(account.family_id))
+    .filter((account) => !familyEmailsWithProfile.has(String(account.email || "").toLowerCase()))
+    .map((account) => ({
+      id: `account-${account.id}`,
+      family_record_id: null,
+      family_id: "No profile",
+      parent: "No family profile",
+      student: "No students yet",
+      email: account.email,
+      phone: "",
+      status: account.confirmed_at ? "Validated account only" : "Pending email validation",
+    }));
+  const searchRows = !query ? [] : [...familySearchRows, ...authOnlyRows]
     .filter((row) => Object.values(row).some((value) => String(value || "").toLowerCase().includes(query)));
   const printFamilyLabel = (family) => (
     `${family.legacy_family_id || family.id} ${fullName(family) || family.email || ""}`
@@ -2512,7 +2546,7 @@ function StaffPortal({ isAdmin }) {
           )}
         </div>
       )}
-      {active === "search" && <div className="portal-panel"><div className="panel-heading"><div><span>家庭与学生搜索</span><h2>Search Families</h2></div></div><label className="standalone-field"><span>Family ID, parent/student name, phone, or email</span><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedPrintFamilyId(""); }} /></label><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"]]} rows={searchRows} empty="Enter a search term." /></div>}
+      {active === "search" && <div className="portal-panel"><div className="panel-heading"><div><span>家庭与学生搜索</span><h2>Search Families</h2></div></div><label className="standalone-field"><span>Family ID, parent/student name, phone, or email</span><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedPrintFamilyId(""); }} /></label><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"], ["status", "Status"]]} rows={searchRows} empty="Enter a search term." /></div>}
       {active === "print" && (
         <div className="portal-panel print-area">
           <div className="panel-heading">
