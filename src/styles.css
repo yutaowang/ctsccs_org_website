@@ -218,15 +218,25 @@ button {
   gap: 9px;
   margin: 0 0 8px;
   color: var(--blue);
-  font: 700 1.22rem/1.2 "Playfair Display", Georgia, serif;
+  font: 700 1.22rem/1.18 "Playfair Display", Georgia, serif;
 }
 
 .nav-group h2::before {
+  flex: 0 0 auto;
   display: block;
   width: 18px;
   height: 3px;
   background: var(--gold);
   content: "";
+}
+
+.nav-title-text {
+  display: grid;
+  gap: 1px;
+}
+
+.nav-title-text span:last-child {
+  font-size: 0.96em;
 }
 
 .nav-group ul {

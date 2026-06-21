@@ -8,7 +8,8 @@ import "./styles.css";
 
 const navGroups = [
   {
-    title: "学校概况 Our School",
+    titleZh: "学校概况",
+    titleEn: "Our School",
     links: [
       ["学校简介 About Us", "/about"],
       ["管理团队 Management Team", "/administration"],
@@ -17,7 +18,8 @@ const navGroups = [
     ],
   },
   {
-    title: "教学教务 Academics",
+    titleZh: "教学教务",
+    titleEn: "Academics",
     links: [
       ["教学大纲 Catalog", "/catalog"],
       ["课程注册 Registration", "/registration"],
@@ -26,7 +28,8 @@ const navGroups = [
     ],
   },
   {
-    title: "更多信息 More About",
+    titleZh: "更多信息",
+    titleEn: "More About",
     links: [
       ["联系我们 Contact Us", "/contact"],
       ["交通指南 Location", "/location"],
@@ -140,8 +143,13 @@ function Navigation({ menuOpen, closeMenu, currentPath }) {
     <aside id="site-navigation" className={`sidebar ${menuOpen ? "is-open" : ""}`}>
       <nav aria-label="主要导航">
         {navGroups.map((group) => (
-          <section className="nav-group" key={group.title}>
-            <h2>{group.title}</h2>
+          <section className="nav-group" key={group.titleEn}>
+            <h2>
+              <span className="nav-title-text">
+                <span>{group.titleZh}</span>
+                <span>{group.titleEn}</span>
+              </span>
+            </h2>
             <ul>
               {group.links.map(([label, href]) => (
                 <li key={href}>
