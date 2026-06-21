@@ -2003,6 +2003,10 @@ footer {
   border: 1px solid var(--line);
 }
 .payment-history-table { min-width: 1120px; }
+.payment-history-search {
+  max-width: 620px;
+  margin-bottom: 18px;
+}
 .payment-transactions-row td {
   background: #f8f9fb;
 }

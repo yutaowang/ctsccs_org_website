@@ -1391,6 +1391,7 @@ function StaffPortal({ isAdmin }) {
   const [settingKey, setSettingKey] = useState("");
   const [settingValue, setSettingValue] = useState("");
   const [search, setSearch] = useState("");
+  const [paymentHistorySearch, setPaymentHistorySearch] = useState("");
   const [selectedPrintFamilyId, setSelectedPrintFamilyId] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -2038,13 +2039,26 @@ function StaffPortal({ isAdmin }) {
       sort_balance: due - paid + refund,
     };
   }).filter((row) => hasFamilyId(row.fam_id) && (row.sort_due > 0 || row.sort_paid > 0));
+  const paymentHistoryQuery = paymentHistorySearch.trim().toLowerCase();
+  const visiblePaymentRows = paymentHistoryQuery
+    ? paymentRows.filter((row) => {
+      const haystack = [
+        row.fam_id, row.email, row.name, row.tuition, row.pta, row.adjust, row.due,
+        row.refund, row.paid, row.balance, row.method,
+        ...row.transactions.flatMap((payment) => [
+          payment.id, payment.method, payment.amount, payment.status, payment.paid_at, payment.detail,
+        ]),
+      ].join(" ").toLowerCase();
+      return haystack.includes(paymentHistoryQuery);
+    })
+    : paymentRows;
   const exportPaymentHistory = () => {
     const rows = [
       [
         "FamID", "Email", "Name", "Tuition", "PTA", "Adjust", "Due", "Refund", "Paid", "Balance",
         "Method", "Transaction Status", "Transaction Timestamp", "Transaction Detail",
       ],
-      ...paymentRows.flatMap((row) => [
+      ...visiblePaymentRows.flatMap((row) => [
         [row.fam_id, row.email, row.name, row.tuition, row.pta, row.adjust, row.due, row.refund, row.paid, row.balance, row.method, "", "", ""],
         ...row.transactions.map((payment) => [
           row.fam_id, "", `Payment ${payment.id}`, "", "", "", "", "", payment.amount, "", payment.method,
@@ -2405,7 +2419,15 @@ function StaffPortal({ isAdmin }) {
             </label>
             <button className="button-link" type="submit">Record payment</button>
           </form>
-          {!paymentRows.length ? (
+          <label className="standalone-field payment-history-search">
+            <span>Search Payment History</span>
+            <input
+              value={paymentHistorySearch}
+              onChange={(event) => setPaymentHistorySearch(event.target.value)}
+              placeholder="FamID, email, name, method, check number, or transaction detail"
+            />
+          </label>
+          {!visiblePaymentRows.length ? (
             <div className="empty-state">No payment records.</div>
           ) : (
             <div className="data-table-wrap">
@@ -2426,7 +2448,7 @@ function StaffPortal({ isAdmin }) {
                   </tr>
                 </thead>
                 <tbody>
-                  {paymentRows.map((row) => (
+                  {visiblePaymentRows.map((row) => (
                     <React.Fragment key={row.id}>
                       <tr>
                         <td>{row.fam_id}</td>
