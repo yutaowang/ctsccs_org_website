@@ -3,7 +3,11 @@ import { supabase } from "./supabase";
 
 const oldSite = "https://ctsccs.org/";
 
-const isLocalPath = (path) => path.startsWith("/") || path.startsWith("course_description/");
+const isLocalPath = (path) => (
+  path.startsWith("/")
+  || path.startsWith("Forms/")
+  || path.startsWith("course_description/")
+);
 const localPath = (path) => path.startsWith("/") ? path : `/${path}`;
 
 const external = (path) => path.startsWith("http") || path.startsWith("mailto:")
@@ -74,8 +78,8 @@ function About({ Link }) {
       <Section title="作为一个负责任的组织 Being a Responsible Organization">
         <p>学校每年提供多种发展项目，包括奖学金、志愿教学助理计划、学生领导力项目，以及社区外展活动。所有学生和家长须遵守书面政策，教师必须遵循行为准则。</p>
         <div className="download-grid">
-          <Download href="Forms/SCCS Handbook.pdf">学校手册</Download>
-          <Download href="Forms/SCCS Teacher Code.pdf">教师行为准则</Download>
+          <Download href="Forms/SCCS Student Handbook - English.pdf">学校手册</Download>
+          <Download href="Forms/SCCS Teacher Code - English.pdf">教师行为准则</Download>
         </div>
       </Section>
       <Section title="About Us" className="english-copy">
@@ -230,7 +234,7 @@ function Calendar() {
   return (
     <Page eyebrow="Academics" title="学校校历 2026–2027 School Calendar">
       <Section>
-        <Download href="Forms/SCCS 2026-2027 School Calendar.pdf">下载校历 Download PDF</Download>
+        <Download href="Forms/SCCS 2024-2025 School Calendar.pdf">下载校历 Download PDF</Download>
         <div className="calendar-grid">
           {calendarEvents.map(([date, event]) => (
             <div className={event.includes("No School") ? "no-school" : ""} key={date}>
