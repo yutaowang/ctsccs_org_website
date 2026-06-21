@@ -1380,6 +1380,7 @@ function StaffPortal({ isAdmin }) {
   const [familyPaymentRecords, setFamilyPaymentRecords] = useState([]);
   const [paymentForm, setPaymentForm] = useState({
     family_id: "",
+    family_query: "",
     method: "cash",
     amount: "",
     check_number: "",
@@ -1452,15 +1453,48 @@ function StaffPortal({ isAdmin }) {
     families.filter((family) => hasFamilyId(family.legacy_family_id || family.id)),
     (family) => `${family.legacy_family_id || family.id} ${fullName(family) || family.email || ""}`,
   );
+  const paymentFamilySearchLabel = (family) => (
+    `${family.legacy_family_id || family.id} · ${family.email || "No email"} · ${fullName(family) || "Family"}`
+  );
+  const resolvePaymentFamily = () => {
+    const query = paymentForm.family_query.trim().toLowerCase();
+    if (paymentForm.family_id) {
+      const selected = families.find((family) => String(family.id) === String(paymentForm.family_id));
+      if (selected) return { family: selected };
+    }
+    if (!query) return { error: "Please enter a FamID, email, or name." };
+
+    const exact = paymentFamilyOptions.filter((family) => {
+      const familyId = String(family.legacy_family_id || family.id).toLowerCase();
+      return (
+        familyId === query
+        || String(family.email || "").toLowerCase() === query
+        || fullName(family).toLowerCase() === query
+        || paymentFamilySearchLabel(family).toLowerCase() === query
+      );
+    });
+    if (exact.length === 1) return { family: exact[0] };
+
+    const partial = paymentFamilyOptions.filter((family) => (
+      String(family.legacy_family_id || family.id).toLowerCase().includes(query)
+      || String(family.email || "").toLowerCase().includes(query)
+      || fullName(family).toLowerCase().includes(query)
+      || paymentFamilySearchLabel(family).toLowerCase().includes(query)
+    ));
+    if (partial.length === 1) return { family: partial[0] };
+    if (partial.length > 1) return { error: "More than one family matches. Please type a more specific FamID, email, or name." };
+    return { error: "No family matches that FamID, email, or name." };
+  };
   const savePayment = async (event) => {
     event.preventDefault();
+    const resolved = resolvePaymentFamily();
     const amountCents = Math.round(Number(paymentForm.amount) * 100);
-    if (!paymentForm.family_id || !Number.isFinite(amountCents) || amountCents <= 0) {
-      setStatus({ error: "Please select a family and enter a valid payment amount.", message: "" });
+    if (resolved.error || !Number.isFinite(amountCents) || amountCents <= 0) {
+      setStatus({ error: resolved.error || "Please enter a valid payment amount.", message: "" });
       return;
     }
     const { error } = await supabase.from("payments").insert({
-      family_id: Number(paymentForm.family_id),
+      family_id: Number(resolved.family.id),
       method: paymentForm.method,
       amount_cents: amountCents,
       currency: "usd",
@@ -1474,7 +1508,7 @@ function StaffPortal({ isAdmin }) {
       setStatus({ error: error.message, message: "" });
       return;
     }
-    setPaymentForm({ family_id: "", method: "cash", amount: "", check_number: "", notes: "" });
+    setPaymentForm({ family_id: "", family_query: "", method: "cash", amount: "", check_number: "", notes: "" });
     setStatus({ error: "", message: "Payment recorded." });
     load();
   };
@@ -2329,14 +2363,26 @@ function StaffPortal({ isAdmin }) {
           <form className="portal-form compact payment-record-form" onSubmit={savePayment}>
             <label>
               <span>Family</span>
-              <select value={paymentForm.family_id} onChange={(event) => setPaymentForm({ ...paymentForm, family_id: event.target.value })} required>
-                <option value="">Select family</option>
+              <input
+                list="payment-family-options"
+                value={paymentForm.family_query}
+                onChange={(event) => {
+                  const value = event.target.value;
+                  const selected = paymentFamilyOptions.find((family) => paymentFamilySearchLabel(family) === value);
+                  setPaymentForm({
+                    ...paymentForm,
+                    family_query: value,
+                    family_id: selected?.id || "",
+                  });
+                }}
+                placeholder="FamID, email, or name"
+                required
+              />
+              <datalist id="payment-family-options">
                 {paymentFamilyOptions.map((family) => (
-                  <option value={family.id} key={family.id}>
-                    {family.legacy_family_id || family.id} · {fullName(family) || family.email || "Family"}
-                  </option>
+                  <option value={paymentFamilySearchLabel(family)} key={family.id} />
                 ))}
-              </select>
+              </datalist>
             </label>
             <label>
               <span>Method</span>
