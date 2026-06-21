@@ -1809,6 +1809,17 @@ footer {
 }
 .panel-heading span { color: var(--blue); font-size: 0.68rem; font-weight: 700; }
 .panel-heading h2 { margin: 3px 0 0; color: var(--navy); font-size: 1.35rem; }
+.profile-family-id {
+  padding: 8px 12px;
+  color: #5f6d83;
+  background: #f8f9fb;
+  border: 1px solid var(--line);
+  font-size: 0.72rem;
+  font-weight: 700;
+}
+.profile-family-id strong {
+  color: var(--navy);
+}
 .print-summary-heading { margin-top: 6px; }
 .summary-grid {
   display: grid;

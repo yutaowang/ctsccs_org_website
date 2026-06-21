@@ -10,7 +10,7 @@ const roles = {
   superadmin: "sccs_superadmin_role",
 };
 const familyFields = [
-  "family_name", "parent_first_name", "parent_last_name", "parent_chinese_name",
+  "parent_first_name", "parent_last_name", "parent_chinese_name",
   "address", "city", "state", "zip", "phone", "wechat",
 ];
 const studentFields = ["first_name", "last_name", "chinese_name", "gender", "birth_year"];
@@ -601,14 +601,17 @@ function FamilyPortal() {
       )}
       {active === "profile" && (
         <form className="portal-form" onSubmit={saveFamily}>
-          <div className="panel-heading"><div><span>更新家庭信息</span><h2>Update Profile</h2></div></div>
+          <div className="panel-heading">
+            <div><span>更新家庭信息</span><h2>Update Profile</h2></div>
+            <div className="profile-family-id">Family ID: <strong>{family.legacy_family_id || family.id || "Not assigned"}</strong></div>
+          </div>
           {familyFields.map((field) => (
             <label className={field === "address" ? "wide" : ""} key={field}>
               <span>{field.replaceAll("_", " ")}</span>
               <input value={family[field] || ""} onChange={(event) => setFamily({ ...family, [field]: event.target.value })} />
             </label>
           ))}
-          <label className="wide"><span>Email / username</span><input value={session.user.email} disabled /></label>
+          <label className="wide"><span>Email / username</span><input value={session.user.email} readOnly /></label>
           <button className="button-link" type="submit">Update profile</button>
         </form>
       )}
