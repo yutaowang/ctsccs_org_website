@@ -1450,12 +1450,43 @@ function StaffPortal({ isAdmin }) {
     if (active === "classes") load();
   }, [active]);
 
+  const registrationByStudentId = new Map(registrations.map((row) => [row.student_id, row]));
+  const paymentNumber = (value) => {
+    const number = Number(value || 0);
+    return Number.isFinite(number) ? number : 0;
+  };
+  const legacyPaymentForFamily = (family) => familyPaymentRecords.find((row) => (
+    row.family_id === family.id
+    || row.legacy_family_id === family.legacy_family_id
+    || row.legacy_family_id === family.id
+  ));
+  const paymentDueForFamily = (family) => {
+    const familyStudents = students.filter((student) => student.family_id === family.id);
+    const familyCourses = familyStudents.flatMap((student) => (
+      registeredClassIds(registrationByStudentId.get(student.id))
+        .map((classId) => classes.find((course) => course.id === classId))
+        .filter(Boolean)
+    ));
+    const legacyPayment = legacyPaymentForFamily(family);
+    const tuition = familyCourses.length
+      ? donationTotal(familyCourses)
+      : paymentNumber(legacyPayment?.registration_fee);
+    const pta = familyCourses.length ? SAFETY_PATROL_DEPOSIT : paymentNumber(legacyPayment?.patrol_deposit);
+    const adjust = paymentNumber(legacyPayment?.late_fee);
+    return {
+      legacyPayment,
+      tuition,
+      pta,
+      adjust,
+      due: tuition + pta + adjust,
+    };
+  };
   const paymentFamilyOptions = sortedByLabel(
     families.filter((family) => hasFamilyId(family.legacy_family_id || family.id)),
-    (family) => `${family.legacy_family_id || family.id} ${fullName(family) || family.email || ""}`,
+    (family) => `${fullName(family) || ""} ${family.email || ""} ${family.legacy_family_id || family.id}`,
   );
   const paymentFamilySearchLabel = (family) => (
-    `${family.legacy_family_id || family.id} · ${family.email || "No email"} · ${fullName(family) || "Family"}`
+    `${fullName(family) || "Family"} · FamID ${family.legacy_family_id || family.id} · ${family.email || "No email"} · Due ${formatDonation(paymentDueForFamily(family).due)}`
   );
   const resolvePaymentFamily = () => {
     const query = paymentForm.family_query.trim().toLowerCase();
@@ -1948,22 +1979,12 @@ function StaffPortal({ isAdmin }) {
       session_3: classes.find((item) => item.id === row.session_3)?.short_name,
     };
   }).filter((row) => hasFamilyId(row.family_id));
-  const registrationByStudentId = new Map(registrations.map((row) => [row.student_id, row]));
   const paymentsByFamilyId = payments.reduce((groups, row) => {
     const familyPayments = groups.get(row.family_id) || [];
     familyPayments.push(row);
     groups.set(row.family_id, familyPayments);
     return groups;
   }, new Map());
-  const paymentNumber = (value) => {
-    const number = Number(value || 0);
-    return Number.isFinite(number) ? number : 0;
-  };
-  const legacyPaymentForFamily = (family) => familyPaymentRecords.find((row) => (
-    row.family_id === family.id
-    || row.legacy_family_id === family.legacy_family_id
-    || row.legacy_family_id === family.id
-  ));
   const legacyPaidTotal = (row) => [
     row?.pay_1_cash, row?.pay_1_check, row?.pay_2_cash, row?.pay_2_check,
     row?.pay_3_cash, row?.pay_3_check, row?.pay_4_cash, row?.pay_4_check,
@@ -1981,19 +2002,8 @@ function StaffPortal({ isAdmin }) {
     return methods;
   };
   const paymentRows = families.map((family) => {
-    const familyStudents = students.filter((student) => student.family_id === family.id);
-    const familyCourses = familyStudents.flatMap((student) => (
-      registeredClassIds(registrationByStudentId.get(student.id))
-        .map((classId) => classes.find((course) => course.id === classId))
-        .filter(Boolean)
-    ));
-    const legacyPayment = legacyPaymentForFamily(family);
-    const tuition = familyCourses.length
-      ? donationTotal(familyCourses)
-      : paymentNumber(legacyPayment?.registration_fee);
-    const pta = familyCourses.length ? SAFETY_PATROL_DEPOSIT : paymentNumber(legacyPayment?.patrol_deposit);
-    const adjust = paymentNumber(legacyPayment?.late_fee);
-    const due = tuition + pta + adjust;
+    const charges = paymentDueForFamily(family);
+    const { legacyPayment, tuition, pta, adjust, due } = charges;
     const refund = legacyRefundTotal(legacyPayment);
     const importedPaid = legacyPaidTotal(legacyPayment);
     const familyPayments = paymentsByFamilyId.get(family.id) || [];
