@@ -2547,6 +2547,20 @@ footer {
   cursor: not-allowed;
   opacity: 0.5;
 }
+.danger-text-button {
+  min-height: 34px;
+  padding: 0 12px;
+  color: #9b2f2f;
+  background: #fff1f1;
+  border: 1px solid #e5bcbc;
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.68rem;
+  font-weight: 800;
+}
+.danger-text-button:hover {
+  background: #ffe7e7;
+}
 .danger-link {
   padding: 9px 13px;
   color: #9b2f2f;

@@ -734,7 +734,8 @@ function RowActions({ onEdit, onDelete, disabled = false }) {
     const rect = buttonRef.current?.getBoundingClientRect();
     if (!rect) return;
     const menuWidth = 178;
-    const menuHeight = 52;
+    const actionCount = Number(Boolean(onEdit)) + Number(Boolean(onDelete));
+    const menuHeight = Math.max(52, actionCount * 52);
     const gap = 8;
     const viewportPadding = 10;
     const opensLeft = rect.left >= menuWidth + gap + viewportPadding;
@@ -781,8 +782,8 @@ function RowActions({ onEdit, onDelete, disabled = false }) {
       </button>
       {open && (
         <div ref={menuRef} className="row-actions-menu" style={position || undefined}>
-          <button type="button" onClick={() => { setOpen(false); onEdit(); }}>Edit</button>
-          <button className="danger" type="button" onClick={() => { setOpen(false); onDelete(); }} disabled={disabled}>Delete</button>
+          {onEdit && <button type="button" onClick={() => { setOpen(false); onEdit(); }}>Edit</button>}
+          {onDelete && <button className="danger" type="button" onClick={() => { setOpen(false); onDelete(); }} disabled={disabled}>Delete</button>}
         </div>
       )}
     </div>
@@ -1929,19 +1930,86 @@ function StaffPortal({ isAdmin }) {
     groups.set(student.family_id, rows);
     return groups;
   }, new Map());
+  const paymentsByFamilyId = payments.reduce((groups, row) => {
+    const familyPayments = groups.get(row.family_id) || [];
+    familyPayments.push(row);
+    groups.set(row.family_id, familyPayments);
+    return groups;
+  }, new Map());
+  const accountByFamilyId = new Map(familyAccounts
+    .filter((account) => account.family_id)
+    .map((account) => [account.family_id, account]));
+  const accountByEmail = new Map(familyAccounts
+    .filter((account) => account.email)
+    .map((account) => [String(account.email).toLowerCase(), account]));
+  const paidCentsForFamily = (familyId) => (paymentsByFamilyId.get(familyId) || [])
+    .filter((payment) => payment.status === "paid")
+    .reduce((sum, payment) => sum + Number(payment.amount_cents || 0), 0);
+  const hasPaidPayment = (familyId) => paidCentsForFamily(familyId) > 0;
+  const familyAccountFor = (family) => (
+    accountByFamilyId.get(family.id)
+    || accountByEmail.get(String(family.email || "").toLowerCase())
+    || null
+  );
+  const familySearchStatus = (family, familyStudents) => {
+    const registeredCourses = familyStudents.flatMap((student) => (
+      registeredClassIds(registrationByStudentId.get(student.id))
+    ));
+    const due = paymentDueForFamily(family).due;
+    const paid = paidCentsForFamily(family.id) / 100;
+    const account = familyAccountFor(family);
+    if (due > 0 && paid >= due) return "Paid";
+    if (registeredCourses.length && due > 0) return "Waiting for Payment";
+    if (registeredCourses.length) return "Registered Classes";
+    if (familyStudents.length) return "Added Students";
+    if (account?.confirmed_at) return "Validated account only";
+    return "Registered account only";
+  };
+  const deleteFamilySearchRow = async (row) => {
+    if (row.has_paid_payment) {
+      setStatus({ error: "This family has payment records and cannot be deleted.", message: "" });
+      return;
+    }
+    if (!window.confirm(`Delete ${row.parent || row.email || "this family account"}? This will remove the family account, students, and class registrations.`)) {
+      return;
+    }
+    const result = await fetch("/api/family-accounts", {
+      method: "DELETE",
+      headers: {
+        Authorization: `Bearer ${session.access_token}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        familyId: row.family_record_id,
+        accountId: row.account_id,
+      }),
+    });
+    const body = await result.json().catch(() => ({}));
+    if (!result.ok) {
+      setStatus({ error: body.error || "Could not delete family account.", message: "" });
+      return;
+    }
+    setStatus({ error: "", message: "Family account deleted." });
+    if (String(selectedPrintFamilyId) === String(row.family_record_id)) setSelectedPrintFamilyId("");
+    await load();
+  };
   const familySearchRows = families
     .filter((family) => hasFamilyId(family.legacy_family_id || family.id))
     .map((family) => {
       const familyStudents = studentsByFamilyId.get(family.id) || [];
+      const account = familyAccountFor(family);
+      const statusLabel = familySearchStatus(family, familyStudents);
       return {
         id: `family-${family.id}`,
         family_record_id: family.id,
+        account_id: account?.id || family.user_id || null,
         family_id: family.legacy_family_id || family.id,
         parent: fullName(family) || "Not provided",
         student: familyStudents.length ? familyStudents.map(fullName).filter(Boolean).join(", ") : "No students yet",
         email: family.email,
         phone: family.phone,
-        status: familyStudents.length ? "Family profile" : "Family profile, no students",
+        status: statusLabel,
+        has_paid_payment: hasPaidPayment(family.id),
       };
     });
   const familyIdsWithProfile = new Set(families.map((family) => family.id));
@@ -1952,15 +2020,27 @@ function StaffPortal({ isAdmin }) {
     .map((account) => ({
       id: `account-${account.id}`,
       family_record_id: null,
+      account_id: account.id,
       family_id: "No profile",
       parent: "No family profile",
       student: "No students yet",
       email: account.email,
       phone: "",
-      status: account.confirmed_at ? "Validated account only" : "Pending email validation",
+      status: account.confirmed_at ? "Validated account only" : "Registered account only",
+      has_paid_payment: false,
     }));
   const searchRows = !query ? [] : [...familySearchRows, ...authOnlyRows]
     .filter((row) => Object.values(row).some((value) => String(value || "").toLowerCase().includes(query)));
+  const searchActionRows = searchRows.map((row) => ({
+    id: row.id,
+    cells: [row.family_id, row.parent, row.student, row.email, row.phone, row.status],
+    sortValues: [row.family_id, row.parent, row.student, row.email, row.phone, row.status],
+    actions: (
+      row.has_paid_payment
+        ? <button className="danger-text-button" type="button" onClick={() => deleteFamilySearchRow(row)}>Cannot delete</button>
+        : <RowActions onDelete={() => deleteFamilySearchRow(row)} />
+    ),
+  }));
   const printFamilyLabel = (family) => (
     `${family.legacy_family_id || family.id} ${fullName(family) || family.email || ""}`
   );
@@ -2013,12 +2093,6 @@ function StaffPortal({ isAdmin }) {
       session_3: classes.find((item) => item.id === row.session_3)?.short_name,
     };
   }).filter((row) => hasFamilyId(row.family_id));
-  const paymentsByFamilyId = payments.reduce((groups, row) => {
-    const familyPayments = groups.get(row.family_id) || [];
-    familyPayments.push(row);
-    groups.set(row.family_id, familyPayments);
-    return groups;
-  }, new Map());
   const legacyPaidTotal = (row) => [
     row?.pay_1_cash, row?.pay_1_check, row?.pay_2_cash, row?.pay_2_check,
     row?.pay_3_cash, row?.pay_3_check, row?.pay_4_cash, row?.pay_4_check,
@@ -2546,7 +2620,7 @@ function StaffPortal({ isAdmin }) {
           )}
         </div>
       )}
-      {active === "search" && <div className="portal-panel"><div className="panel-heading"><div><span>家庭与学生搜索</span><h2>Search Families</h2></div></div><label className="standalone-field"><span>Family ID, parent/student name, phone, or email</span><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedPrintFamilyId(""); }} /></label><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student", "Student"], ["email", "Email"], ["phone", "Phone"], ["status", "Status"]]} rows={searchRows} empty="Enter a search term." /></div>}
+      {active === "search" && <div className="portal-panel"><div className="panel-heading"><div><span>家庭与学生搜索</span><h2>Search Families</h2></div></div><label className="standalone-field"><span>Family ID, parent/student name, phone, or email</span><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedPrintFamilyId(""); }} /></label><ActionTable columns={["Family ID", "Parent", "Student", "Email", "Phone", "Status"]} rows={searchActionRows} empty="Enter a search term." /></div>}
       {active === "print" && (
         <div className="portal-panel print-area">
           <div className="panel-heading">

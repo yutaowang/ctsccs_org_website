@@ -25,8 +25,10 @@ async function supabaseRequest(configuration, path, options = {}) {
       apikey: configuration.serviceKey,
       Authorization: `Bearer ${options.token || configuration.serviceKey}`,
       "Content-Type": "application/json",
+      ...(options.prefer ? { Prefer: options.prefer } : {}),
       ...(options.profile ? { "Accept-Profile": options.profile, "Content-Profile": options.profile } : {}),
     },
+    body: options.body === undefined ? undefined : JSON.stringify(options.body),
   });
   const text = await response.text();
   let data = null;
@@ -70,9 +72,82 @@ async function listAllAuthUsers(configuration) {
   }
 }
 
+async function deleteFamilyAccount(configuration, body) {
+  const familyId = body.familyId ? String(body.familyId) : "";
+  const accountId = body.accountId ? String(body.accountId) : "";
+  if (!familyId && !accountId) throw new Error("Family or account id is required.");
+
+  const roleGuard = accountId
+    ? await supabaseRequest(
+      configuration,
+      `/rest/v1/user_roles?select=role&user_id=eq.${encodeURIComponent(accountId)}`,
+      { profile: "sccs" },
+    )
+    : { ok: true, data: [] };
+  if (!roleGuard.ok) throw new Error(roleGuard.data?.message || "Could not verify account role.");
+  if ((roleGuard.data || []).some((row) => STAFF_ROLES.has(row.role))) {
+    throw new Error("Staff/admin accounts cannot be deleted from Family Search.");
+  }
+
+  let family = null;
+  if (familyId) {
+    const familyResult = await supabaseRequest(
+      configuration,
+      `/rest/v1/families?select=id,user_id,email&id=eq.${encodeURIComponent(familyId)}&limit=1`,
+      { profile: "sccs" },
+    );
+    if (!familyResult.ok) throw new Error(familyResult.data?.message || "Could not load family profile.");
+    family = familyResult.data?.[0] || null;
+  }
+  if (!family && accountId) {
+    const familyResult = await supabaseRequest(
+      configuration,
+      `/rest/v1/families?select=id,user_id,email&user_id=eq.${encodeURIComponent(accountId)}&limit=1`,
+      { profile: "sccs" },
+    );
+    if (!familyResult.ok) throw new Error(familyResult.data?.message || "Could not load family profile.");
+    family = familyResult.data?.[0] || null;
+  }
+
+  if (family?.id) {
+    const paidResult = await supabaseRequest(
+      configuration,
+      `/rest/v1/payments?select=id&family_id=eq.${encodeURIComponent(family.id)}&status=eq.paid&limit=1`,
+      { profile: "sccs" },
+    );
+    if (!paidResult.ok) throw new Error(paidResult.data?.message || "Could not verify payment history.");
+    if ((paidResult.data || []).length) {
+      const error = new Error("This family has payment records and cannot be deleted.");
+      error.status = 409;
+      throw error;
+    }
+  }
+
+  const targetUserId = family?.user_id || accountId;
+  if (targetUserId) {
+    const deleteUser = await supabaseRequest(
+      configuration,
+      `/auth/v1/admin/users/${encodeURIComponent(targetUserId)}`,
+      { method: "DELETE" },
+    );
+    if (!deleteUser.ok && deleteUser.status !== 404) {
+      throw new Error(deleteUser.data?.message || "Could not delete login account.");
+    }
+  }
+
+  if (family?.id) {
+    const deleteFamily = await supabaseRequest(
+      configuration,
+      `/rest/v1/families?id=eq.${encodeURIComponent(family.id)}`,
+      { method: "DELETE", profile: "sccs", prefer: "return=minimal" },
+    );
+    if (!deleteFamily.ok) throw new Error(deleteFamily.data?.message || "Could not delete family profile.");
+  }
+}
+
 export default async function handler(request, response) {
-  if (request.method !== "GET") {
-    response.setHeader("Allow", "GET");
+  if (!["GET", "DELETE"].includes(request.method)) {
+    response.setHeader("Allow", "GET, DELETE");
     return json(response, 405, { error: "Method not allowed." });
   }
 
@@ -80,6 +155,11 @@ export default async function handler(request, response) {
     const configuration = config();
     const admin = await requireAdmin(request, configuration);
     if (!admin) return json(response, 403, { error: "Administrator access required." });
+
+    if (request.method === "DELETE") {
+      await deleteFamilyAccount(configuration, request.body || {});
+      return json(response, 200, { ok: true });
+    }
 
     const [users, rolesResult, familiesResult] = await Promise.all([
       listAllAuthUsers(configuration),
@@ -112,6 +192,6 @@ export default async function handler(request, response) {
     return json(response, 200, { accounts });
   } catch (error) {
     console.error("Family account search failed.", error?.message || error);
-    return json(response, 400, { error: error?.message || "Could not load family accounts." });
+    return json(response, error?.status || 400, { error: error?.message || "Could not load family accounts." });
   }
 }
