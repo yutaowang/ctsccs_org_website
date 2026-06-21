@@ -1,7 +1,23 @@
 {
   "rewrites": [
-    { "source": "/admin", "destination": "/index.html" },
+    { "source": "/about", "destination": "/index.html" },
+    { "source": "/administration", "destination": "/index.html" },
+    { "source": "/regulation", "destination": "/index.html" },
+    { "source": "/newsletters", "destination": "/index.html" },
+    { "source": "/catalog", "destination": "/index.html" },
+    { "source": "/registration", "destination": "/index.html" },
+    { "source": "/calendar", "destination": "/index.html" },
+    { "source": "/courses", "destination": "/index.html" },
+    { "source": "/contact", "destination": "/index.html" },
+    { "source": "/location", "destination": "/index.html" },
+    { "source": "/community-services", "destination": "/index.html" },
+    { "source": "/sponsors", "destination": "/index.html" },
+    { "source": "/resources", "destination": "/index.html" },
+    { "source": "/links", "destination": "/index.html" },
+    { "source": "/feedback", "destination": "/index.html" },
+    { "source": "/login", "destination": "/index.html" },
+    { "source": "/reset-password", "destination": "/index.html" },
     { "source": "/account", "destination": "/index.html" },
-    { "source": "/login", "destination": "/index.html" }
+    { "source": "/admin", "destination": "/index.html" }
   ]
 }
