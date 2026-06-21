@@ -96,7 +96,6 @@ export function LoginPage({ Link, navigate }) {
   const [password, setPassword] = useState("");
   const [retypePassword, setRetypePassword] = useState("");
   const [signupProfile, setSignupProfile] = useState({
-    family_name: "",
     parent_first_name: "",
     parent_last_name: "",
     parent_chinese_name: "",
@@ -217,14 +216,13 @@ export function LoginPage({ Link, navigate }) {
       <form className={`auth-form ${mode === "signup" ? "signup-form" : ""}`} onSubmit={submit}>
         {mode === "signup" && (
           <>
-            <label><span>Family Name</span><input value={signupProfile.family_name} onChange={(e) => setSignupProfile({ ...signupProfile, family_name: e.target.value })} /></label>
             <label><RequiredLabel>Parent First Name</RequiredLabel><input value={signupProfile.parent_first_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_first_name: e.target.value })} required /></label>
             <label><RequiredLabel>Parent Last Name</RequiredLabel><input value={signupProfile.parent_last_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_last_name: e.target.value })} required /></label>
-            <label><span>Parent Chinese Name</span><input value={signupProfile.parent_chinese_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_chinese_name: e.target.value })} /></label>
+            <label><span>Parent Chinese Name (Optional)</span><input value={signupProfile.parent_chinese_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_chinese_name: e.target.value })} /></label>
             <label className="wide"><RequiredLabel>Address</RequiredLabel><input value={signupProfile.address} onChange={(e) => setSignupProfile({ ...signupProfile, address: e.target.value })} required /></label>
-            <label><span>City</span><input value={signupProfile.city} onChange={(e) => setSignupProfile({ ...signupProfile, city: e.target.value })} /></label>
-            <label><span>State</span><input value={signupProfile.state} onChange={(e) => setSignupProfile({ ...signupProfile, state: e.target.value })} /></label>
-            <label><span>Zip</span><input value={signupProfile.zip} onChange={(e) => setSignupProfile({ ...signupProfile, zip: e.target.value })} /></label>
+            <label><RequiredLabel>City</RequiredLabel><input value={signupProfile.city} onChange={(e) => setSignupProfile({ ...signupProfile, city: e.target.value })} required /></label>
+            <label><RequiredLabel>State</RequiredLabel><input value={signupProfile.state} onChange={(e) => setSignupProfile({ ...signupProfile, state: e.target.value })} required /></label>
+            <label><RequiredLabel>Zip</RequiredLabel><input value={signupProfile.zip} onChange={(e) => setSignupProfile({ ...signupProfile, zip: e.target.value })} required /></label>
             <label><RequiredLabel>Phone</RequiredLabel><input type="tel" value={signupProfile.phone} onChange={(e) => setSignupProfile({ ...signupProfile, phone: e.target.value })} required /></label>
             <label><span>Wechat</span><input value={signupProfile.wechat} onChange={(e) => setSignupProfile({ ...signupProfile, wechat: e.target.value })} /></label>
           </>

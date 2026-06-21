@@ -56,6 +56,9 @@ function validateProfile(body) {
     ["parent_first_name", "Parent First Name"],
     ["parent_last_name", "Parent Last Name"],
     ["address", "Address"],
+    ["city", "City"],
+    ["state", "State"],
+    ["zip", "Zip"],
     ["phone", "Phone"],
   ].filter(([field]) => !payload[field]).map(([, label]) => label);
   if (missing.length) {

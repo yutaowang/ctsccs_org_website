@@ -2555,16 +2555,16 @@ footer {
 .danger-text-button {
   min-height: 34px;
   padding: 0 12px;
-  color: #9b2f2f;
-  background: #fff1f1;
-  border: 1px solid #e5bcbc;
+  color: #185b42;
+  background: #ecf8f2;
+  border: 1px solid #9acdb9;
   cursor: pointer;
   font: inherit;
   font-size: 0.68rem;
   font-weight: 800;
 }
 .danger-text-button:hover {
-  background: #ffe7e7;
+  background: #ddf2e8;
 }
 .danger-link {
   padding: 9px 13px;
