@@ -6,6 +6,7 @@ const oldSite = "https://ctsccs.org/";
 const isLocalPath = (path) => (
   path.startsWith("/")
   || path.startsWith("Forms/")
+  || path.startsWith("Newsletters/")
   || path.startsWith("course_description/")
 );
 const localPath = (path) => path.startsWith("/") ? path : `/${path}`;
@@ -149,6 +150,13 @@ const newsletters = [
   ["2014 No.3", "Newsletters/SCCS Newsletter 2014 No 3 English.pdf", "Newsletters/SCCS Newsletter 2014 No 3 Chinese.pdf"],
   ["2014 No.2", "Newsletters/SCCS Newsletter 2014 No 2 English.pdf", "Newsletters/SCCS Newsletter 2014 No 2 Chinese.pdf"],
   ["2014 No.1", "Newsletters/SCCS Newsletter 2014 No 1 English.pdf", "Newsletters/SCCS Newsletter 2014 No 1 Chinese.pdf"],
+  ["2013 No.5", "Newsletters/SCCS Newsletter 2013 No 5 English.pdf", "Newsletters/SCCS Newsletter 2013 No 5 Chinese.pdf"],
+  ["2013 No.4", "Newsletters/SCCS Newsletter 2013 No 4 English.pdf", "Newsletters/SCCS Newsletter 2013 No 4 Chinese.pdf"],
+  ["2013 No.3", "Newsletters/SCCS Newsletter 2013 No 3 English.pdf", "Newsletters/SCCS Newsletter 2013 No 3 Chinese.pdf"],
+  ["2013 No.2", "Newsletters/SCCS Newsletter 2013 No 2 English.pdf", "Newsletters/SCCS Newsletter 2013 No 2 Chinese.pdf"],
+  ["2013 No.1", "Newsletters/SCCS Newsletter 2013 No 1 English.pdf", "Newsletters/SCCS Newsletter 2013 No 1 Chinese.pdf"],
+  ["2012 No.5", "Newsletters/SCCS Newsletter 2012 No 5 English.pdf", "Newsletters/SCCS Newsletter 2012 No 5 Chinese.pdf"],
+  ["2012 No.4", "Newsletters/SCCS Newsletter 2012 No 4 English.pdf", "Newsletters/SCCS Newsletter 2012 No 4 Chinese.pdf"],
 ];
 
 function Newsletters() {
