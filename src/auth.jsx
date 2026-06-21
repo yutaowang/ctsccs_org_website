@@ -95,6 +95,39 @@ export function LoginPage({ Link, navigate }) {
   const [error, setError] = useState("");
 
   useEffect(() => {
+    let cancelled = false;
+
+    const verifySignupToken = async () => {
+      if (!supabase) return;
+      const query = new URLSearchParams(window.location.search);
+      const tokenHash = query.get("token_hash") || query.get("token");
+      const type = query.get("type");
+      if (!tokenHash || type !== "signup") return;
+
+      setBusy(true);
+      setError("");
+      setMessage("Validating your email...");
+      const result = await supabase.auth.verifyOtp({
+        type: "signup",
+        token_hash: tokenHash,
+      });
+      if (cancelled) return;
+      setBusy(false);
+      if (result.error) {
+        setMessage("");
+        setError(result.error.message);
+        return;
+      }
+      window.history.replaceState({}, "", "/login");
+      setMessage("Email validated. Opening Online Registration...");
+      navigate?.("/account");
+    };
+
+    void verifySignupToken();
+    return () => { cancelled = true; };
+  }, [navigate]);
+
+  useEffect(() => {
     if (!loading && session && role === FAMILY_ROLE) navigate?.("/account");
   }, [loading, session, role, navigate]);
 

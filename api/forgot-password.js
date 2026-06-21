@@ -114,7 +114,11 @@ async function generateRecoveryLink(config, email) {
       Authorization: `Bearer ${config.serviceRoleKey}`,
       "Content-Type": "application/json",
     },
-    body: JSON.stringify({ type: "recovery", email }),
+    body: JSON.stringify({
+      type: "recovery",
+      email,
+      redirect_to: `${config.siteUrl}/reset-password`,
+    }),
   });
 
   if (!result.ok) {
@@ -123,7 +127,7 @@ async function generateRecoveryLink(config, email) {
   }
   const data = await result.json();
   const tokenHash = data.properties?.hashed_token || data.hashed_token;
-  if (!tokenHash) return data.action_link || null;
+  if (!tokenHash) return null;
 
   const resetUrl = new URL("/reset-password", config.siteUrl);
   resetUrl.searchParams.set("type", "recovery");

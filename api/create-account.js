@@ -63,9 +63,14 @@ async function generateSignupLink(configuration, email, password) {
   if (!result.ok) {
     throw new Error(data?.msg || data?.message || "Could not create account validation link.");
   }
-  const actionLink = data?.action_link || data?.properties?.action_link;
-  if (!actionLink) throw new Error("Could not create account validation link.");
-  return actionLink;
+  const tokenHash = data?.hashed_token || data?.properties?.hashed_token;
+  if (tokenHash) {
+    const validationUrl = new URL("/login", configuration.siteUrl);
+    validationUrl.searchParams.set("type", "signup");
+    validationUrl.searchParams.set("token_hash", tokenHash);
+    return validationUrl.toString();
+  }
+  throw new Error("Could not create account validation link.");
 }
 
 function validationTemplate(actionLink) {
