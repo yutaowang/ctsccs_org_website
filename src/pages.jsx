@@ -427,7 +427,6 @@ function Courses() {
           </table>
         </div>
         <div className="note-box">
-          <p>课程简介：点击带链接的课程名称查看。Course introduction: click a linked course title.</p>
           <p>SCCS 所有课程年龄要求为 5 岁以上。All SCCS courses require students to be age 5 or older.</p>
         </div>
       </Section>
