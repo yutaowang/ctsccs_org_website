@@ -57,15 +57,19 @@ function Download({ href, children }) {
 
 function About({ Link }) {
   return (
-    <Page eyebrow="Our School" title="学校简介 About Us">
+    <Page eyebrow="学校概况 Our School" title="学校简介 About Us">
       <Section>
         <p>假如时光老人可以“倒行逆时”，把您带回到二十世纪七十年代，您不妨到康州的纽伦敦走一走。在那里，约十五户华人家庭正在组建一所中文学校。纽伦敦公共图书馆是这所学校的第一个校址，十几个孩子成了第一批学生。</p>
+        <p>If time could turn back to the late 1970s, you would find about fifteen Chinese families in New London, Connecticut, working together to start a Chinese school. The New London Public Library became the school's first home, and a small group of children became its first students.</p>
         <p>三十多年后的今天，当您走进位于康州东南海滨的 Waterford 高中，重游这所中文学校时，迎接您的将是四十多名教师和三百多名来自华人家庭和其他族裔家庭的学生。东南康州中文学校已注册成为一所非营利学校，学校实行行政团队和家长会（PTA）共商校事、校董事会监督和校长负责执行的现代管理体制。</p>
+        <p>Today, at Waterford High School on the southeastern Connecticut shoreline, SCCS serves more than 300 students with the help of over 40 teachers. The school is a registered nonprofit organization with an administrative team, PTA collaboration, board oversight and principal-led operations.</p>
         <p>在广大家长、朋友以及各界人士的支持和关爱下，学校一贯秉承“思想力求创新，行动务必扎实”的原则，发展成为一所教学目标清晰、办学理念新颖、规章制度齐全、课程设置广泛的社区综合性学校。</p>
+        <p>With the support of parents, friends and the broader community, SCCS has grown into a comprehensive community school with clear educational goals, a practical spirit, well-developed policies and a broad curriculum.</p>
       </Section>
       <div className="two-column-sections">
         <Section title="我们的传统 Our Heritage">
           <p>东南康州中文学校成立于二十世纪七十年代末，起源于纽伦敦的一个小图书馆，由十五户华人家庭的家长们发起。今天，学校已发展成为拥有四十多名教职员工和三百多名学生的非营利教育机构，服务于 New London、Norwich、New Haven 和罗德岛等周边地区。</p>
+          <p>SCCS was founded in the late 1970s by parents from fifteen families and began in a small library in New London. It is now a nonprofit educational organization serving students from New London, Norwich, New Haven, Rhode Island and surrounding communities.</p>
         </Section>
         <Section title="我们的使命 Our Mission">
           <p>培养学生在全球化环境中具有扎实的双语能力和多元文化素养。</p>
@@ -74,18 +78,16 @@ function About({ Link }) {
       </div>
       <Section title="我们的学校 Our School">
         <p>学校开设四十多门课程，主要集中在海外华人语言和文化教育，同时涵盖科技、艺术、音乐等多样化教育领域，并提供年度才艺表演、中文演讲比赛等支持项目。</p>
-        <Link className="text-link" to="/courses">查看课程安排 →</Link>
+        <p>The school offers more than forty courses focused on Chinese language and culture, along with enrichment classes in technology, art, music and other subjects. SCCS also supports annual performances, speech contests and community activities.</p>
+        <Link className="text-link" to="/courses">查看课程安排 View Courses →</Link>
       </Section>
       <Section title="作为一个负责任的组织 Being a Responsible Organization">
         <p>学校每年提供多种发展项目，包括奖学金、志愿教学助理计划、学生领导力项目，以及社区外展活动。所有学生和家长须遵守书面政策，教师必须遵循行为准则。</p>
+        <p>Each year SCCS supports scholarship programs, volunteer teaching assistant opportunities, student leadership initiatives and community outreach. Students, parents and teachers are expected to follow school policies and codes of conduct.</p>
         <div className="download-grid">
-          <Download href="Forms/SCCS Student Handbook - English.pdf">学校手册</Download>
-          <Download href="Forms/SCCS Teacher Code - English.pdf">教师行为准则</Download>
+          <Download href="Forms/SCCS Student Handbook - English.pdf">学校手册 Student Handbook</Download>
+          <Download href="Forms/SCCS Teacher Code - English.pdf">教师行为准则 Teacher Code of Conduct</Download>
         </div>
-      </Section>
-      <Section title="About Us" className="english-copy">
-        <p>Founded in the late 1970s by parents from fifteen families, SCCS began in the New London Public Library. It has grown into a well-established nonprofit educational organization serving more than 300 students.</p>
-        <p>SCCS teaches Chinese language, preserves Chinese culture, cultivates bilingual talent, and helps students build a solid foundation in the humanities and sciences for tomorrow's global challenges.</p>
       </Section>
     </Page>
   );
@@ -102,8 +104,8 @@ const adminTeam = [
 
 function Administration() {
   return (
-    <Page eyebrow="Our School" title="管理团队 Management Team 2026–2027">
-      <Section title="Admin Team">
+    <Page eyebrow="学校概况 Our School" title="管理团队 Management Team 2026–2027">
+      <Section title="行政团队 Admin Team">
         <div className="table-wrap">
           <table>
             <thead><tr><th>姓名 Name</th><th>职务 Title</th><th>电子邮件 Email</th></tr></thead>
@@ -112,12 +114,12 @@ function Administration() {
         </div>
       </Section>
       <div className="two-column-sections">
-        <Section title="Board of Directors">
+        <Section title="董事会 Board of Directors">
           <ul className="people-list">
             {["陈儒忠 Mr. Raymond Chen", "王顺泰 Mr. Shuntai Wang", "王珂 Ms. Ke Wang", "于卫里 Ms. Weili Yu", "冯喜东 Mr. Xidong Feng"].map((name) => <li key={name}>{name}</li>)}
           </ul>
         </Section>
-        <Section title="PTA Leaders">
+        <Section title="家长会 PTA Leaders">
           <ul className="people-list">
             {["罗雪梅 Ms. Xuemei Luo", "伍緎榛 Ms. Annie Sufen Chong", "吴霞 Ms. Xia Wu", "曾百灵 Ms. Bailing Zeng", "待定 TBD"].map((name) => <li key={name}>{name}</li>)}
           </ul>
@@ -129,14 +131,15 @@ function Administration() {
 
 function Regulation() {
   return (
-    <Page eyebrow="Our School" title="学校制度 Regulation">
+    <Page eyebrow="学校概况 Our School" title="学校制度 Regulation">
       <Section>
         <p className="lead">学生、家长与教师共同遵循的学校政策及行为规范。</p>
+        <p className="lead">School policies and conduct expectations for students, parents and teachers.</p>
         <div className="download-grid">
           <Download href="Forms/SCCS Student Handbok - Chinese.pdf">学生手册（中文）</Download>
-          <Download href="Forms/SCCS Student Handbook - English.pdf">Student Handbook</Download>
+          <Download href="Forms/SCCS Student Handbook - English.pdf">学生手册 Student Handbook</Download>
           <Download href="Forms/SCCS Teacher Code - Chinese.pdf">教师守则（中文）</Download>
-          <Download href="Forms/SCCS Teacher Code - English.pdf">Code of Conduct for Teachers</Download>
+          <Download href="Forms/SCCS Teacher Code - English.pdf">教师守则 Code of Conduct for Teachers</Download>
         </div>
       </Section>
     </Page>
@@ -161,13 +164,13 @@ const newsletters = [
 
 function Newsletters() {
   return (
-    <Page eyebrow="Our School" title="新闻快讯 Newsletter">
+    <Page eyebrow="学校概况 Our School" title="新闻快讯 Newsletter">
       <Section>
         <div className="newsletter-list">
           {newsletters.map(([issue, english, chinese]) => (
             <article key={issue}>
-              <div><span>NEWSLETTER</span><h2>{issue}</h2></div>
-              <div><Download href={english}>English</Download><Download href={chinese}>中文</Download></div>
+              <div><span>新闻快讯 NEWSLETTER</span><h2>{issue}</h2></div>
+              <div><Download href={chinese}>中文</Download><Download href={english}>English</Download></div>
             </article>
           ))}
         </div>
@@ -178,19 +181,17 @@ function Newsletters() {
 
 function Catalog() {
   return (
-    <Page eyebrow="Academics" title="教学大纲 School Catalog">
-      <Section title="基本原则和教学目标：“先快后慢”和“500+3”">
+    <Page eyebrow="教学教务 Academics" title="教学大纲 School Catalog">
+      <Section title="基本原则和教学目标：“先快后慢”和“500+3” Teaching Principles and Goals">
         <p>基于学生年龄、语言学习规律以及美国学校课业负担随年级上升而由轻到重的特点，我校中文教学采用先紧后松、先快后慢的模式。低年级集中识字写字；中年级通过阅读扩大词汇量、提高理解并开始基本写作；高年级加强写作、阅读理解和中文实际应用能力，同时为 AP 和 SAT 中文考试打下基础。</p>
         <p>“五百+三”计划是学校整体教学纲要。学生在九年期间实现五百个基本汉字的四会：会认、会读、会写、会用；并至少写一篇中文作文、参加一次中文演讲比赛、读一本中文阅读材料。</p>
-      </Section>
-      <Section title="Teaching Principle and Educational Goal" className="english-copy">
         <p>SCCS Chinese language classes focus on functional listening, speaking, reading and writing. Students at every level demonstrate practical use of Chinese, while advanced study also prepares students for Chinese AP and SAT exams.</p>
         <p>The “500 + 3” plan requires students to recognize, read, write and use 500 Chinese characters over nine years, write at least one Chinese essay, enter a speech contest and complete a Chinese reading.</p>
       </Section>
       <Section title="详细教学大纲 Full Catalog">
         <div className="download-grid">
-          <Download href="Forms/SCCS Catalog - Chinese.pdf">教学大纲下载</Download>
-          <Download href="Forms/SCCS Catalog - English.pdf">Download Catalog</Download>
+          <Download href="Forms/SCCS Catalog - Chinese.pdf">中文教学大纲 Chinese Catalog</Download>
+          <Download href="Forms/SCCS Catalog - English.pdf">英文教学大纲 English Catalog</Download>
         </div>
       </Section>
     </Page>
@@ -199,21 +200,21 @@ function Catalog() {
 
 function Registration({ Link }) {
   return (
-    <Page eyebrow="Academics" title="课程注册 Registration">
+    <Page eyebrow="教学教务 Academics" title="课程注册 Registration">
       <Section>
-        <div className="notice-banner"><strong>2026 秋季开学日期</strong><span>2026 年 9 月 7 日</span></div>
+        <div className="notice-banner"><strong>2026 秋季开学日期 Fall 2026 Start Date</strong><span>2026 年 9 月 7 日 September 7, 2026</span></div>
         <ol className="numbered-list">
-          <li><strong>注册期限</strong><p>请于 2026 年 9 月 21 日前完成注册缴费，在此之前注册的家庭免除 $25 注册费。</p></li>
-          <li><strong>网上注册</strong><p>网上注册于 2026 年 7 月 20 日上午 9 时后开始。完成后请打印注册表，并同支票一同交到注册处。</p></li>
-          <li><strong>家庭账户</strong><p>每个学生家庭需要一个家庭账户。请加入微信号以方便学校联系，不要重复建立新账户。</p></li>
-          <li><strong>课程</strong><p>具体课程、时间、地点和收费情况，请查看 <Link to="/courses">课程安排</Link>。</p></li>
-          <li><strong>课本</strong><p>课本在开学第一天由任课老师发放。改课或退课时，请将课本退回学校办公室。</p></li>
-          <li><strong>付款与邮寄</strong><p>支票请开给 SCCS，邮寄至 SCCS PO Box 766, East Lyme, CT 06333。银行退票罚款 $25。</p></li>
-          <li><strong>加课、转课、退课</strong><p>请于 2026 年 9 月 21 日前在线办理。该日期后学校不再接受转课或退课请求。</p></li>
+          <li><strong>注册期限 Registration Deadline</strong><p>请于 2026 年 9 月 21 日前完成注册缴费，在此之前注册的家庭免除 $25 注册费。</p><p>Please complete registration and payment by September 21, 2026. Families who register before this date will not be charged the $25 registration fee.</p></li>
+          <li><strong>网上注册 Online Registration</strong><p>网上注册于 2026 年 7 月 20 日上午 9 时后开始。完成后请打印注册表，并同支票一同交到注册处。</p><p>Online registration opens after 9:00 AM on July 20, 2026. After registering, please print the registration summary and bring it with your payment check to the Registration Desk.</p></li>
+          <li><strong>家庭账户 Family Account</strong><p>每个学生家庭需要一个家庭账户。请加入微信号以方便学校联系，不要重复建立新账户。</p><p>Each family needs one family account. Please include your WeChat ID if available so the school can communicate with you. Do not create duplicate accounts.</p></li>
+          <li><strong>课程 Courses</strong><p>具体课程、时间、地点和收费情况，请查看 <Link to="/courses">课程安排</Link>。</p><p>For course names, times, classrooms and donation amounts, please visit the <Link to="/courses">Courses</Link> page.</p></li>
+          <li><strong>课本 Textbooks</strong><p>课本在开学第一天由任课老师发放。改课或退课时，请将课本退回学校办公室。</p><p>Textbooks are distributed by teachers on the first day of school. If you change or drop a class, please return the textbook to the school office.</p></li>
+          <li><strong>付款与邮寄 Payment and Mailing</strong><p>支票请开给 SCCS，邮寄至 SCCS PO Box 766, East Lyme, CT 06333。银行退票罚款 $25。</p><p>Please make checks payable to SCCS and mail them to SCCS, PO Box 766, East Lyme, CT 06333. Returned checks are subject to a $25 fee.</p></li>
+          <li><strong>加课、转课、退课 Add, Change or Drop Classes</strong><p>请于 2026 年 9 月 21 日前在线办理。该日期后学校不再接受转课或退课请求。</p><p>Please complete class additions, changes or drops online by September 21, 2026. After that date, course changes and drops will no longer be accepted.</p></li>
         </ol>
         <div className="action-row">
-          <Link className="button-link" to="/login">进入网上注册</Link>
-          <Download href="Forms/SCCS Online Registration User Guide.pdf">网上注册指南</Download>
+          <Link className="button-link" to="/login">进入网上注册 Online Registration</Link>
+          <Download href="Forms/SCCS Online Registration User Guide.pdf">网上注册指南 User Guide</Download>
         </div>
       </Section>
     </Page>
@@ -221,32 +222,32 @@ function Registration({ Link }) {
 }
 
 const calendarEvents = [
-  ["9/7/26", "Start of Fall 2026 Semester"],
+  ["9/7/26", "2026 秋季学期开学 Start of Fall 2026 Semester"],
   ["9/14/26", ""],
-  ["9/21/26", "Last Day to Change Class Registration"],
+  ["9/21/26", "更改课程注册截止日 Last Day to Change Class Registration"],
   ["9/28/26", ""], ["10/5/26", ""], ["10/12/26", ""], ["10/19/26", ""], ["10/26/26", ""],
-  ["11/2/26", "Daylight Saving Time Ends"], ["11/9/26", ""], ["11/16/26", ""], ["11/23/26", ""],
-  ["11/30/26", "Thanksgiving Holiday · No School"],
-  ["12/7/26", ""], ["12/14/26", "Final Exam"],
-  ["12/21/26", "Speech Contest · End of Fall Semester · Full Attendance Required"],
-  ["12/28/26", "Christmas Holiday · No School"],
-  ["1/4/27", "New Year Holiday · No School"],
-  ["1/11/27", "Start of Spring 2027 Semester"], ["1/18/27", ""], ["1/25/27", ""],
-  ["2/1/27", ""], ["2/8/27", ""], ["2/15/27", "Chinese New Year Celebration"], ["2/22/27", ""],
-  ["3/1/27", ""], ["3/8/27", "Daylight Saving Time Starts"], ["3/15/27", ""], ["3/22/27", ""], ["3/29/27", ""],
-  ["4/5/27", ""], ["4/12/27", "Spring Break · No School"], ["4/19/27", ""], ["4/26/27", ""],
-  ["5/3/27", ""], ["5/10/27", "Final Exam"], ["5/17/27", "Talent Show · End of Academic Year"],
+  ["11/2/26", "夏令时结束 Daylight Saving Time Ends"], ["11/9/26", ""], ["11/16/26", ""], ["11/23/26", ""],
+  ["11/30/26", "感恩节假期 · 停课 Thanksgiving Holiday · No School"],
+  ["12/7/26", ""], ["12/14/26", "期末考试 Final Exam"],
+  ["12/21/26", "中文演讲比赛 · 秋季学期结束 · 全勤要求 Speech Contest · End of Fall Semester · Full Attendance Required"],
+  ["12/28/26", "圣诞假期 · 停课 Christmas Holiday · No School"],
+  ["1/4/27", "新年假期 · 停课 New Year Holiday · No School"],
+  ["1/11/27", "2027 春季学期开学 Start of Spring 2027 Semester"], ["1/18/27", ""], ["1/25/27", ""],
+  ["2/1/27", ""], ["2/8/27", ""], ["2/15/27", "春节庆祝 Chinese New Year Celebration"], ["2/22/27", ""],
+  ["3/1/27", ""], ["3/8/27", "夏令时开始 Daylight Saving Time Starts"], ["3/15/27", ""], ["3/22/27", ""], ["3/29/27", ""],
+  ["4/5/27", ""], ["4/12/27", "春假 · 停课 Spring Break · No School"], ["4/19/27", ""], ["4/26/27", ""],
+  ["5/3/27", ""], ["5/10/27", "期末考试 Final Exam"], ["5/17/27", "才艺表演 · 学年结束 Talent Show · End of Academic Year"],
 ];
 
 function Calendar() {
   return (
-    <Page eyebrow="Academics" title="学校校历 2026–2027 School Calendar">
+    <Page eyebrow="教学教务 Academics" title="学校校历 2026–2027 School Calendar">
       <Section>
         <Download href="Forms/SCCS 2024-2025 School Calendar.pdf">下载校历 Download PDF</Download>
         <div className="calendar-grid">
           {calendarEvents.map(([date, event]) => (
             <div className={event.includes("No School") ? "no-school" : ""} key={date}>
-              <strong>{date}</strong><span>{event || "School Day"}</span>
+              <strong>{date}</strong><span>{event || "上课日 School Day"}</span>
             </div>
           ))}
         </div>
@@ -277,12 +278,12 @@ const chineseCourses = [
 const courseGroups = [
   {
     id: "chinese",
-    label: "Chinese 中文课",
+    label: "中文课 Chinese",
     courses: chineseCourses,
   },
   {
     id: "math",
-    label: "Math 数学课",
+    label: "数学课 Math",
     courses: [
       ["Math Advanced 3rd grade", "Katherine Zhang", "206", "$200", "11:10–11:55", "course_description/math_grade3.pdf"],
       ["Math Advanced 4th grade", "Alina Li", "218", "$200", "11:10–11:55", "course_description/math_grade4.pdf"],
@@ -300,7 +301,7 @@ const courseGroups = [
   },
   {
     id: "arts",
-    label: "Art & PE 文体课",
+    label: "文体课 Art & PE",
     courses: [
       ["Academic Art (Age 9+)", "Yujuan Zhai", "219", "$300", "12:00–12:45", "course_description/academic_art.pdf"],
       ["Chess Advanced", "Julian Horst", "214", "$150", "12:00–12:45", "course_description/chess.pdf"],
@@ -334,9 +335,9 @@ export const courseDescriptionLinkFor = (courseName) => (
 );
 
 const databaseCourseTypeGroups = {
-  CHN: { id: "chinese", label: "Chinese 中文课", order: 0 },
-  BB: { id: "math", label: "Math 数学课", order: 1 },
-  CC: { id: "arts", label: "Art&PE 文体课", order: 2 },
+  CHN: { id: "chinese", label: "中文课 Chinese", order: 0 },
+  BB: { id: "math", label: "数学课 Math", order: 1 },
+  CC: { id: "arts", label: "文体课 Art & PE", order: 2 },
   SAT: { id: "sat", label: "SAT", order: 3 },
 };
 
@@ -389,7 +390,7 @@ function Courses() {
   const activeGroup = displayedGroups.find((group) => group.id === activeGroupId) || displayedGroups[0];
 
   return (
-    <Page eyebrow="Academics" title="课程安排 Courses">
+    <Page eyebrow="教学教务 Academics" title="课程安排 Courses">
       <Section>
         <div className="course-tabs" role="tablist" aria-label="课程类别">
           {displayedGroups.map((group) => (
@@ -415,12 +416,12 @@ function Courses() {
           aria-labelledby={`course-tab-${activeGroup.id}`}
         >
           <table>
-            <thead><tr><th>Class Name</th><th>Teacher</th><th>Room</th><th>Donation</th><th>Time</th><th>Introduction</th></tr></thead>
+            <thead><tr><th>课程 Class Name</th><th>教师 Teacher</th><th>教室 Room</th><th>捐款 Donation</th><th>时间 Time</th><th>介绍 Introduction</th></tr></thead>
             <tbody>{activeGroup.courses.map(([name, teacher, room, fee, time, file]) => (
               <tr key={name}>
                 <td>{name}</td>
                 <td>{teacher}</td><td>{room}</td><td>{fee}</td><td>{time}</td>
-                <td>{file ? <ExternalLink href={file}>Course description</ExternalLink> : ""}</td>
+                <td>{file ? <ExternalLink href={file}>课程介绍 Course description</ExternalLink> : ""}</td>
               </tr>
             ))}</tbody>
           </table>
@@ -443,7 +444,7 @@ function Contact({ Link }) {
     ["联系电话 Phone", "(860) 451-9292"],
   ];
   return (
-    <Page eyebrow="More About" title="联系我们 Contact Us">
+    <Page eyebrow="更多信息 More About" title="联系我们 Contact Us">
       <Section>
         <div className="contact-grid">
           {details.map(([label, value]) => (
@@ -451,8 +452,8 @@ function Contact({ Link }) {
           ))}
         </div>
         <div className="action-row">
-          <Link className="button-link" to="/calendar">查看校历</Link>
-          <Link className="outline-link" to="/location">查看驾车路线</Link>
+          <Link className="button-link" to="/calendar">查看校历 View Calendar</Link>
+          <Link className="outline-link" to="/location">查看驾车路线 Driving Directions</Link>
         </div>
         <div className="note-box">
           <p>东南康州中文学校的工作人员都是志愿者，利用周末空闲时间为社区服务，请大家理解、配合和积极参与！</p>
@@ -464,20 +465,20 @@ function Contact({ Link }) {
 }
 
 const directions = [
-  ["从北方出发 From North", "沿 I-395 South 至 Waterford 的 CT-85 South，从出口 2 下高速，驶向 Waterford/Chesterfield。沿 CT-85 South、Cross Road 和 US-1 North/Boston Post Road 前往目的地。"],
-  ["从南方或西南方向 From South/Southwest", "沿 I-95 North 往 Providence 方向行驶，在 East Lyme 的出口 75 下高速，往 Waterford 方向，沿 US-1 North/Boston Post Road 抵达目的地。"],
-  ["从北方或东北方向 From North/Northeast", "沿 I-95 South 往 New Haven 方向行驶，在 Waterford 的出口 82 下高速，驶向 CT-85/Broad Street，沿 CT-85 South/Broad Street 抵达目的地。"],
+  ["从北方出发 From North", "沿 I-395 South 至 Waterford 的 CT-85 South，从出口 2 下高速，驶向 Waterford/Chesterfield。沿 CT-85 South、Cross Road 和 US-1 North/Boston Post Road 前往目的地。 Take I-395 South to CT-85 South in Waterford. Use Exit 2 toward Waterford/Chesterfield, then follow CT-85 South, Cross Road and US-1 North/Boston Post Road to the school."],
+  ["从南方或西南方向 From South/Southwest", "沿 I-95 North 往 Providence 方向行驶，在 East Lyme 的出口 75 下高速，往 Waterford 方向，沿 US-1 North/Boston Post Road 抵达目的地。 Take I-95 North toward Providence. Use Exit 75 in East Lyme toward Waterford, then follow US-1 North/Boston Post Road to the school."],
+  ["从北方或东北方向 From North/Northeast", "沿 I-95 South 往 New Haven 方向行驶，在 Waterford 的出口 82 下高速，驶向 CT-85/Broad Street，沿 CT-85 South/Broad Street 抵达目的地。 Take I-95 South toward New Haven. Use Exit 82 in Waterford toward CT-85/Broad Street, then follow CT-85 South/Broad Street to the school."],
 ];
 
 function Location() {
   return (
-    <Page eyebrow="More About" title="交通指南 Location">
+    <Page eyebrow="更多信息 More About" title="交通指南 Location">
       <Section>
         <div className="location-hero">
-          <span>School Location</span>
+          <span>学校地址 School Location</span>
           <h2>20 Rope Ferry Road<br />Waterford, CT 06385</h2>
-          <p>Waterford High School · Sundays 9:30 AM – 12:45 PM</p>
-          <a className="button-link" href="https://maps.google.com/?q=20+Rope+Ferry+Road+Waterford+CT+06385" target="_blank" rel="noreferrer">在地图中打开</a>
+          <p>Waterford 高中 · 周日 9:30 AM – 12:45 PM Waterford High School · Sundays 9:30 AM – 12:45 PM</p>
+          <a className="button-link" href="https://maps.google.com/?q=20+Rope+Ferry+Road+Waterford+CT+06385" target="_blank" rel="noreferrer">在地图中打开 Open in Maps</a>
         </div>
       </Section>
       <Section title="驾车路线 Driving Directions">
@@ -491,18 +492,19 @@ function Location() {
 
 function CommunityServices() {
   return (
-    <Page eyebrow="More About" title="公益服务 Community Services">
+    <Page eyebrow="更多信息 More About" title="公益服务 Community Services">
       <Section>
+        <p className="lead">社区志愿服务在美国有悠久而光荣的传统。SCCS 学生和家长长期投入时间服务社区，在贡献中成长，也通过行动成为彼此的榜样。</p>
         <p className="lead">Community volunteer service has a long and proud history in America. SCCS students and parents have devoted countless hours to serve our community, making it a better place while becoming role models through service.</p>
       </Section>
       <div className="feature-cards">
         <article>
           <img src={`${oldSite}Images/lyme_light.jpg`} alt="Lyme Light" />
-          <div><span>Student Performance Group</span><h2>The Lyme Light</h2><p>Lyme Light is a nonprofit performance group founded in March 2013 to provide community service opportunities for students. The group performs at senior centers and nursing homes throughout the region.</p><ExternalLink className="text-link" href="https://www.ctlymelight.org/">Visit Lyme Light →</ExternalLink></div>
+          <div><span>学生表演团队 Student Performance Group</span><h2>The Lyme Light</h2><p>Lyme Light 是 2013 年 3 月成立的非营利学生表演团队，为学生提供社区服务机会，并在本地区养老中心和护理机构演出。</p><p>Lyme Light is a nonprofit performance group founded in March 2013 to provide community service opportunities for students. The group performs at senior centers and nursing homes throughout the region.</p><ExternalLink className="text-link" href="https://www.ctlymelight.org/">访问 Lyme Light Visit Lyme Light →</ExternalLink></div>
         </article>
         <article>
           <img src={`${oldSite}Images/PresidentsVolunteerAward.jpg`} alt="President's Volunteer Service Award" />
-          <div><span>Volunteer Recognition</span><h2>President's Volunteer Service Awards</h2><p>SCCS is a registered certifying organization for the President's Volunteer Service Award and can nominate eligible volunteers, verify service and distribute awards.</p><a className="text-link" href="mailto:ytu@ctsccs.org">Contact Ms. Yinyu Tu →</a></div>
+          <div><span>志愿服务表彰 Volunteer Recognition</span><h2>总统志愿服务奖 President's Volunteer Service Awards</h2><p>SCCS 是总统志愿服务奖的注册认证机构，可为符合条件的志愿者提名、核实服务时间并颁发奖项。</p><p>SCCS is a registered certifying organization for the President's Volunteer Service Award and can nominate eligible volunteers, verify service and distribute awards.</p><a className="text-link" href="mailto:ytu@ctsccs.org">联系涂音宇老师 Contact Ms. Yinyu Tu →</a></div>
         </article>
       </div>
     </Page>
@@ -517,8 +519,9 @@ const sponsors = [
 
 function Sponsors() {
   return (
-    <Page eyebrow="More About" title="友情赞助 Proud Sponsors">
+    <Page eyebrow="更多信息 More About" title="友情赞助 Proud Sponsors">
       <Section>
+        <p className="lead">社区朋友的慷慨支持帮助学校开展日常运营、购置教材和教学材料、支持教师培训、教育活动和拓展课程。感谢所有友情赞助者，所有捐助都直接用于支持 SCCS 教育项目。</p>
         <p className="lead">The generosity of our community supports school operations, books and teaching materials, teacher training, educational events and enrichment activities. Thanks to our Proud Sponsors, 100% of contributed funds directly support SCCS educational programs.</p>
         <div className="sponsor-grid">
           {sponsors.map(([name, href, image]) => <ExternalLink href={href} key={name}><img src={`${oldSite}${image}`} alt={name} /><strong>{name}</strong></ExternalLink>)}
@@ -540,8 +543,10 @@ const resources = [
 
 function Resources() {
   return (
-    <Page eyebrow="More About" title="中文资讯 Chinese Resources">
+    <Page eyebrow="更多信息 More About" title="中文资讯 Chinese Resources">
       <Section>
+        <p className="lead">这里收集了中文学习、教材、练习纸和相关文化教育资源，供学生和家长参考。</p>
+        <p className="lead">This page collects Chinese learning resources, textbooks, practice sheets and related cultural education links for students and parents.</p>
         <div className="resource-grid">
           {resources.map(([name, href, image]) => <ExternalLink href={href} key={name}><img src={`${oldSite}${image}`} alt="" /><strong>{name}</strong><span>打开资源 ↗</span></ExternalLink>)}
         </div>
@@ -566,8 +571,10 @@ const communityLinks = [
 
 function Links() {
   return (
-    <Page eyebrow="More About" title="社区链接 Community Links">
+    <Page eyebrow="更多信息 More About" title="社区链接 Community Links">
       <Section>
+        <p className="lead">以下链接连接到周边学校、教育机构和友校资源，方便家长和社区成员查询。</p>
+        <p className="lead">The following links connect families and community members to nearby schools, educational organizations and partner Chinese schools.</p>
         <div className="community-links">
           {communityLinks.map(([name, href], index) => <ExternalLink href={href} key={name}><span>{String(index + 1).padStart(2, "0")}</span><strong>{name}</strong><i>↗</i></ExternalLink>)}
         </div>
@@ -607,19 +614,20 @@ function Feedback() {
   };
 
   return (
-    <Page eyebrow="More About" title="意见反馈 Feedback">
+    <Page eyebrow="更多信息 More About" title="意见反馈 Feedback">
       <Section>
+        <p className="lead">感谢您访问 SCCS 网站。如果您在使用网站时遇到困难，或有问题、想法和建议，欢迎给我们留言。您的反馈会帮助我们把网站做得更好。</p>
         <p className="lead">Thank you for visiting the SCCS website. If you have any difficulties, questions, ideas or suggestions, please send us a message. Your feedback helps make this site better.</p>
         {submitted ? (
-          <div className="success-message"><strong>谢谢您的反馈！</strong><p>We received your feedback and sent it to the SCCS team.</p></div>
+          <div className="success-message"><strong>谢谢您的反馈！ Thank you for your feedback!</strong><p>我们已收到您的反馈，并已发送给 SCCS 团队。</p><p>We received your feedback and sent it to the SCCS team.</p></div>
         ) : (
           <form className="feedback-form" onSubmit={submitFeedback}>
-            <label><span>Your Name *</span><input name="name" required /></label>
-            <label><span>Your Email *</span><input name="email" type="email" required /></label>
-            <label><span>Your Phone</span><input name="phone" type="tel" /></label>
-            <label className="full"><span>Your Comment or Questions *</span><textarea name="message" rows="7" required /></label>
+            <label><span>您的姓名 Your Name *</span><input name="name" required /></label>
+            <label><span>您的邮箱 Your Email *</span><input name="email" type="email" required /></label>
+            <label><span>您的电话 Your Phone</span><input name="phone" type="tel" /></label>
+            <label className="full"><span>意见或问题 Your Comment or Questions *</span><textarea name="message" rows="7" required /></label>
             {error && <div className="form-message error">{error}</div>}
-            <button className="button-link" type="submit" disabled={busy}>{busy ? "Submitting..." : "提交反馈 Submit"}</button>
+            <button className="button-link" type="submit" disabled={busy}>{busy ? "正在提交... Submitting..." : "提交反馈 Submit"}</button>
           </form>
         )}
       </Section>

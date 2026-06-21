@@ -8,7 +8,7 @@ import "./styles.css";
 
 const navGroups = [
   {
-    title: "Our School",
+    title: "学校概况 Our School",
     links: [
       ["学校简介 About Us", "/about"],
       ["管理团队 Management Team", "/administration"],
@@ -17,7 +17,7 @@ const navGroups = [
     ],
   },
   {
-    title: "Academics",
+    title: "教学教务 Academics",
     links: [
       ["教学大纲 Catalog", "/catalog"],
       ["课程注册 Registration", "/registration"],
@@ -26,7 +26,7 @@ const navGroups = [
     ],
   },
   {
-    title: "More About",
+    title: "更多信息 More About",
     links: [
       ["联系我们 Contact Us", "/contact"],
       ["交通指南 Location", "/location"],
@@ -39,10 +39,18 @@ const navGroups = [
   },
 ];
 
-const slides = Array.from(
-  { length: 10 },
-  (_, index) => `https://ctsccs.org/images/img_${index + 1}.png`,
-);
+const slides = [
+  "/Images/hero-children-laughing.png",
+  "/Images/hero-chinese-reading.png",
+  "/Images/hero-calligraphy-class.png",
+  "/Images/hero-classroom-language.png",
+  "/Images/hero-school-arrival.png",
+  "/Images/hero-cultural-dance.png",
+  "/Images/hero-stem-robotics.png",
+  "/Images/hero-art-class.png",
+  "/Images/hero-music-class.png",
+  "/Images/hero-outdoor-community.png",
+];
 
 function useRouter() {
   const [path, setPath] = useState(window.location.pathname);
@@ -191,7 +199,7 @@ function Slideshow() {
       ))}
       <div className="hero-shade" />
       <div className="hero-copy">
-        <p>Welcome to SCCS</p>
+        <p>欢迎来到 SCCS Welcome to SCCS</p>
         <h1>在语言里认识文化<br />在社区中一起成长</h1>
         <p className="hero-subtitle">Discover culture through language. Grow together in community.</p>
         <SiteLink className="hero-button" to="/registration">
@@ -219,18 +227,22 @@ function Announcements() {
     <div className="content-grid">
       <section className="card announcements">
         <div className="section-heading">
-          <span className="eyebrow">Latest News</span>
-          <h2>标题新闻</h2>
+          <span className="eyebrow">最新消息 Latest News</span>
+          <h2>标题新闻 Headlines</h2>
         </div>
         <article>
           <div className="date-badge"><strong>07</strong><span>SEP</span></div>
           <div>
-            <h3>关于 2026–2027 学年通知</h3>
+            <h3>关于 2026–2027 学年通知 2026–2027 School Year Notice</h3>
             <ul>
               <li>中文学校新学期将于 2026 年 9 月 7 日开始，第一节课上课时间为上午 9:30。</li>
+              <li>The new school year begins on September 7, 2026, with the first class starting at 9:30 AM.</li>
               <li>2026 秋季所有课程将在 <strong>Waterford High School</strong> 进行，恢复课堂现场教学。</li>
+              <li>All Fall 2026 classes will meet in person at <strong>Waterford High School</strong>.</li>
               <li>LCG 将 SAT、PSAT 合并为一节 90 分钟课程，收费调整为 $500。</li>
+              <li>LCG will combine SAT and PSAT into one 90-minute course with tuition adjusted to $500.</li>
               <li>Norwich 家庭可选择现场注册，也可以 <SiteLink to="/registration">在线注册课程</SiteLink>。</li>
+              <li>Norwich families may register on site or complete <SiteLink to="/registration">online registration</SiteLink>.</li>
             </ul>
           </div>
         </article>
@@ -238,15 +250,19 @@ function Announcements() {
 
       <section className="card principal">
         <div className="section-heading">
-          <span className="eyebrow">From Our Principal</span>
-          <h2>校长纸上谈兵</h2>
+          <span className="eyebrow">校长寄语 From Our Principal</span>
+          <h2>校长纸上谈兵 Principal's Notes</h2>
         </div>
         <blockquote>
           “我们不仅仅是为了教会学生讲中文和理解中国文化而办学，我们要参与培养一批批真正掌握双语和多元文化的学生。”
         </blockquote>
+        <blockquote>
+          "Our school is not only here to teach Chinese language and culture. We hope to help raise generations of students who are truly bilingual and multicultural."
+        </blockquote>
         <p>我们不断摸索并结合中美两国教学方法，培养既有扎实基础知识，又富有创新能力，愿意贡献并勇于负责的人才。</p>
+        <p>We continue to combine the strengths of Chinese and American educational approaches, helping students build strong foundations, creativity, responsibility and a spirit of service.</p>
         <SiteLink className="text-link" to="/about">
-          了解学校 <span aria-hidden="true">→</span>
+          了解学校 Learn About SCCS <span aria-hidden="true">→</span>
         </SiteLink>
       </section>
     </div>
@@ -289,13 +305,13 @@ function Footer() {
       <div className="footer-inner">
         <div>
           <strong>SCCS</strong>
-          <p>Southeastern Connecticut Chinese School</p>
+          <p>东南康州中文学校 Southeastern Connecticut Chinese School</p>
         </div>
         <div className="footer-links">
-          <SiteLink to="/about">About Us</SiteLink>
-          <SiteLink to="/contact">Contact</SiteLink>
-          <SiteLink to="/location">Location</SiteLink>
-          <SiteLink to="/newsletters">Newsletter</SiteLink>
+          <SiteLink to="/about">学校简介 About Us</SiteLink>
+          <SiteLink to="/contact">联系我们 Contact</SiteLink>
+          <SiteLink to="/location">交通指南 Location</SiteLink>
+          <SiteLink to="/newsletters">新闻快讯 Newsletter</SiteLink>
         </div>
         <p className="copyright">© 2026–2027 SCCS · Waterford, Connecticut, USA</p>
       </div>
@@ -341,7 +357,8 @@ function App() {
                 <div className="page-title"><span>404</span><h1>页面未找到</h1></div>
                 <section className="page-section">
                   <p>你访问的页面不存在。</p>
-                  <SiteLink className="button-link" to="/">返回首页</SiteLink>
+                  <p>The page you requested does not exist.</p>
+                  <SiteLink className="button-link" to="/">返回首页 Back Home</SiteLink>
                 </section>
               </div>
             )}

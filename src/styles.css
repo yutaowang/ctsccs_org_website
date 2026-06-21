@@ -669,7 +669,7 @@ footer {
   color: white;
   background:
     linear-gradient(110deg, rgba(8, 31, 67, 0.98), rgba(23, 73, 142, 0.84)),
-    url("https://ctsccs.org/images/img_4.png") center / cover;
+    url("/Images/hero-classroom-language.png") center / cover;
   box-shadow: 0 16px 45px rgba(14, 41, 84, 0.15);
 }
 
@@ -1126,7 +1126,7 @@ footer {
   color: white;
   background:
     linear-gradient(100deg, rgba(7, 27, 58, 0.95), rgba(14, 41, 84, 0.65)),
-    url("https://ctsccs.org/images/img_8.png") center / cover;
+    url("/Images/hero-school-arrival.png") center / cover;
 }
 
 .location-hero > span {
