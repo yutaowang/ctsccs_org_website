@@ -204,6 +204,21 @@ export default async function handler(request, response) {
       mode: "payment",
       client_reference_id: String(family.id),
       customer_email: family.email || user.email,
+      payment_method_types: ["card"],
+      branding_settings: {
+        display_name: "SCCS Online Registration",
+        button_color: "#f0bf32",
+        background_color: "#fffefa",
+        border_style: "rounded",
+        logo: {
+          type: "url",
+          url: `${configuration.siteUrl}/sccs-logo.png`,
+        },
+        icon: {
+          type: "url",
+          url: `${configuration.siteUrl}/sccs-blue-mark.png`,
+        },
+      },
       success_url: `${configuration.siteUrl}/account?payment=success`,
       cancel_url: `${configuration.siteUrl}/account?payment=cancelled`,
       metadata: {
