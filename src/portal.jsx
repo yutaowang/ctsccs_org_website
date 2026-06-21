@@ -1946,6 +1946,14 @@ function StaffPortal({ isAdmin }) {
     .filter((payment) => payment.status === "paid")
     .reduce((sum, payment) => sum + Number(payment.amount_cents || 0), 0);
   const hasPaidPayment = (familyId) => paidCentsForFamily(familyId) > 0;
+  const legacyPaidForFamily = (family) => {
+    const row = legacyPaymentForFamily(family);
+    return [
+      row?.pay_1_cash, row?.pay_1_check, row?.pay_2_cash, row?.pay_2_check,
+      row?.pay_3_cash, row?.pay_3_check, row?.pay_4_cash, row?.pay_4_check,
+      row?.pay_5_cash, row?.pay_5_check,
+    ].reduce((sum, value) => sum + paymentNumber(value), 0);
+  };
   const familyAccountFor = (family) => (
     accountByFamilyId.get(family.id)
     || accountByEmail.get(String(family.email || "").toLowerCase())
@@ -1956,7 +1964,7 @@ function StaffPortal({ isAdmin }) {
       registeredClassIds(registrationByStudentId.get(student.id))
     ));
     const due = paymentDueForFamily(family).due;
-    const paid = paidCentsForFamily(family.id) / 100;
+    const paid = legacyPaidForFamily(family) + (paidCentsForFamily(family.id) / 100);
     const account = familyAccountFor(family);
     if (due > 0 && paid >= due) return "Paid";
     if (registeredCourses.length && due > 0) return "Waiting for Payment";
@@ -2009,7 +2017,7 @@ function StaffPortal({ isAdmin }) {
         email: family.email,
         phone: family.phone,
         status: statusLabel,
-        has_paid_payment: hasPaidPayment(family.id),
+        has_paid_payment: hasPaidPayment(family.id) || legacyPaidForFamily(family) > 0,
       };
     });
   const familyIdsWithProfile = new Set(families.map((family) => family.id));

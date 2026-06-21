@@ -93,7 +93,7 @@ async function deleteFamilyAccount(configuration, body) {
   if (familyId) {
     const familyResult = await supabaseRequest(
       configuration,
-      `/rest/v1/families?select=id,user_id,email&id=eq.${encodeURIComponent(familyId)}&limit=1`,
+      `/rest/v1/families?select=id,user_id,email,legacy_family_id&id=eq.${encodeURIComponent(familyId)}&limit=1`,
       { profile: "sccs" },
     );
     if (!familyResult.ok) throw new Error(familyResult.data?.message || "Could not load family profile.");
@@ -102,7 +102,7 @@ async function deleteFamilyAccount(configuration, body) {
   if (!family && accountId) {
     const familyResult = await supabaseRequest(
       configuration,
-      `/rest/v1/families?select=id,user_id,email&user_id=eq.${encodeURIComponent(accountId)}&limit=1`,
+      `/rest/v1/families?select=id,user_id,email,legacy_family_id&user_id=eq.${encodeURIComponent(accountId)}&limit=1`,
       { profile: "sccs" },
     );
     if (!familyResult.ok) throw new Error(familyResult.data?.message || "Could not load family profile.");
@@ -110,13 +110,27 @@ async function deleteFamilyAccount(configuration, body) {
   }
 
   if (family?.id) {
-    const paidResult = await supabaseRequest(
-      configuration,
-      `/rest/v1/payments?select=id&family_id=eq.${encodeURIComponent(family.id)}&status=eq.paid&limit=1`,
-      { profile: "sccs" },
-    );
+    const legacyFamilyId = family.legacy_family_id || family.id;
+    const [paidResult, legacyPaymentResult] = await Promise.all([
+      supabaseRequest(
+        configuration,
+        `/rest/v1/payments?select=id&family_id=eq.${encodeURIComponent(family.id)}&status=eq.paid&limit=1`,
+        { profile: "sccs" },
+      ),
+      supabaseRequest(
+        configuration,
+        `/rest/v1/family_registrations?select=pay_1_cash,pay_1_check,pay_2_cash,pay_2_check,pay_3_cash,pay_3_check,pay_4_cash,pay_4_check,pay_5_cash,pay_5_check&or=(family_id.eq.${encodeURIComponent(family.id)},legacy_family_id.eq.${encodeURIComponent(legacyFamilyId)})&limit=1`,
+        { profile: "sccs" },
+      ),
+    ]);
     if (!paidResult.ok) throw new Error(paidResult.data?.message || "Could not verify payment history.");
-    if ((paidResult.data || []).length) {
+    if (!legacyPaymentResult.ok) throw new Error(legacyPaymentResult.data?.message || "Could not verify legacy payment history.");
+    const legacyPaid = (legacyPaymentResult.data || []).some((row) => [
+      row.pay_1_cash, row.pay_1_check, row.pay_2_cash, row.pay_2_check,
+      row.pay_3_cash, row.pay_3_check, row.pay_4_cash, row.pay_4_check,
+      row.pay_5_cash, row.pay_5_check,
+    ].some((value) => Number(value || 0) > 0));
+    if ((paidResult.data || []).length || legacyPaid) {
       const error = new Error("This family has payment records and cannot be deleted.");
       error.status = 409;
       throw error;
@@ -124,6 +138,15 @@ async function deleteFamilyAccount(configuration, body) {
   }
 
   const targetUserId = family?.user_id || accountId;
+  if (family?.id) {
+    const deleteFamily = await supabaseRequest(
+      configuration,
+      `/rest/v1/families?id=eq.${encodeURIComponent(family.id)}`,
+      { method: "DELETE", profile: "sccs", prefer: "return=minimal" },
+    );
+    if (!deleteFamily.ok) throw new Error(deleteFamily.data?.message || "Could not delete family profile.");
+  }
+
   if (targetUserId) {
     const deleteUser = await supabaseRequest(
       configuration,
@@ -133,15 +156,6 @@ async function deleteFamilyAccount(configuration, body) {
     if (!deleteUser.ok && deleteUser.status !== 404) {
       throw new Error(deleteUser.data?.message || "Could not delete login account.");
     }
-  }
-
-  if (family?.id) {
-    const deleteFamily = await supabaseRequest(
-      configuration,
-      `/rest/v1/families?id=eq.${encodeURIComponent(family.id)}`,
-      { method: "DELETE", profile: "sccs", prefer: "return=minimal" },
-    );
-    if (!deleteFamily.ok) throw new Error(deleteFamily.data?.message || "Could not delete family profile.");
   }
 }
 

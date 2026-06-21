@@ -1,5 +1,26 @@
 # SCCS Website Change Log
 
+## 2026-06-21
+
+- Added Stripe online payment support on the Family Summary page.
+- Added payment transaction records for cash, check, and online payments, including online card metadata when available.
+- Updated Family Summary to show course donation amounts, Safety Patrol Deposit, total due, payment notes, and office-use payment fields.
+- Updated Family Summary print formatting for registration and tuition summaries.
+- Updated the Pay Online button to show a green Paid state after payment is recorded.
+- Updated Admin Portal Payment History to retain the legacy summary columns, group payment transactions under each Family ID, add method details, and support CSV export.
+- Added payment search fields for selecting families and filtering Payment History.
+- Updated family search/payment family lookup to support FamID, email, and name matching with due amounts in the search results.
+- Added Stripe Checkout customization for SCCS branding and card-only checkout configuration.
+- Fixed email validation redirect URLs to use `SITE_URL` instead of `localhost:3000`.
+- Updated family account creation to collect required parent/contact profile fields before sending validation email.
+- Marked required family account signup fields with `*` and added Retype Password validation.
+- Added Auth-only family accounts to Admin Portal Family Search so pending/validated accounts without family profiles can be found.
+- Added a Family Search Status column for account and registration/payment states, including Registered account only, Validated account only, Added Students, Registered Classes, Waiting for Payment, and Paid.
+- Added Family Search delete actions for unpaid family accounts.
+- Blocked Family Search deletion for families with new or legacy payment records.
+- Fixed Family Search deletion so it deletes the family profile before deleting the Auth account, avoiding `permission denied for table families` during cascades.
+- Added Admin Portal Family Search protection so staff/admin accounts cannot be deleted from Family Search.
+
 ## 2026-06-19
 
 - Updated `/admin` to use unified email-based staff login.

@@ -85,11 +85,16 @@ function Message({ error, message }) {
   return <div className={`form-message ${error ? "error" : ""}`}>{error || message}</div>;
 }
 
+function RequiredLabel({ children }) {
+  return <span>{children} <strong className="required-marker" aria-label="required">*</strong></span>;
+}
+
 export function LoginPage({ Link, navigate }) {
   const { session, loading, role, signOut } = useAuth();
   const [mode, setMode] = useState("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
+  const [retypePassword, setRetypePassword] = useState("");
   const [signupProfile, setSignupProfile] = useState({
     family_name: "",
     parent_first_name: "",
@@ -145,9 +150,13 @@ export function LoginPage({ Link, navigate }) {
 
   const submit = async (event) => {
     event.preventDefault();
-    setBusy(true);
     setError("");
     setMessage("");
+    if (mode === "signup" && password !== retypePassword) {
+      setError("Passwords do not match.");
+      return;
+    }
+    setBusy(true);
     let result;
 
     if (mode === "signup") {
@@ -209,20 +218,23 @@ export function LoginPage({ Link, navigate }) {
         {mode === "signup" && (
           <>
             <label><span>Family Name</span><input value={signupProfile.family_name} onChange={(e) => setSignupProfile({ ...signupProfile, family_name: e.target.value })} /></label>
-            <label><span>Parent First Name</span><input value={signupProfile.parent_first_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_first_name: e.target.value })} required /></label>
-            <label><span>Parent Last Name</span><input value={signupProfile.parent_last_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_last_name: e.target.value })} required /></label>
+            <label><RequiredLabel>Parent First Name</RequiredLabel><input value={signupProfile.parent_first_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_first_name: e.target.value })} required /></label>
+            <label><RequiredLabel>Parent Last Name</RequiredLabel><input value={signupProfile.parent_last_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_last_name: e.target.value })} required /></label>
             <label><span>Parent Chinese Name</span><input value={signupProfile.parent_chinese_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_chinese_name: e.target.value })} /></label>
-            <label className="wide"><span>Address</span><input value={signupProfile.address} onChange={(e) => setSignupProfile({ ...signupProfile, address: e.target.value })} required /></label>
+            <label className="wide"><RequiredLabel>Address</RequiredLabel><input value={signupProfile.address} onChange={(e) => setSignupProfile({ ...signupProfile, address: e.target.value })} required /></label>
             <label><span>City</span><input value={signupProfile.city} onChange={(e) => setSignupProfile({ ...signupProfile, city: e.target.value })} /></label>
             <label><span>State</span><input value={signupProfile.state} onChange={(e) => setSignupProfile({ ...signupProfile, state: e.target.value })} /></label>
             <label><span>Zip</span><input value={signupProfile.zip} onChange={(e) => setSignupProfile({ ...signupProfile, zip: e.target.value })} /></label>
-            <label><span>Phone</span><input type="tel" value={signupProfile.phone} onChange={(e) => setSignupProfile({ ...signupProfile, phone: e.target.value })} required /></label>
+            <label><RequiredLabel>Phone</RequiredLabel><input type="tel" value={signupProfile.phone} onChange={(e) => setSignupProfile({ ...signupProfile, phone: e.target.value })} required /></label>
             <label><span>Wechat</span><input value={signupProfile.wechat} onChange={(e) => setSignupProfile({ ...signupProfile, wechat: e.target.value })} /></label>
           </>
         )}
-        <label className={mode === "signup" ? "wide" : ""}><span>{mode === "signup" ? "Email / Username" : "Email"}</span><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
+        <label className={mode === "signup" ? "wide" : ""}><RequiredLabel>{mode === "signup" ? "Email / Username" : "Email"}</RequiredLabel><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
         {mode !== "reset" && (
-          <label><span>Password</span><input type="password" minLength="8" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
+          <label><RequiredLabel>Password</RequiredLabel><input type="password" minLength="8" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
+        )}
+        {mode === "signup" && (
+          <label><RequiredLabel>Retype Password</RequiredLabel><input type="password" minLength="8" value={retypePassword} onChange={(e) => setRetypePassword(e.target.value)} required /></label>
         )}
         <Message error={error} message={message} />
         <button className="button-link" type="submit" disabled={busy}>{busy ? "Please wait..." : titles[mode]}</button>

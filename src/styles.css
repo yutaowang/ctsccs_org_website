@@ -1433,6 +1433,11 @@ footer {
   border-left-color: #b23c34;
 }
 
+.required-marker {
+  color: #b13a32;
+  font-weight: 900;
+}
+
 .account-heading,
 .student-list > div {
   display: flex;
