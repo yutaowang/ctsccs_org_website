@@ -30,6 +30,15 @@ function ExternalLink({ href, children, className }) {
   );
 }
 
+function StackedText({ zh, en }) {
+  return (
+    <span className="stacked-bilingual">
+      <span>{zh}</span>
+      <span>{en}</span>
+    </span>
+  );
+}
+
 function Page({ eyebrow, title, children }) {
   return (
     <article className="inner-page">
@@ -416,12 +425,21 @@ function Courses() {
           aria-labelledby={`course-tab-${activeGroup.id}`}
         >
           <table>
-            <thead><tr><th>课程 Class Name</th><th>教师 Teacher</th><th>教室 Room</th><th>捐款 Donation</th><th>时间 Time</th><th>介绍 Introduction</th></tr></thead>
+            <thead>
+              <tr>
+                <th><StackedText zh="课程" en="Class Name" /></th>
+                <th><StackedText zh="教师" en="Teacher" /></th>
+                <th><StackedText zh="教室" en="Room" /></th>
+                <th><StackedText zh="捐款" en="Donation" /></th>
+                <th><StackedText zh="时间" en="Time" /></th>
+                <th><StackedText zh="介绍" en="Introduction" /></th>
+              </tr>
+            </thead>
             <tbody>{activeGroup.courses.map(([name, teacher, room, fee, time, file]) => (
               <tr key={name}>
                 <td>{name}</td>
                 <td>{teacher}</td><td>{room}</td><td>{fee}</td><td>{time}</td>
-                <td>{file ? <ExternalLink href={file}>课程介绍 Course description</ExternalLink> : ""}</td>
+                <td>{file ? <ExternalLink href={file}><StackedText zh="课程介绍" en="Course description" /></ExternalLink> : ""}</td>
               </tr>
             ))}</tbody>
           </table>
