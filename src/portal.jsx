@@ -65,6 +65,18 @@ const sortedByLabel = (items, labelFor) => (
   [...items].sort((left, right) => compareValues(labelFor(left), labelFor(right)))
 );
 
+const fetchAllRows = async (buildQuery, pageSize = 1000) => {
+  const rows = [];
+  for (let from = 0; ; from += pageSize) {
+    const result = await buildQuery().range(from, from + pageSize - 1);
+    if (result.error) return { data: rows, error: result.error };
+    rows.push(...(result.data || []));
+    if (!result.data || result.data.length < pageSize) {
+      return { data: rows, error: null };
+    }
+  }
+};
+
 const donationAmount = (course) => Number(course?.donation || 0);
 const donationTotal = (courses) => courses.reduce((sum, course) => sum + donationAmount(course), 0);
 const registeredClassIds = (registration) => [1, 2, 3]
@@ -1443,22 +1455,22 @@ function StaffPortal({ isAdmin }) {
 
   const load = async () => {
     const requests = [
-      supabase.from("classes").select("*, class_times(display_time)").order("name"),
-      supabase.from("class_times").select("*").order("id"),
-      supabase.from("teacher_classes").select("*"),
-      supabase.from("teachers").select("*").order("last_name"),
-      supabase.from("students").select("*").order("last_name"),
-      supabase.from("families").select("*").order("legacy_family_id"),
-      supabase.from("class_registrations").select("*"),
-      supabase.from("attendance").select("*").order("class_date", { ascending: false }),
-      supabase.from("student_grades").select("*").order("recorded_at", { ascending: false }),
+      fetchAllRows(() => supabase.from("classes").select("*, class_times(display_time)").order("name")),
+      fetchAllRows(() => supabase.from("class_times").select("*").order("id")),
+      fetchAllRows(() => supabase.from("teacher_classes").select("*")),
+      fetchAllRows(() => supabase.from("teachers").select("*").order("last_name")),
+      fetchAllRows(() => supabase.from("students").select("*").order("last_name")),
+      fetchAllRows(() => supabase.from("families").select("*").order("legacy_family_id")),
+      fetchAllRows(() => supabase.from("class_registrations").select("*")),
+      fetchAllRows(() => supabase.from("attendance").select("*").order("class_date", { ascending: false })),
+      fetchAllRows(() => supabase.from("student_grades").select("*").order("recorded_at", { ascending: false })),
     ];
     if (isAdmin) {
       requests.push(
-        supabase.from("payments").select("*").order("paid_at", { ascending: false }),
-        supabase.from("family_registrations").select("*"),
-        supabase.from("user_roles").select("*").order("created_at"),
-        supabase.from("site_settings").select("*").order("key"),
+        fetchAllRows(() => supabase.from("payments").select("*").order("paid_at", { ascending: false })),
+        fetchAllRows(() => supabase.from("family_registrations").select("*")),
+        fetchAllRows(() => supabase.from("user_roles").select("*").order("created_at")),
+        fetchAllRows(() => supabase.from("site_settings").select("*").order("key")),
       );
     }
     const results = await Promise.all(requests);
