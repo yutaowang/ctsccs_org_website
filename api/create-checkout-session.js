@@ -208,7 +208,12 @@ export default async function handler(request, response) {
       mode: "payment",
       client_reference_id: String(family.id),
       customer_email: family.email || user.email,
-      payment_method_types: ["card"],
+      payment_method_types: ["card", "wechat_pay"],
+      payment_method_options: {
+        wechat_pay: {
+          client: "web",
+        },
+      },
       branding_settings: {
         display_name: "SCCS Online Registration",
         button_color: "#f0bf32",
