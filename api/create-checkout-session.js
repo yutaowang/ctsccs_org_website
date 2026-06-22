@@ -74,6 +74,13 @@ function studentName(student) {
   return [student?.first_name, student?.last_name].filter(Boolean).join(" ") || `Student ${student?.id}`;
 }
 
+function parentName(family) {
+  return [family?.parent_first_name, family?.parent_last_name]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join(" ");
+}
+
 function encodeCheckoutParams(params, prefix = "") {
   const pairs = [];
   Object.entries(params).forEach(([key, value]) => {
@@ -95,9 +102,9 @@ function encodeCheckoutParams(params, prefix = "") {
   return pairs;
 }
 
-async function createStripeCheckoutSession(configuration, params) {
+async function stripeRequest(configuration, path, params) {
   const form = new URLSearchParams(encodeCheckoutParams(params));
-  const result = await fetch("https://api.stripe.com/v1/checkout/sessions", {
+  const result = await fetch(`https://api.stripe.com/v1${path}`, {
     method: "POST",
     headers: {
       Authorization: `Bearer ${configuration.stripeSecretKey}`,
@@ -108,9 +115,29 @@ async function createStripeCheckoutSession(configuration, params) {
   });
   const data = await result.json();
   if (!result.ok) {
-    throw new Error(data?.error?.message || "Could not create Stripe Checkout session.");
+    throw new Error(data?.error?.message || "Stripe request failed.");
   }
   return data;
+}
+
+async function createStripeCustomer(configuration, family, user) {
+  return stripeRequest(configuration, "/customers", {
+    email: family.email || user.email,
+    name: parentName(family) || family.email || user.email,
+    metadata: {
+      family_id: String(family.id),
+      legacy_family_id: family.legacy_family_id ? String(family.legacy_family_id) : "",
+      user_id: user.id,
+    },
+  });
+}
+
+async function createStripeCheckoutSession(configuration, params) {
+  try {
+    return await stripeRequest(configuration, "/checkout/sessions", params);
+  } catch (error) {
+    throw new Error(error?.message || "Could not create Stripe Checkout session.");
+  }
 }
 
 export default async function handler(request, response) {
@@ -204,10 +231,11 @@ export default async function handler(request, response) {
       return json(response, 400, { error: "No payment amount is due." });
     }
 
+    const customer = await createStripeCustomer(configuration, family, user);
     const session = await createStripeCheckoutSession(configuration, {
       mode: "payment",
       client_reference_id: String(family.id),
-      customer_email: family.email || user.email,
+      customer: customer.id,
       payment_method_types: ["card", "wechat_pay"],
       payment_method_options: {
         wechat_pay: {
