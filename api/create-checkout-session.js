@@ -80,7 +80,11 @@ function encodeCheckoutParams(params, prefix = "") {
     const name = prefix ? `${prefix}[${key}]` : key;
     if (Array.isArray(value)) {
       value.forEach((item, index) => {
-        pairs.push(...encodeCheckoutParams(item, `${name}[${index}]`));
+        if (item && typeof item === "object") {
+          pairs.push(...encodeCheckoutParams(item, `${name}[${index}]`));
+        } else if (item !== undefined && item !== null) {
+          pairs.push([`${name}[${index}]`, String(item)]);
+        }
       });
     } else if (value && typeof value === "object") {
       pairs.push(...encodeCheckoutParams(value, name));
