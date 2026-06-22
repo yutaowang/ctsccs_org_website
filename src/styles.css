@@ -1407,6 +1407,7 @@ footer {
 }
 
 .auth-form input,
+.auth-form select,
 .account-form input,
 .registration-row select {
   width: 100%;

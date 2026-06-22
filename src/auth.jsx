@@ -2,6 +2,62 @@ import React, { createContext, useContext, useEffect, useState } from "react";
 import { isSupabaseConfigured, supabase } from "./supabase";
 
 const FAMILY_ROLE = "sccs_family_role";
+const US_STATES = [
+  ["AL", "Alabama"],
+  ["AK", "Alaska"],
+  ["AZ", "Arizona"],
+  ["AR", "Arkansas"],
+  ["CA", "California"],
+  ["CO", "Colorado"],
+  ["CT", "Connecticut"],
+  ["DE", "Delaware"],
+  ["DC", "District of Columbia"],
+  ["FL", "Florida"],
+  ["GA", "Georgia"],
+  ["HI", "Hawaii"],
+  ["ID", "Idaho"],
+  ["IL", "Illinois"],
+  ["IN", "Indiana"],
+  ["IA", "Iowa"],
+  ["KS", "Kansas"],
+  ["KY", "Kentucky"],
+  ["LA", "Louisiana"],
+  ["ME", "Maine"],
+  ["MD", "Maryland"],
+  ["MA", "Massachusetts"],
+  ["MI", "Michigan"],
+  ["MN", "Minnesota"],
+  ["MS", "Mississippi"],
+  ["MO", "Missouri"],
+  ["MT", "Montana"],
+  ["NE", "Nebraska"],
+  ["NV", "Nevada"],
+  ["NH", "New Hampshire"],
+  ["NJ", "New Jersey"],
+  ["NM", "New Mexico"],
+  ["NY", "New York"],
+  ["NC", "North Carolina"],
+  ["ND", "North Dakota"],
+  ["OH", "Ohio"],
+  ["OK", "Oklahoma"],
+  ["OR", "Oregon"],
+  ["PA", "Pennsylvania"],
+  ["RI", "Rhode Island"],
+  ["SC", "South Carolina"],
+  ["SD", "South Dakota"],
+  ["TN", "Tennessee"],
+  ["TX", "Texas"],
+  ["UT", "Utah"],
+  ["VT", "Vermont"],
+  ["VA", "Virginia"],
+  ["WA", "Washington"],
+  ["WV", "West Virginia"],
+  ["WI", "Wisconsin"],
+  ["WY", "Wyoming"],
+];
+const ZIP_PATTERN = /^[0-9]{5}$/;
+const PHONE_PATTERN = /^[0-9]{3}-[0-9]{3}-[0-9]{4}$/;
+const SIMPLE_EMAIL_PATTERN = /^[^@ ]+@[^@ ]+[.][^@ ]+$/;
 const AuthContext = createContext({
   session: null,
   loading: true,
@@ -155,6 +211,18 @@ export function LoginPage({ Link, navigate }) {
       setError("Passwords do not match.");
       return;
     }
+    if (mode === "signup" && !ZIP_PATTERN.test(signupProfile.zip.trim())) {
+      setError("Zip must be exactly 5 digits.");
+      return;
+    }
+    if (mode === "signup" && !PHONE_PATTERN.test(signupProfile.phone.trim())) {
+      setError("Phone must use ###-###-#### format.");
+      return;
+    }
+    if (mode === "signup" && !SIMPLE_EMAIL_PATTERN.test(email.trim())) {
+      setError("Email must contain @ and .");
+      return;
+    }
     setBusy(true);
     let result;
 
@@ -221,13 +289,18 @@ export function LoginPage({ Link, navigate }) {
             <label><span>Parent Chinese Name (Optional)</span><input value={signupProfile.parent_chinese_name} onChange={(e) => setSignupProfile({ ...signupProfile, parent_chinese_name: e.target.value })} /></label>
             <label className="wide"><RequiredLabel>Address</RequiredLabel><input value={signupProfile.address} onChange={(e) => setSignupProfile({ ...signupProfile, address: e.target.value })} required /></label>
             <label><RequiredLabel>City</RequiredLabel><input value={signupProfile.city} onChange={(e) => setSignupProfile({ ...signupProfile, city: e.target.value })} required /></label>
-            <label><RequiredLabel>State</RequiredLabel><input value={signupProfile.state} onChange={(e) => setSignupProfile({ ...signupProfile, state: e.target.value })} required /></label>
-            <label><RequiredLabel>Zip</RequiredLabel><input value={signupProfile.zip} onChange={(e) => setSignupProfile({ ...signupProfile, zip: e.target.value })} required /></label>
-            <label><RequiredLabel>Phone</RequiredLabel><input type="tel" value={signupProfile.phone} onChange={(e) => setSignupProfile({ ...signupProfile, phone: e.target.value })} required /></label>
+            <label>
+              <RequiredLabel>State</RequiredLabel>
+              <select value={signupProfile.state} onChange={(e) => setSignupProfile({ ...signupProfile, state: e.target.value })} required>
+                {US_STATES.map(([code, name]) => <option key={code} value={code}>{name} ({code})</option>)}
+              </select>
+            </label>
+            <label><RequiredLabel>Zip</RequiredLabel><input value={signupProfile.zip} inputMode="numeric" maxLength="5" pattern="[0-9]{5}" title="Zip must be exactly 5 digits." onChange={(e) => setSignupProfile({ ...signupProfile, zip: e.target.value })} required /></label>
+            <label><RequiredLabel>Phone</RequiredLabel><input type="tel" value={signupProfile.phone} inputMode="tel" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="###-###-####" title="Phone must use ###-###-#### format." onChange={(e) => setSignupProfile({ ...signupProfile, phone: e.target.value })} required /></label>
             <label><span>Wechat</span><input value={signupProfile.wechat} onChange={(e) => setSignupProfile({ ...signupProfile, wechat: e.target.value })} /></label>
           </>
         )}
-        <label className={mode === "signup" ? "wide" : ""}><RequiredLabel>{mode === "signup" ? "Email / Username" : "Email"}</RequiredLabel><input type="email" value={email} onChange={(e) => setEmail(e.target.value)} required /></label>
+        <label className={mode === "signup" ? "wide" : ""}><RequiredLabel>{mode === "signup" ? "Email / Username" : "Email"}</RequiredLabel><input type="email" value={email} pattern="^[^@ ]+@[^@ ]+[.][^@ ]+$" title="Email must contain @ and ." onChange={(e) => setEmail(e.target.value)} required /></label>
         {mode !== "reset" && (
           <label><RequiredLabel>Password</RequiredLabel><input type="password" minLength="8" value={password} onChange={(e) => setPassword(e.target.value)} required /></label>
         )}

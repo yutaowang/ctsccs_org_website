@@ -1,6 +1,16 @@
 import { EMAIL_PATTERN, escapeHtml, mailConfig, sendMail } from "./mail.js";
 
 const attempts = new Map();
+const STATE_CODES = new Set([
+  "AL", "AK", "AZ", "AR", "CA", "CO", "CT", "DE", "DC", "FL", "GA", "HI",
+  "ID", "IL", "IN", "IA", "KS", "KY", "LA", "ME", "MD", "MA", "MI", "MN",
+  "MS", "MO", "MT", "NE", "NV", "NH", "NJ", "NM", "NY", "NC", "ND", "OH",
+  "OK", "OR", "PA", "RI", "SC", "SD", "TN", "TX", "UT", "VT", "VA", "WA",
+  "WV", "WI", "WY",
+]);
+const ZIP_PATTERN = /^[0-9]{5}$/;
+const PHONE_PATTERN = /^[0-9]{3}-[0-9]{3}-[0-9]{4}$/;
+const SIMPLE_EMAIL_PATTERN = /^[^@ ]+@[^@ ]+[.][^@ ]+$/;
 
 function json(response, status, body) {
   response.status(status).setHeader("Content-Type", "application/json; charset=utf-8");
@@ -63,6 +73,15 @@ function validateProfile(body) {
   ].filter(([field]) => !payload[field]).map(([, label]) => label);
   if (missing.length) {
     throw new Error(`Please complete required fields: ${missing.join(", ")}.`);
+  }
+  if (!STATE_CODES.has(payload.state)) {
+    throw new Error("Please select a valid state.");
+  }
+  if (!ZIP_PATTERN.test(payload.zip)) {
+    throw new Error("Zip must be exactly 5 digits.");
+  }
+  if (!PHONE_PATTERN.test(payload.phone)) {
+    throw new Error("Phone must use ###-###-#### format.");
   }
   return payload;
 }
@@ -206,8 +225,8 @@ export default async function handler(request, response) {
   const email = String(request.body?.email || "").trim().toLowerCase();
   const password = String(request.body?.password || "");
   let profile;
-  if (!EMAIL_PATTERN.test(email) || email.includes("..")) {
-    return json(response, 400, { error: "Please enter a valid email address." });
+  if (!SIMPLE_EMAIL_PATTERN.test(email) || !EMAIL_PATTERN.test(email) || email.includes("..")) {
+    return json(response, 400, { error: "Email must contain @ and ." });
   }
   if (password.length < 8) {
     return json(response, 400, { error: "Password must be at least 8 characters." });
