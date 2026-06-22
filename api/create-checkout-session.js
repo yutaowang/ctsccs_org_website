@@ -216,11 +216,11 @@ export default async function handler(request, response) {
         border_style: "rounded",
         logo: {
           type: "url",
-          url: `${configuration.siteUrl}/sccs-logo.png`,
+          url: `${configuration.siteUrl}/favicon.png`,
         },
         icon: {
           type: "url",
-          url: `${configuration.siteUrl}/sccs-blue-mark.png`,
+          url: `${configuration.siteUrl}/favicon.png`,
         },
       },
       success_url: `${configuration.siteUrl}/account?payment=success`,
