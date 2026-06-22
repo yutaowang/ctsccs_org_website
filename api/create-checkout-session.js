@@ -251,7 +251,7 @@ export default async function handler(request, response) {
           url: `${configuration.siteUrl}/favicon.png`,
         },
       },
-      success_url: `${configuration.siteUrl}/account?payment=success`,
+      success_url: `${configuration.siteUrl}/account?payment=success&session_id={CHECKOUT_SESSION_ID}`,
       cancel_url: `${configuration.siteUrl}/account?payment=cancelled`,
       metadata: {
         family_id: String(family.id),

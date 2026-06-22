@@ -118,12 +118,12 @@ function paymentDetailsFromIntent(intent) {
   };
 }
 
-async function recordCheckoutPayment(configuration, session) {
+async function recordCheckoutPayment(configuration, session, status = "paid") {
   const familyId = Number(session.metadata?.family_id || session.client_reference_id || 0);
   if (!familyId || !session.id) return;
 
   let stripeDetails = {};
-  if (session.payment_intent) {
+  if (session.payment_intent && status === "paid") {
     const intentId = typeof session.payment_intent === "string"
       ? session.payment_intent
       : session.payment_intent.id;
@@ -144,12 +144,26 @@ async function recordCheckoutPayment(configuration, session) {
       amount_cents: Number(session.amount_total || 0),
       currency: String(session.currency || "usd").toLowerCase(),
       paid_at: new Date((session.created || Math.floor(Date.now() / 1000)) * 1000).toISOString(),
-      status: "paid",
+      status,
       stripe_checkout_session_id: session.id,
-      notes: "Stripe Checkout",
+      notes: `Stripe Checkout ${status}`,
       ...stripeDetails,
     },
   });
+}
+
+function statusForCheckoutEvent(eventType) {
+  switch (eventType) {
+    case "checkout.session.completed":
+    case "checkout.session.async_payment_succeeded":
+      return "paid";
+    case "checkout.session.async_payment_failed":
+      return "failed";
+    case "checkout.session.expired":
+      return "cancelled";
+    default:
+      return null;
+  }
 }
 
 export default async function handler(request, response) {
@@ -167,8 +181,9 @@ export default async function handler(request, response) {
     }
 
     const event = JSON.parse(rawBody.toString("utf8"));
-    if (["checkout.session.completed", "checkout.session.async_payment_succeeded"].includes(event.type)) {
-      await recordCheckoutPayment(configuration, event.data?.object || {});
+    const checkoutStatus = statusForCheckoutEvent(event.type);
+    if (checkoutStatus) {
+      await recordCheckoutPayment(configuration, event.data?.object || {}, checkoutStatus);
     }
 
     return json(response, 200, { received: true });

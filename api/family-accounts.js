@@ -185,13 +185,16 @@ export default async function handler(request, response) {
 
     const roleByUser = new Map((rolesResult.data || []).map((row) => [row.user_id, row.role]));
     const familyByUser = new Map((familiesResult.data || []).filter((row) => row.user_id).map((row) => [row.user_id, row]));
+    const familyByEmail = new Map((familiesResult.data || [])
+      .filter((row) => row.email)
+      .map((row) => [String(row.email).toLowerCase(), row]));
     const familyEmailSet = new Set((familiesResult.data || []).map((row) => String(row.email || "").toLowerCase()).filter(Boolean));
 
     const accounts = users
       .filter((user) => !STAFF_ROLES.has(roleByUser.get(user.id)))
       .filter((user) => user.app_metadata?.portal === "family" || !roleByUser.get(user.id))
       .map((user) => {
-        const family = familyByUser.get(user.id);
+        const family = familyByUser.get(user.id) || familyByEmail.get(String(user.email || "").toLowerCase());
         return {
           id: user.id,
           email: user.email || "",

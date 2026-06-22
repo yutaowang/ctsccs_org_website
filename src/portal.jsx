@@ -219,6 +219,36 @@ function FamilyPortal() {
     }
   };
 
+  useEffect(() => {
+    let cancelled = false;
+    const syncPayment = async () => {
+      const params = new URLSearchParams(window.location.search);
+      const sessionId = params.get("session_id");
+      if (params.get("payment") !== "success" || !sessionId) return;
+      setStatus({ error: "", message: "Confirming online payment..." });
+      try {
+        const result = await fetch("/api/sync-checkout-session", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({ session_id: sessionId }),
+        });
+        const body = await result.json().catch(() => ({}));
+        if (!result.ok) throw new Error(body.error || "Could not confirm online payment.");
+        if (cancelled) return;
+        window.history.replaceState({}, "", "/account?payment=success");
+        setStatus({ error: "", message: "Online payment confirmed." });
+        await load();
+      } catch (error) {
+        if (!cancelled) setStatus({ error: error.message, message: "" });
+      }
+    };
+    void syncPayment();
+    return () => { cancelled = true; };
+  }, [session.access_token]);
+
   useEffect(() => { load(); }, [session]);
   useEffect(() => { if (recovering) setActive("password"); }, [recovering]);
 
@@ -2027,6 +2057,7 @@ function StaffPortal({ isAdmin }) {
   const familyEmailsWithProfile = new Set(families.map((family) => String(family.email || "").toLowerCase()).filter(Boolean));
   const authOnlyRows = familyAccounts
     .filter((account) => !account.family_id || !familyIdsWithProfile.has(account.family_id))
+    .filter((account) => !account.has_family_profile)
     .filter((account) => !familyEmailsWithProfile.has(String(account.email || "").toLowerCase()))
     .map((account) => ({
       id: `account-${account.id}`,
