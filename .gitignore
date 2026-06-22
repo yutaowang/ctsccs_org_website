@@ -8,5 +8,6 @@ Thumbs.db
 .env.*
 !.env.example
 supabase/seed/*.sql
+backups/
 __pycache__/
 *.py[cod]

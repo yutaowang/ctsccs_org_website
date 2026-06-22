@@ -1,5 +1,16 @@
 # SCCS Website Change Log
 
+## 2026-06-22
+
+- Updated public website pages to follow Chinese-first, English-after bilingual content ordering.
+- Added English translations to public pages that previously had Chinese-only content.
+- Updated public navigation group labels to display Chinese above English in the left-side menu.
+- Updated the Courses page table headers and course-description links to display Chinese above English for better space usage.
+- Updated homepage, About, Management Team, Regulation, Newsletter, Catalog, Registration, Calendar, Courses, Contact, Location, Community Services, Sponsors, Resources, Links, and Feedback content with bilingual copy.
+- Added a reusable Supabase backup script at `scripts/backup_supabase.py`.
+- Added `backups/` to `.gitignore` so local database backups containing sensitive family/student data are not committed.
+- Created a local Supabase data backup for the `sccs` schema under `backups/`.
+
 ## 2026-06-21
 
 - Added Stripe online payment support on the Family Summary page.
