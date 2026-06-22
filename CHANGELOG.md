@@ -10,6 +10,16 @@
 - Added a reusable Supabase backup script at `scripts/backup_supabase.py`.
 - Added `backups/` to `.gitignore` so local database backups containing sensitive family/student data are not committed.
 - Created a local Supabase data backup for the `sccs` schema under `backups/`.
+- Updated family account signup validation with an alphabetized State dropdown, 5-digit Zip validation, `###-###-####` Phone validation, and stricter Email validation.
+- Fixed Stripe Checkout parameter encoding so card-only sessions send `payment_method_types[0]=card` correctly.
+- Updated Stripe Checkout branding to use the yellow SCCS icon.
+- Tested and removed WeChat Pay after confirming Stripe-hosted Checkout requires a confusing WeChat Pay Name field that cannot be hidden.
+- Added success-page payment reconciliation using Checkout Session IDs so paid online payments are recorded even if webhook processing is delayed.
+- Expanded the Stripe webhook to handle `checkout.session.completed`, `checkout.session.async_payment_succeeded`, `checkout.session.async_payment_failed`, and `checkout.session.expired`.
+- Fixed Admin Portal Family Search loading so large `families`, `students`, `registrations`, and payment datasets are fetched with pagination instead of being limited to the first 1000 rows.
+- Improved Family Search account/profile matching by both Auth user ID and email to avoid false `No profile` rows.
+- Added `scripts/remove_family_account.py` for dry-run-first removal of family accounts and related records.
+- Added `scripts/update_family_account_status.py` for dry-run-first payment-status adjustments such as `Paid` to `Waiting for Payment`.
 
 ## 2026-06-21
 
