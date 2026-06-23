@@ -1,5 +1,13 @@
 # SCCS Website Change Log
 
+## 2026-06-23
+
+- Added Admin Portal Payment History support for cash/check refunds, including refund buttons on paid cash/check transactions and negative Record Payment amounts that post to the Refund column.
+- Updated Payment History transaction rows and CSV export to separate Paid and Refund amounts.
+- Updated Payment History family lookup to show Balance instead of Due and sorted family-related admin lists by family name.
+- Added inline editing for Payment History Adjust amounts so late fees can be waived or changed per family, with Due and Balance recalculated from the saved adjustment.
+- Added editable Site Settings key-value rows, including an editable default `registration_change_deadline` row when the setting has not been saved yet.
+
 ## 2026-06-22
 
 - Updated public website pages to follow Chinese-first, English-after bilingual content ordering.

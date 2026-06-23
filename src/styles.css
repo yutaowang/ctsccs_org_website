@@ -2113,6 +2113,53 @@ footer {
   border: 1px solid #c7d1df;
   font: inherit;
 }
+.site-settings-table {
+  margin-top: 18px;
+}
+.setting-value-button {
+  display: inline;
+  max-width: min(640px, 70vw);
+  padding: 0;
+  color: var(--blue);
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  font: inherit;
+  font-weight: 700;
+  overflow-wrap: anywhere;
+  text-align: left;
+}
+.setting-value-button.key {
+  color: var(--navy);
+}
+.setting-value-button:hover,
+.setting-value-button:focus-visible {
+  text-decoration: underline;
+}
+.setting-key-input {
+  width: min(320px, 70vw);
+  min-height: 34px;
+  padding: 6px 8px;
+  border: 1px solid #c7d1df;
+  font: inherit;
+}
+.setting-value-editor {
+  display: grid;
+  gap: 8px;
+}
+.setting-value-editor textarea {
+  width: min(640px, 70vw);
+  min-height: 92px;
+  padding: 8px 10px;
+  border: 1px solid #c7d1df;
+  font: inherit;
+  resize: vertical;
+}
+.setting-editor-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
 .portal-form.embedded {
   margin-top: 26px;
   padding: 24px 0 0;

@@ -1441,6 +1441,7 @@ function StaffPortal({ isAdmin }) {
   const [siteSettings, setSiteSettings] = useState([]);
   const [settingKey, setSettingKey] = useState("");
   const [settingValue, setSettingValue] = useState("");
+  const [settingEdit, setSettingEdit] = useState(null);
   const [search, setSearch] = useState("");
   const [paymentHistorySearch, setPaymentHistorySearch] = useState("");
   const [adjustEdit, setAdjustEdit] = useState(null);
@@ -2015,14 +2016,16 @@ function StaffPortal({ isAdmin }) {
     if (!result.error) await load();
   };
 
+  const parseSettingValue = (text) => {
+    try {
+      return JSON.parse(text);
+    } catch {
+      return { text };
+    }
+  };
   const saveSetting = async (event) => {
     event.preventDefault();
-    let value;
-    try {
-      value = JSON.parse(settingValue);
-    } catch {
-      value = { text: settingValue };
-    }
+    const value = parseSettingValue(settingValue);
     const result = await supabase.from("site_settings").upsert({
       key: settingKey.trim(),
       value,
@@ -2034,6 +2037,36 @@ function StaffPortal({ isAdmin }) {
     if (!result.error) {
       setSettingKey("");
       setSettingValue("");
+      await load();
+    }
+  };
+  const beginSettingEdit = (row) => {
+    setSettingEdit({
+      rowId: `${row.exists ? "saved" : "new"}-${row.key}`,
+      originalKey: row.exists ? row.key : "",
+      key: row.key,
+      value: JSON.stringify(row.value),
+    });
+  };
+  const saveSettingEdit = async () => {
+    const nextKey = settingEdit?.key.trim();
+    if (!nextKey) {
+      setStatus({ error: "Setting key is required.", message: "" });
+      return;
+    }
+    const payload = {
+      key: nextKey,
+      value: parseSettingValue(settingEdit.value),
+      updated_by: session.user.id,
+    };
+    const result = settingEdit.originalKey
+      ? await supabase.from("site_settings").update(payload).eq("key", settingEdit.originalKey)
+      : await supabase.from("site_settings").upsert(payload);
+    setStatus(result.error
+      ? { error: result.error.message, message: "" }
+      : { error: "", message: "Site setting saved." });
+    if (!result.error) {
+      setSettingEdit(null);
       await load();
     }
   };
@@ -2059,6 +2092,17 @@ function StaffPortal({ isAdmin }) {
     ["grades", "Grades"], ["email", "Email Students"], ["password", "Password"],
   ];
   const tabs = isAdmin ? adminTabs : teacherTabs;
+  const siteSettingRows = siteSettings.some((row) => row.key === "registration_change_deadline")
+    ? siteSettings.map((row) => ({ ...row, exists: true }))
+    : [
+      {
+        key: "registration_change_deadline",
+        value: { date: "2026-09-21" },
+        updated_at: "",
+        exists: false,
+      },
+      ...siteSettings.map((row) => ({ ...row, exists: true })),
+    ];
   const query = search.trim().toLowerCase();
   const studentsByFamilyId = students.reduce((groups, student) => {
     const rows = groups.get(student.family_id) || [];
@@ -2904,7 +2948,75 @@ function StaffPortal({ isAdmin }) {
         </div>
       )}
       {active === "staff" && <StaffUserManager />}
-      {active === "settings" && <div className="portal-panel"><div className="panel-heading"><div><span>网站配置</span><h2>Site Settings</h2></div></div><div className="form-message">To set the class change deadline, use key <strong>registration_change_deadline</strong> and value <strong>{"{\"date\":\"2026-09-21\"}"}</strong>.</div><form className="portal-form compact" onSubmit={saveSetting}><label><span>Setting key</span><input value={settingKey} onChange={(event) => setSettingKey(event.target.value)} placeholder="registration_change_deadline" required /></label><label><span>JSON value or text</span><input value={settingValue} onChange={(event) => setSettingValue(event.target.value)} placeholder='{"date":"2026-09-21"}' required /></label><button className="button-link" type="submit">Save setting</button></form><DataTable columns={[["key", "Key"], ["display_value", "Value"], ["updated_at", "Updated"]]} rows={siteSettings.map((row) => ({ ...row, display_value: JSON.stringify(row.value) }))} /></div>}
+      {active === "settings" && (
+        <div className="portal-panel">
+          <div className="panel-heading"><div><span>网站配置</span><h2>Site Settings</h2></div></div>
+          <form className="portal-form compact" onSubmit={saveSetting}>
+            <label>
+              <span>Setting key</span>
+              <input value={settingKey} onChange={(event) => setSettingKey(event.target.value)} placeholder="registration_change_deadline" required />
+            </label>
+            <label>
+              <span>JSON value or text</span>
+              <input value={settingValue} onChange={(event) => setSettingValue(event.target.value)} placeholder='{"date":"2026-09-21"}' required />
+            </label>
+            <button className="button-link" type="submit">Save setting</button>
+          </form>
+          <div className="data-table-wrap site-settings-table">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Key</th>
+                  <th>Value</th>
+                  <th>Updated</th>
+                </tr>
+              </thead>
+              <tbody>
+                {siteSettingRows.map((row) => {
+                  const rowId = `${row.exists ? "saved" : "new"}-${row.key}`;
+                  const isEditing = settingEdit?.rowId === rowId;
+                  return (
+                    <tr key={rowId}>
+                      <td>
+                        {isEditing ? (
+                          <input
+                            className="setting-key-input"
+                            value={settingEdit.key}
+                            onChange={(event) => setSettingEdit({ ...settingEdit, key: event.target.value })}
+                          />
+                        ) : (
+                          <button className="setting-value-button key" type="button" onClick={() => beginSettingEdit(row)}>
+                            {row.key}
+                          </button>
+                        )}
+                      </td>
+                      <td>
+                        {isEditing ? (
+                          <div className="setting-value-editor">
+                            <textarea
+                              value={settingEdit.value}
+                              onChange={(event) => setSettingEdit({ ...settingEdit, value: event.target.value })}
+                            />
+                            <div className="setting-editor-actions">
+                              <button className="outline-link compact-action" type="button" onClick={saveSettingEdit}>Save</button>
+                              <button className="outline-link compact-action" type="button" onClick={() => setSettingEdit(null)}>Cancel</button>
+                            </div>
+                          </div>
+                        ) : (
+                          <button className="setting-value-button" type="button" onClick={() => beginSettingEdit(row)}>
+                            {JSON.stringify(row.value)}
+                          </button>
+                        )}
+                      </td>
+                      <td>{row.exists ? formatTimestamp(row.updated_at) : "Not saved"}</td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
       {active === "password" && (
         <div className="password-panel-stack">
           <form className="portal-form compact" onSubmit={changePassword}>
