@@ -8,11 +8,14 @@
 - Added inline editing for Payment History Adjust amounts so late fees can be waived or changed per family, with Due and Balance recalculated from the saved adjustment.
 - Added editable Site Settings key-value rows, including an editable default `registration_change_deadline` row when the setting has not been saved yet.
 - Added a Pfizer employee question to family signup/profile and waived the Safety Patrol Deposit for eligible Pfizer employees using a `pfizer.com` family email.
+- Expanded the family employee question to include SCCS staff and accept verified `pfizer.com` or `ctsccs.org` account emails for the Safety Patrol Deposit waiver.
 - Added app-level Waterford resident detection on family profiles and waived the Safety Patrol Deposit for families with City set to Waterford.
 - Added Waterford resident tuition discount logic so each student receives one free class, automatically applying the highest-priced registered class first.
 - Excluded SAT/PSAT tuition from the Waterford resident free-class discount.
 - Added schema-cache fallback handling for family signup/profile saves while the Pfizer and Waterford family columns are rolling out.
 - Removed database-side Waterford residency trigger logic so family waiver rules stay in the application/API layer.
+- Updated `scripts/backup_supabase.py` to create full `sccs` backups with schema DDL and INSERT data statements.
+- Added `scripts/backup_supabase_pg_dump.py` for `pg_dump`-based full `sccs` schema and data backups, including automatic Windows PostgreSQL installation detection.
 
 ## 2026-06-22
 

@@ -224,6 +224,14 @@ export function LoginPage({ Link, navigate }) {
       setError("Email must contain @ and .");
       return;
     }
+    if (
+      mode === "signup"
+      && signupProfile.pfizer_employee
+      && !["pfizer.com", "ctsccs.org"].includes(email.trim().toLowerCase().split("@").pop())
+    ) {
+      setError("Pfizer and SCCS employees must register with a pfizer.com or ctsccs.org email address.");
+      return;
+    }
     setBusy(true);
     let result;
 
@@ -300,7 +308,7 @@ export function LoginPage({ Link, navigate }) {
             <label><RequiredLabel>Phone</RequiredLabel><input type="tel" value={signupProfile.phone} inputMode="tel" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="###-###-####" title="Phone must use ###-###-#### format." onChange={(e) => setSignupProfile({ ...signupProfile, phone: e.target.value })} required /></label>
             <label><span>Wechat</span><input value={signupProfile.wechat} onChange={(e) => setSignupProfile({ ...signupProfile, wechat: e.target.value })} /></label>
             <label>
-              <span>Are you a Pfizer Employee?</span>
+              <span>Are you a Pfizer employee, or do you work for SCCS?</span>
               <select value={signupProfile.pfizer_employee ? "yes" : "no"} onChange={(e) => setSignupProfile({ ...signupProfile, pfizer_employee: e.target.value === "yes" })}>
                 <option value="no">No</option>
                 <option value="yes">Yes</option>

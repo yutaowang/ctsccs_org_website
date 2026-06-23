@@ -81,10 +81,10 @@ function parentName(family) {
     .join(" ");
 }
 
-function isPfizerDepositWaived(family, user) {
+function isEmployeeDepositWaived(family, user) {
   const email = String(family?.email || user?.email || "").trim().toLowerCase();
   const domain = email.split("@").pop();
-  return Boolean(family?.pfizer_employee) && domain === "pfizer.com";
+  return Boolean(family?.pfizer_employee) && ["pfizer.com", "ctsccs.org"].includes(domain);
 }
 
 function isWaterfordDepositWaived(family) {
@@ -95,7 +95,7 @@ function isWaterfordDepositWaived(family) {
 }
 
 function isSafetyPatrolDepositWaived(family, user) {
-  return isPfizerDepositWaived(family, user) || isWaterfordDepositWaived(family);
+  return isEmployeeDepositWaived(family, user) || isWaterfordDepositWaived(family);
 }
 
 function isSatPsatCourse(course) {

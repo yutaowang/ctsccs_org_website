@@ -113,8 +113,12 @@ const csvEscape = (value) => {
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 const SAFETY_PATROL_DEPOSIT = 40;
-const isPfizerEmail = (email) => String(email || "").trim().toLowerCase().split("@").pop() === "pfizer.com";
-const isPfizerDepositWaived = (family, email) => Boolean(family?.pfizer_employee) && isPfizerEmail(email || family?.email);
+const isEligibleEmployeeEmail = (email) => (
+  ["pfizer.com", "ctsccs.org"].includes(String(email || "").trim().toLowerCase().split("@").pop())
+);
+const isEmployeeDepositWaived = (family, email) => (
+  Boolean(family?.pfizer_employee) && isEligibleEmployeeEmail(email || family?.email)
+);
 const isWaterfordCity = (city) => String(city || "").trim().toLowerCase() === "waterford";
 const hasWaterfordAddress = (family) => (
   [family?.address, family?.city]
@@ -123,7 +127,7 @@ const hasWaterfordAddress = (family) => (
 );
 const isWaterfordResident = (family) => Boolean(family?.waterford_resident) || isWaterfordCity(family?.city) || hasWaterfordAddress(family);
 const safetyPatrolDepositForFamily = (family, email) => (
-  isPfizerDepositWaived(family, email) || isWaterfordResident(family) ? 0 : SAFETY_PATROL_DEPOSIT
+  isEmployeeDepositWaived(family, email) || isWaterfordResident(family) ? 0 : SAFETY_PATROL_DEPOSIT
 );
 const missingFamilyWaiverColumn = (error) => {
   const text = String(error?.message || error?.details || error?.hint || "");
@@ -300,6 +304,13 @@ function FamilyPortal() {
 
   const saveFamily = async (event) => {
     event.preventDefault();
+    if (family.pfizer_employee && !isEligibleEmployeeEmail(session.user.email)) {
+      setStatus({
+        error: "Pfizer and SCCS employees must use a pfizer.com or ctsccs.org email address.",
+        message: "",
+      });
+      return;
+    }
     const payload = Object.fromEntries(
       familyFields.map((field) => [field, family[field] || null]),
     );
@@ -560,7 +571,7 @@ function FamilyPortal() {
             <strong>Notes</strong>
             <p>1. 填写付款信息 Fill out payment information on both copies;</p>
             <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
-            <p>3. {safetyPatrolDeposit === 0 ? "Safety Patrol Deposit waived for eligible Pfizer employees or Waterford residents." : "Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty."}</p>
+            <p>3. {safetyPatrolDeposit === 0 ? "Safety Patrol Deposit waived for eligible Pfizer/SCCS employees or Waterford residents." : "Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty."}</p>
             {isWaterfordResident(family) && <p>4. Waterford resident discount: one non-SAT/PSAT class per student is free; the highest eligible donation class is applied first.</p>}
           </div>
           <section className="office-use">
@@ -717,7 +728,7 @@ function FamilyPortal() {
             </label>
           ))}
           <label>
-            <span>Are you a Pfizer Employee?</span>
+            <span>Are you a Pfizer employee, or do you work for SCCS?</span>
             <select value={family.pfizer_employee ? "yes" : "no"} onChange={(event) => setFamily({ ...family, pfizer_employee: event.target.value === "yes" })}>
               <option value="no">No</option>
               <option value="yes">Yes</option>
@@ -3007,7 +3018,7 @@ function StaffPortal({ isAdmin }) {
                 <strong>Notes</strong>
                 <p>1. 填写付款信息 Fill out payment information on both copies;</p>
                 <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
-                <p>3. {selectedPrintSafetyPatrolDeposit === 0 ? "Safety Patrol Deposit waived for eligible Pfizer employees or Waterford residents." : "Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty."}</p>
+                <p>3. {selectedPrintSafetyPatrolDeposit === 0 ? "Safety Patrol Deposit waived for eligible Pfizer/SCCS employees or Waterford residents." : "Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty."}</p>
                 {selectedPrintFamily && isWaterfordResident(selectedPrintFamily) && <p>4. Waterford resident discount: one non-SAT/PSAT class per student is free; the highest eligible donation class is applied first.</p>}
               </div>
               <section className="office-use">

@@ -52,6 +52,12 @@ function isWaterfordCity(value) {
   return String(value || "").trim().toLowerCase() === "waterford";
 }
 
+function isEligibleEmployeeEmail(email) {
+  return ["pfizer.com", "ctsccs.org"].includes(
+    String(email || "").trim().toLowerCase().split("@").pop(),
+  );
+}
+
 function missingFamilyWaiverColumn(data) {
   const text = String(data?.message || data?.details || data?.hint || "");
   return (
@@ -263,6 +269,11 @@ export default async function handler(request, response) {
     profile = validateProfile(request.body || {});
   } catch (error) {
     return json(response, 400, { error: error.message });
+  }
+  if (profile.pfizer_employee && !isEligibleEmployeeEmail(email)) {
+    return json(response, 400, {
+      error: "Pfizer and SCCS employees must register with a pfizer.com or ctsccs.org email address.",
+    });
   }
 
   try {
