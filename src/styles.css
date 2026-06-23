@@ -2086,6 +2086,20 @@ footer {
   background: #eef2f7;
   font-weight: 700;
 }
+.inline-adjust-display,
+.inline-adjust-editor {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+.inline-adjust-editor input {
+  width: 86px;
+  min-height: 30px;
+  padding: 4px 8px;
+  border: 1px solid #c7d1df;
+  font: inherit;
+}
 .portal-form.embedded {
   margin-top: 26px;
   padding: 24px 0 0;

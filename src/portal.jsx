@@ -1443,6 +1443,7 @@ function StaffPortal({ isAdmin }) {
   const [settingValue, setSettingValue] = useState("");
   const [search, setSearch] = useState("");
   const [paymentHistorySearch, setPaymentHistorySearch] = useState("");
+  const [adjustEdit, setAdjustEdit] = useState(null);
   const [selectedPrintFamilyId, setSelectedPrintFamilyId] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -1512,7 +1513,8 @@ function StaffPortal({ isAdmin }) {
 
   const registrationByStudentId = new Map(registrations.map((row) => [row.student_id, row]));
   const paymentNumber = (value) => {
-    const number = Number(value || 0);
+    const normalized = typeof value === "string" ? value.replace(/[$,]/g, "").trim() : value;
+    const number = Number(normalized || 0);
     return Number.isFinite(number) ? number : 0;
   };
   const paymentsByFamilyId = payments.reduce((groups, row) => {
@@ -1656,6 +1658,37 @@ function StaffPortal({ isAdmin }) {
       return;
     }
     setStatus({ error: "", message: "Refund recorded." });
+    load();
+  };
+  const beginAdjustEdit = (row) => {
+    setAdjustEdit({
+      familyId: row.id,
+      familyRegistrationId: row.family_registration_id,
+      legacyFamilyId: row.fam_id,
+      value: String(row.adjust_amount ?? 0),
+    });
+  };
+  const saveAdjust = async (row) => {
+    const amount = Math.round(Number(adjustEdit?.value));
+    if (!Number.isFinite(amount)) {
+      setStatus({ error: "Please enter a valid adjustment amount.", message: "" });
+      return;
+    }
+    const payload = {
+      family_id: Number(row.id),
+      legacy_family_id: Number.isFinite(Number(row.fam_id)) ? Number(row.fam_id) : null,
+      late_fee: amount,
+    };
+    const request = row.family_registration_id
+      ? supabase.from("family_registrations").update({ late_fee: amount }).eq("id", row.family_registration_id)
+      : supabase.from("family_registrations").insert(payload);
+    const { error } = await request;
+    if (error) {
+      setStatus({ error: error.message, message: "" });
+      return;
+    }
+    setAdjustEdit(null);
+    setStatus({ error: "", message: "Adjustment updated." });
     load();
   };
 
@@ -2060,10 +2093,9 @@ function StaffPortal({ isAdmin }) {
     const registeredCourses = familyStudents.flatMap((student) => (
       registeredClassIds(registrationByStudentId.get(student.id))
     ));
-    const due = paymentDueForFamily(family).due;
-    const paid = legacyPaidForFamily(family) + (paidCentsForFamily(family.id) / 100);
+    const { due, balance } = paymentSummaryForFamily(family);
     const account = familyAccountFor(family);
-    if (due > 0 && paid >= due) return "Paid";
+    if (due > 0 && balance <= 0) return "Paid";
     if (registeredCourses.length && due > 0) return "Waiting for Payment";
     if (registeredCourses.length) return "Registered Classes";
     if (familyStudents.length) return "Added Students";
@@ -2217,14 +2249,16 @@ function StaffPortal({ isAdmin }) {
         .map((payment) => payment.method)
         .filter(Boolean),
     ]));
-    return {
-      id: family.id,
-      fam_id: family.legacy_family_id || family.id,
-      email: family.email,
-      name: fullName(family),
-      tuition: formatDonation(tuition),
-      pta: formatDonation(pta),
-      adjust: formatDonation(adjust),
+      return {
+        id: family.id,
+        fam_id: family.legacy_family_id || family.id,
+        family_registration_id: legacyPayment?.id || null,
+        email: family.email,
+        name: fullName(family),
+        tuition: formatDonation(tuition),
+        pta: formatDonation(pta),
+        adjust: formatDonation(adjust),
+        adjust_amount: adjust,
       due: formatDonation(due),
       refund: formatDonation(refund),
       paid: formatDonation(paid),
@@ -2686,7 +2720,26 @@ function StaffPortal({ isAdmin }) {
                         <td>{row.name}</td>
                         <td>{row.tuition}</td>
                         <td>{row.pta}</td>
-                        <td>{row.adjust}</td>
+                        <td>
+                          {adjustEdit?.familyId === row.id ? (
+                            <div className="inline-adjust-editor">
+                              <input
+                                type="number"
+                                step="1"
+                                value={adjustEdit.value}
+                                onChange={(event) => setAdjustEdit({ ...adjustEdit, value: event.target.value })}
+                                aria-label={`Adjustment for ${row.name || row.fam_id}`}
+                              />
+                              <button className="outline-link compact-action" type="button" onClick={() => saveAdjust(row)}>Save</button>
+                              <button className="outline-link compact-action" type="button" onClick={() => setAdjustEdit(null)}>Cancel</button>
+                            </div>
+                          ) : (
+                            <div className="inline-adjust-display">
+                              <span>{row.adjust}</span>
+                              <button className="outline-link compact-action" type="button" onClick={() => beginAdjustEdit(row)}>Edit</button>
+                            </div>
+                          )}
+                        </td>
                         <td>{row.due}</td>
                         <td>{row.refund}</td>
                         <td>{row.paid}</td>
