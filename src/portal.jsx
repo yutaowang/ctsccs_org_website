@@ -1139,6 +1139,10 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
   ));
   const teacherOptions = sortedByLabel(teachers, teacherLabel);
   const classTimeOptions = sortedByLabel(classTimes, (time) => time.display_time || time.name || time.id);
+  const classTypeOptions = sortedByLabel(
+    Array.from(new Set(classes.map((course) => course.type).filter(Boolean))),
+    (type) => type,
+  );
 
   return (
     <div className="portal-panel">
@@ -1162,7 +1166,7 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
             <label><span>Teacher short name</span><input value={form.teacher_short_name} readOnly /></label>
             <label><span>Class time</span><select value={form.class_time_id} onChange={(event) => setForm({ ...form, class_time_id: event.target.value })}><option value="">No time selected</option>{classTimeOptions.map((time) => <option value={time.id} key={time.id}>{time.display_time || time.name || time.id}</option>)}</select></label>
             <label><span>Classroom</span><input value={form.classroom} onChange={(event) => setForm({ ...form, classroom: event.target.value })} /></label>
-            <label><span>Type</span><input value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })} /></label>
+            <label><span>Type</span><select value={form.type} onChange={(event) => setForm({ ...form, type: event.target.value })}><option value="">No type selected</option>{classTypeOptions.map((type) => <option value={type} key={type}>{type}</option>)}</select></label>
             <label><span>Maximum seats</span><input type="number" min="0" value={form.maximum} onChange={(event) => setForm({ ...form, maximum: event.target.value })} /></label>
             <label><span>Tuition / donation</span><input type="number" min="0" value={form.donation} onChange={(event) => setForm({ ...form, donation: event.target.value })} /></label>
             <label><span>Equivalent</span><input value={form.equivalent} onChange={(event) => setForm({ ...form, equivalent: event.target.value })} /></label>
