@@ -2735,8 +2735,9 @@ function StaffPortal({ isAdmin }) {
                             </div>
                           ) : (
                             <div className="inline-adjust-display">
-                              <span>{row.adjust}</span>
-                              <button className="outline-link compact-action" type="button" onClick={() => beginAdjustEdit(row)}>Edit</button>
+                              <button className="inline-adjust-value" type="button" onClick={() => beginAdjustEdit(row)}>
+                                {row.adjust}
+                              </button>
                             </div>
                           )}
                         </td>
