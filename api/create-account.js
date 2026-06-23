@@ -52,6 +52,14 @@ function isWaterfordCity(value) {
   return String(value || "").trim().toLowerCase() === "waterford";
 }
 
+function missingFamilyWaiverColumn(data) {
+  const text = String(data?.message || data?.details || data?.hint || "");
+  return (
+    /schema cache/i.test(text)
+    && /'(pfizer_employee|waterford_resident)' column/i.test(text)
+  ) || /Could not find the '(pfizer_employee|waterford_resident)' column/i.test(text);
+}
+
 function validateProfile(body) {
   const profile = body.profile || {};
   const payload = {
@@ -136,16 +144,27 @@ async function saveFamilyProfile(configuration, email, userId, profile) {
   if (!existing.ok) throw new Error(existing.data?.message || "Could not check family profile.");
 
   const row = existing.data?.[0];
-  const result = await supabaseRequest(configuration, row ? `/rest/v1/families?id=eq.${encodeURIComponent(row.id)}` : "/rest/v1/families", {
+  const path = row ? `/rest/v1/families?id=eq.${encodeURIComponent(row.id)}` : "/rest/v1/families";
+  const baseBody = {
+    ...profile,
+    email,
+    user_id: userId,
+  };
+  let result = await supabaseRequest(configuration, path, {
     method: row ? "PATCH" : "POST",
     profile: "sccs",
     prefer: "return=minimal",
-    body: {
-      ...profile,
-      email,
-      user_id: userId,
-    },
+    body: baseBody,
   });
+  if (!result.ok && missingFamilyWaiverColumn(result.data)) {
+    const { pfizer_employee, waterford_resident, ...fallbackBody } = baseBody;
+    result = await supabaseRequest(configuration, path, {
+      method: row ? "PATCH" : "POST",
+      profile: "sccs",
+      prefer: "return=minimal",
+      body: fallbackBody,
+    });
+  }
   if (!result.ok) {
     throw new Error(result.data?.message || "Could not save family profile.");
   }

@@ -8,8 +8,10 @@
 - Added inline editing for Payment History Adjust amounts so late fees can be waived or changed per family, with Due and Balance recalculated from the saved adjustment.
 - Added editable Site Settings key-value rows, including an editable default `registration_change_deadline` row when the setting has not been saved yet.
 - Added a Pfizer employee question to family signup/profile and waived the Safety Patrol Deposit for eligible Pfizer employees using a `pfizer.com` family email.
-- Added automatic Waterford resident detection on family profiles and waived the Safety Patrol Deposit for families with City set to Waterford.
+- Added app-level Waterford resident detection on family profiles and waived the Safety Patrol Deposit for families with City set to Waterford.
 - Added Waterford resident tuition discount logic so each student receives one free class, automatically applying the highest-priced registered class first.
+- Added schema-cache fallback handling for family signup/profile saves while the Pfizer and Waterford family columns are rolling out.
+- Removed database-side Waterford residency trigger logic so family waiver rules stay in the application/API layer.
 
 ## 2026-06-22
 

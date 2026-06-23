@@ -117,6 +117,13 @@ const isWaterfordResident = (family) => Boolean(family?.waterford_resident) || i
 const safetyPatrolDepositForFamily = (family, email) => (
   isPfizerDepositWaived(family, email) || isWaterfordResident(family) ? 0 : SAFETY_PATROL_DEPOSIT
 );
+const missingFamilyWaiverColumn = (error) => {
+  const text = String(error?.message || error?.details || error?.hint || "");
+  return (
+    /schema cache/i.test(text)
+    && /'(pfizer_employee|waterford_resident)' column/i.test(text)
+  ) || /Could not find the '(pfizer_employee|waterford_resident)' column/i.test(text);
+};
 
 const classStatusRank = (course) => (course?.is_open === false ? 1 : 0);
 
@@ -288,17 +295,24 @@ function FamilyPortal() {
     const payload = Object.fromEntries(
       familyFields.map((field) => [field, family[field] || null]),
     );
-    const result = await supabase.from("families")
+    const familyPayload = {
+      ...payload,
+      pfizer_employee: Boolean(family.pfizer_employee),
+      waterford_resident: isWaterfordCity(family.city),
+      email: session.user.email,
+      user_id: session.user.id,
+    };
+    let result = await supabase.from("families")
       .upsert(
-        {
-          ...payload,
-          pfizer_employee: Boolean(family.pfizer_employee),
-          waterford_resident: isWaterfordCity(family.city),
-          email: session.user.email,
-          user_id: session.user.id,
-        },
+        familyPayload,
         { onConflict: "user_id" },
       ).select().single();
+    if (result.error && missingFamilyWaiverColumn(result.error)) {
+      const { pfizer_employee, waterford_resident, ...fallbackPayload } = familyPayload;
+      result = await supabase.from("families")
+        .upsert(fallbackPayload, { onConflict: "user_id" })
+        .select().single();
+    }
     if (result.error) setStatus({ error: result.error.message, message: "" });
     else {
       setFamily(result.data);
