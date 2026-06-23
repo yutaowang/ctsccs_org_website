@@ -48,6 +48,10 @@ function clean(value) {
   return text || null;
 }
 
+function isWaterfordCity(value) {
+  return String(value || "").trim().toLowerCase() === "waterford";
+}
+
 function validateProfile(body) {
   const profile = body.profile || {};
   const payload = {
@@ -62,6 +66,7 @@ function validateProfile(body) {
     phone: clean(profile.phone),
     wechat: clean(profile.wechat),
     pfizer_employee: Boolean(profile.pfizer_employee),
+    waterford_resident: isWaterfordCity(profile.city),
   };
   const missing = [
     ["parent_first_name", "Parent First Name"],

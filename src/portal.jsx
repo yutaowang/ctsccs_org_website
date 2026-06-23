@@ -82,6 +82,15 @@ const fetchAllRows = async (buildQuery, pageSize = 1000) => {
 
 const donationAmount = (course) => Number(course?.donation || 0);
 const donationTotal = (courses) => courses.reduce((sum, course) => sum + donationAmount(course), 0);
+const waterfordClassDiscountForCourses = (courses) => (
+  courses.reduce((maximum, course) => Math.max(maximum, donationAmount(course)), 0)
+);
+const donationTotalForFamily = (studentCourseGroups, family) => {
+  const subtotal = studentCourseGroups.reduce((sum, courses) => sum + donationTotal(courses), 0);
+  if (!isWaterfordResident(family)) return subtotal;
+  const discount = studentCourseGroups.reduce((sum, courses) => sum + waterfordClassDiscountForCourses(courses), 0);
+  return Math.max(subtotal - discount, 0);
+};
 const registeredClassIds = (registration) => [1, 2, 3]
   .map((number) => registration?.[`session_${number}`])
   .filter(Boolean);
@@ -103,8 +112,10 @@ const csvEscape = (value) => {
 const SAFETY_PATROL_DEPOSIT = 40;
 const isPfizerEmail = (email) => String(email || "").trim().toLowerCase().split("@").pop() === "pfizer.com";
 const isPfizerDepositWaived = (family, email) => Boolean(family?.pfizer_employee) && isPfizerEmail(email || family?.email);
+const isWaterfordCity = (city) => String(city || "").trim().toLowerCase() === "waterford";
+const isWaterfordResident = (family) => Boolean(family?.waterford_resident) || isWaterfordCity(family?.city);
 const safetyPatrolDepositForFamily = (family, email) => (
-  isPfizerDepositWaived(family, email) ? 0 : SAFETY_PATROL_DEPOSIT
+  isPfizerDepositWaived(family, email) || isWaterfordResident(family) ? 0 : SAFETY_PATROL_DEPOSIT
 );
 
 const classStatusRank = (course) => (course?.is_open === false ? 1 : 0);
@@ -168,7 +179,7 @@ function Status({ status }) {
 function FamilyPortal() {
   const { session, recovering, finishRecovery } = useAuth();
   const [active, setActive] = useState(recovering ? "password" : "summary");
-  const [family, setFamily] = useState({ ...blank(familyFields), state: "CT", pfizer_employee: false });
+  const [family, setFamily] = useState({ ...blank(familyFields), state: "CT", pfizer_employee: false, waterford_resident: false });
   const [students, setStudents] = useState([]);
   const [student, setStudent] = useState(blank(studentFields));
   const [editingStudentId, setEditingStudentId] = useState(null);
@@ -279,7 +290,13 @@ function FamilyPortal() {
     );
     const result = await supabase.from("families")
       .upsert(
-        { ...payload, pfizer_employee: Boolean(family.pfizer_employee), email: session.user.email, user_id: session.user.id },
+        {
+          ...payload,
+          pfizer_employee: Boolean(family.pfizer_employee),
+          waterford_resident: isWaterfordCity(family.city),
+          email: session.user.email,
+          user_id: session.user.id,
+        },
         { onConflict: "user_id" },
       ).select().single();
     if (result.error) setStatus({ error: result.error.message, message: "" });
@@ -389,18 +406,31 @@ function FamilyPortal() {
   const registeredCoursesFor = (registration) => [1, 2, 3]
     .map((number) => courseDetails(registration?.[`session_${number}`]))
     .filter(Boolean);
-  const familyDonationTotal = students.reduce((sum, row) => (
-    sum + donationTotal(registeredCoursesFor(registrations[row.id] || {}))
-  ), 0);
+  const familyCourseGroups = students.map((row) => registeredCoursesFor(registrations[row.id] || {}));
+  const familyDonationSubtotal = familyCourseGroups.reduce((sum, courses) => sum + donationTotal(courses), 0);
+  const familyDonationTotal = donationTotalForFamily(familyCourseGroups, family);
   const hasRegisteredCourses = students.some((row) => (
     registeredCoursesFor(registrations[row.id] || {}).length > 0
   ));
-  const safetyPatrolDeposit = safetyPatrolDepositForFamily(family, session.user.email);
+  const safetyPatrolDeposit = hasRegisteredCourses
+    ? safetyPatrolDepositForFamily(family, session.user.email)
+    : 0;
   const paymentTotal = hasRegisteredCourses ? familyDonationTotal + safetyPatrolDeposit : 0;
   const paidTotalCents = familyPayments
     .filter((row) => row.status === "paid")
     .reduce((sum, row) => sum + Number(row.amount_cents || 0), 0);
-  const isPaid = paymentTotal > 0 && paidTotalCents >= Math.round(paymentTotal * 100);
+  const refundedTotalCents = familyPayments
+    .filter((row) => row.status === "refunded")
+    .reduce((sum, row) => sum + Number(row.amount_cents || 0), 0);
+  const netPaidTotalCents = paidTotalCents - refundedTotalCents;
+  const isPaid = paymentTotal > 0 && netPaidTotalCents >= Math.round(paymentTotal * 100);
+  const paymentButtonLabel = paymentTotal <= 0
+    ? "No payment due"
+    : isPaid
+      ? "Paid"
+      : paymentBusy
+        ? "Opening payment..."
+        : "Pay online";
   const tabs = [
     ["summary", "Summary"],
     ["student", "Student"],
@@ -489,9 +519,10 @@ function FamilyPortal() {
             );
           })}
           <div className="donation-summary">
-            <div><span>Donation subtotal</span><strong>{formatDonation(familyDonationTotal)}</strong></div>
+            <div><span>Donation subtotal</span><strong>{formatDonation(familyDonationSubtotal)}</strong></div>
+            {isWaterfordResident(family) && <div><span>Waterford class discount</span><strong>-{formatDonation(familyDonationSubtotal - familyDonationTotal)}</strong></div>}
             <div><span>Safety Patrol Deposit</span><strong>{formatDonation(safetyPatrolDeposit)}</strong></div>
-            <div className="donation-total-row"><span>Total</span><strong>{formatDonation(paymentTotal || familyDonationTotal + safetyPatrolDeposit)}</strong></div>
+            <div className="donation-total-row"><span>Total</span><strong>{formatDonation(paymentTotal)}</strong></div>
           </div>
           <div className="payment-action no-print">
             <button
@@ -500,14 +531,15 @@ function FamilyPortal() {
               onClick={startOnlinePayment}
               disabled={!paymentTotal || paymentBusy || isPaid}
             >
-              {isPaid ? "Paid" : paymentBusy ? "Opening payment..." : "Pay online"}
+              {paymentButtonLabel}
             </button>
           </div>
           <div className="registration-notes">
             <strong>Notes</strong>
             <p>1. 填写付款信息 Fill out payment information on both copies;</p>
             <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
-            <p>3. {safetyPatrolDeposit === 0 ? "Safety Patrol Deposit waived for eligible Pfizer employees." : "Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty."}</p>
+            <p>3. {safetyPatrolDeposit === 0 ? "Safety Patrol Deposit waived for eligible Pfizer employees or Waterford residents." : "Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty."}</p>
+            {isWaterfordResident(family) && <p>4. Waterford resident discount: one class per student is free; the highest donation class is applied first.</p>}
           </div>
           <section className="office-use">
             <h3>For Office Use Only</h3>
@@ -1556,14 +1588,15 @@ function StaffPortal({ isAdmin }) {
   ].reduce((sum, value) => sum + paymentNumber(value), 0);
   const paymentDueForFamily = (family) => {
     const familyStudents = students.filter((student) => student.family_id === family.id);
-    const familyCourses = familyStudents.flatMap((student) => (
+    const familyCourseGroups = familyStudents.map((student) => (
       registeredClassIds(registrationByStudentId.get(student.id))
         .map((classId) => classes.find((course) => course.id === classId))
         .filter(Boolean)
     ));
+    const familyCourses = familyCourseGroups.flat();
     const legacyPayment = legacyPaymentForFamily(family);
     const tuition = familyCourses.length
-      ? donationTotal(familyCourses)
+      ? donationTotalForFamily(familyCourseGroups, family)
       : paymentNumber(legacyPayment?.registration_fee);
     const pta = familyCourses.length ? safetyPatrolDepositForFamily(family) : paymentNumber(legacyPayment?.patrol_deposit);
     const adjust = paymentNumber(legacyPayment?.late_fee);
@@ -2275,12 +2308,17 @@ function StaffPortal({ isAdmin }) {
   const adminRegisteredCoursesFor = (registration) => [1, 2, 3]
     .map((number) => adminCourseDetails(registration?.[`session_${number}`]))
     .filter(Boolean);
-  const selectedPrintDonationTotal = selectedPrintStudents.reduce((sum, student) => (
-    sum + donationTotal(adminRegisteredCoursesFor(selectedPrintRegistrations[student.id] || {}))
-  ), 0);
-  const selectedPrintSafetyPatrolDeposit = selectedPrintFamily
+  const selectedPrintCourseGroups = selectedPrintStudents.map((student) => (
+    adminRegisteredCoursesFor(selectedPrintRegistrations[student.id] || {})
+  ));
+  const selectedPrintDonationSubtotal = selectedPrintCourseGroups.reduce((sum, courses) => sum + donationTotal(courses), 0);
+  const selectedPrintDonationTotal = selectedPrintFamily
+    ? donationTotalForFamily(selectedPrintCourseGroups, selectedPrintFamily)
+    : selectedPrintDonationSubtotal;
+  const selectedPrintHasRegisteredCourses = selectedPrintCourseGroups.some((courses) => courses.length > 0);
+  const selectedPrintSafetyPatrolDeposit = selectedPrintFamily && selectedPrintHasRegisteredCourses
     ? safetyPatrolDepositForFamily(selectedPrintFamily)
-    : SAFETY_PATROL_DEPOSIT;
+    : 0;
   const registrationRows = sortedByLabel(registrations.map((row) => {
     const student = students.find((item) => item.id === row.student_id);
     const family = families.find((item) => item.id === student?.family_id);
@@ -2936,7 +2974,10 @@ function StaffPortal({ isAdmin }) {
                 );
               })}
               <div className="donation-summary">
-                <div><span>Donation subtotal</span><strong>{formatDonation(selectedPrintDonationTotal)}</strong></div>
+                <div><span>Donation subtotal</span><strong>{formatDonation(selectedPrintDonationSubtotal)}</strong></div>
+                {selectedPrintFamily && isWaterfordResident(selectedPrintFamily) && (
+                  <div><span>Waterford class discount</span><strong>-{formatDonation(selectedPrintDonationSubtotal - selectedPrintDonationTotal)}</strong></div>
+                )}
                 <div><span>Safety Patrol Deposit</span><strong>{formatDonation(selectedPrintSafetyPatrolDeposit)}</strong></div>
                 <div className="donation-total-row"><span>Total</span><strong>{formatDonation(selectedPrintDonationTotal + selectedPrintSafetyPatrolDeposit)}</strong></div>
               </div>
@@ -2944,7 +2985,8 @@ function StaffPortal({ isAdmin }) {
                 <strong>Notes</strong>
                 <p>1. 填写付款信息 Fill out payment information on both copies;</p>
                 <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
-                <p>3. {selectedPrintSafetyPatrolDeposit === 0 ? "Safety Patrol Deposit waived for eligible Pfizer employees." : "Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty."}</p>
+                <p>3. {selectedPrintSafetyPatrolDeposit === 0 ? "Safety Patrol Deposit waived for eligible Pfizer employees or Waterford residents." : "Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty."}</p>
+                {selectedPrintFamily && isWaterfordResident(selectedPrintFamily) && <p>4. Waterford resident discount: one class per student is free; the highest donation class is applied first.</p>}
               </div>
               <section className="office-use">
                 <h3>For Office Use Only</h3>

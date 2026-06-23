@@ -87,6 +87,15 @@ function isPfizerDepositWaived(family, user) {
   return Boolean(family?.pfizer_employee) && domain === "pfizer.com";
 }
 
+function isWaterfordDepositWaived(family) {
+  return Boolean(family?.waterford_resident)
+    || String(family?.city || "").trim().toLowerCase() === "waterford";
+}
+
+function isSafetyPatrolDepositWaived(family, user) {
+  return isPfizerDepositWaived(family, user) || isWaterfordDepositWaived(family);
+}
+
 function encodeCheckoutParams(params, prefix = "") {
   const pairs = [];
   Object.entries(params).forEach(([key, value]) => {
@@ -202,12 +211,24 @@ export default async function handler(request, response) {
     const classesById = new Map((classesResult.data || []).map((course) => [course.id, course]));
     const studentsById = new Map(students.map((student) => [student.id, student]));
 
-    const courseLineItems = registrations.flatMap((registration) => (
-      idsForRegistration(registration)
+    const waterfordClassDiscount = isWaterfordDepositWaived(family);
+    const courseLineItems = registrations.flatMap((registration) => {
+      const registeredClasses = idsForRegistration(registration)
+        .map((classId) => classesById.get(classId))
+        .filter(Boolean);
+      const freeClassAmount = waterfordClassDiscount
+        ? registeredClasses.reduce((maximum, course) => Math.max(maximum, Math.round(Number(course?.donation || 0) * 100)), 0)
+        : 0;
+      let freeClassApplied = false;
+      return idsForRegistration(registration)
         .map((classId) => {
           const course = classesById.get(classId);
-          const amount = Number(course?.donation || 0) * 100;
+          const amount = Math.round(Number(course?.donation || 0) * 100);
           if (!course || amount <= 0) return null;
+          if (!freeClassApplied && freeClassAmount > 0 && amount === freeClassAmount) {
+            freeClassApplied = true;
+            return null;
+          }
           return {
             price_data: {
               currency: "usd",
@@ -219,10 +240,10 @@ export default async function handler(request, response) {
             quantity: 1,
           };
         })
-        .filter(Boolean)
-    ));
+        .filter(Boolean);
+    });
 
-    const safetyPatrolDepositCents = isPfizerDepositWaived(family, user) ? 0 : SAFETY_PATROL_DEPOSIT_CENTS;
+    const safetyPatrolDepositCents = isSafetyPatrolDepositWaived(family, user) ? 0 : SAFETY_PATROL_DEPOSIT_CENTS;
     const safetyPatrolLineItems = safetyPatrolDepositCents > 0
       ? [{
         price_data: {
