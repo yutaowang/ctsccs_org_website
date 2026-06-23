@@ -88,12 +88,18 @@ function isPfizerDepositWaived(family, user) {
 }
 
 function isWaterfordDepositWaived(family) {
+  const waterfordFields = [family?.address, family?.city]
+    .map((value) => String(value || "").trim().toLowerCase());
   return Boolean(family?.waterford_resident)
-    || String(family?.city || "").trim().toLowerCase() === "waterford";
+    || waterfordFields.some((value) => value === "waterford" || /\bwaterford\b/.test(value));
 }
 
 function isSafetyPatrolDepositWaived(family, user) {
   return isPfizerDepositWaived(family, user) || isWaterfordDepositWaived(family);
+}
+
+function isSatPsatCourse(course) {
+  return /\b(P?SAT|PSAT)\b/i.test(`${course?.name || ""} ${course?.short_name || ""}`);
 }
 
 function encodeCheckoutParams(params, prefix = "") {
@@ -204,7 +210,7 @@ export default async function handler(request, response) {
 
     const classesResult = await supabaseRequest(
       configuration,
-      `/rest/v1/classes?select=id,name,donation&id=in.(${classIds.join(",")})`,
+      `/rest/v1/classes?select=id,name,short_name,donation&id=in.(${classIds.join(",")})`,
       { profile: "sccs", token },
     );
     if (!classesResult.ok) throw new Error(classesResult.data?.message || "Could not load classes.");
@@ -215,7 +221,7 @@ export default async function handler(request, response) {
     const courseLineItems = registrations.flatMap((registration) => {
       const registeredClasses = idsForRegistration(registration)
         .map((classId) => classesById.get(classId))
-        .filter(Boolean);
+        .filter((course) => course && !isSatPsatCourse(course));
       const freeClassAmount = waterfordClassDiscount
         ? registeredClasses.reduce((maximum, course) => Math.max(maximum, Math.round(Number(course?.donation || 0) * 100)), 0)
         : 0;

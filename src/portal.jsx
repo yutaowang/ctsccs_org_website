@@ -82,8 +82,11 @@ const fetchAllRows = async (buildQuery, pageSize = 1000) => {
 
 const donationAmount = (course) => Number(course?.donation || 0);
 const donationTotal = (courses) => courses.reduce((sum, course) => sum + donationAmount(course), 0);
+const isSatPsatCourse = (course) => /\b(P?SAT|PSAT)\b/i.test(`${course?.name || ""} ${course?.short_name || ""}`);
 const waterfordClassDiscountForCourses = (courses) => (
-  courses.reduce((maximum, course) => Math.max(maximum, donationAmount(course)), 0)
+  courses
+    .filter((course) => !isSatPsatCourse(course))
+    .reduce((maximum, course) => Math.max(maximum, donationAmount(course)), 0)
 );
 const donationTotalForFamily = (studentCourseGroups, family) => {
   const subtotal = studentCourseGroups.reduce((sum, courses) => sum + donationTotal(courses), 0);
@@ -113,7 +116,12 @@ const SAFETY_PATROL_DEPOSIT = 40;
 const isPfizerEmail = (email) => String(email || "").trim().toLowerCase().split("@").pop() === "pfizer.com";
 const isPfizerDepositWaived = (family, email) => Boolean(family?.pfizer_employee) && isPfizerEmail(email || family?.email);
 const isWaterfordCity = (city) => String(city || "").trim().toLowerCase() === "waterford";
-const isWaterfordResident = (family) => Boolean(family?.waterford_resident) || isWaterfordCity(family?.city);
+const hasWaterfordAddress = (family) => (
+  [family?.address, family?.city]
+    .map((value) => String(value || "").trim().toLowerCase())
+    .some((value) => value === "waterford" || /\bwaterford\b/.test(value))
+);
+const isWaterfordResident = (family) => Boolean(family?.waterford_resident) || isWaterfordCity(family?.city) || hasWaterfordAddress(family);
 const safetyPatrolDepositForFamily = (family, email) => (
   isPfizerDepositWaived(family, email) || isWaterfordResident(family) ? 0 : SAFETY_PATROL_DEPOSIT
 );
@@ -553,7 +561,7 @@ function FamilyPortal() {
             <p>1. 填写付款信息 Fill out payment information on both copies;</p>
             <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
             <p>3. {safetyPatrolDeposit === 0 ? "Safety Patrol Deposit waived for eligible Pfizer employees or Waterford residents." : "Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty."}</p>
-            {isWaterfordResident(family) && <p>4. Waterford resident discount: one class per student is free; the highest donation class is applied first.</p>}
+            {isWaterfordResident(family) && <p>4. Waterford resident discount: one non-SAT/PSAT class per student is free; the highest eligible donation class is applied first.</p>}
           </div>
           <section className="office-use">
             <h3>For Office Use Only</h3>
@@ -3000,7 +3008,7 @@ function StaffPortal({ isAdmin }) {
                 <p>1. 填写付款信息 Fill out payment information on both copies;</p>
                 <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
                 <p>3. {selectedPrintSafetyPatrolDeposit === 0 ? "Safety Patrol Deposit waived for eligible Pfizer employees or Waterford residents." : "Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty."}</p>
-                {selectedPrintFamily && isWaterfordResident(selectedPrintFamily) && <p>4. Waterford resident discount: one class per student is free; the highest donation class is applied first.</p>}
+                {selectedPrintFamily && isWaterfordResident(selectedPrintFamily) && <p>4. Waterford resident discount: one non-SAT/PSAT class per student is free; the highest eligible donation class is applied first.</p>}
               </div>
               <section className="office-use">
                 <h3>For Office Use Only</h3>

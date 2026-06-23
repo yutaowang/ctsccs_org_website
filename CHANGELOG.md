@@ -10,6 +10,7 @@
 - Added a Pfizer employee question to family signup/profile and waived the Safety Patrol Deposit for eligible Pfizer employees using a `pfizer.com` family email.
 - Added app-level Waterford resident detection on family profiles and waived the Safety Patrol Deposit for families with City set to Waterford.
 - Added Waterford resident tuition discount logic so each student receives one free class, automatically applying the highest-priced registered class first.
+- Excluded SAT/PSAT tuition from the Waterford resident free-class discount.
 - Added schema-cache fallback handling for family signup/profile saves while the Pfizer and Waterford family columns are rolling out.
 - Removed database-side Waterford residency trigger logic so family waiver rules stay in the application/API layer.
 
