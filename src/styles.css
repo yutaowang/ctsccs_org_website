@@ -997,6 +997,12 @@ footer {
   border: 1px solid var(--blue);
 }
 
+.outline-link.compact-action {
+  min-height: 30px;
+  padding: 0 10px;
+  font-size: 0.68rem;
+}
+
 .calendar-grid {
   display: grid;
   margin-top: 25px;

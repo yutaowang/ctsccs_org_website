@@ -1428,6 +1428,7 @@ function StaffPortal({ isAdmin }) {
   const [paymentForm, setPaymentForm] = useState({
     family_id: "",
     family_query: "",
+    type: "payment",
     method: "cash",
     amount: "",
     check_number: "",
@@ -1576,18 +1577,20 @@ function StaffPortal({ isAdmin }) {
   const savePayment = async (event) => {
     event.preventDefault();
     const resolved = resolvePaymentFamily();
-    const amountCents = Math.round(Number(paymentForm.amount) * 100);
-    if (resolved.error || !Number.isFinite(amountCents) || amountCents <= 0) {
+    const enteredAmountCents = Math.round(Number(paymentForm.amount) * 100);
+    if (resolved.error || !Number.isFinite(enteredAmountCents) || enteredAmountCents === 0) {
       setStatus({ error: resolved.error || "Please enter a valid payment amount.", message: "" });
       return;
     }
+    const isRefund = paymentForm.type === "refund" || enteredAmountCents < 0;
+    const amountCents = Math.abs(enteredAmountCents);
     const { error } = await supabase.from("payments").insert({
       family_id: Number(resolved.family.id),
       method: paymentForm.method,
       amount_cents: amountCents,
       currency: "usd",
       paid_at: new Date().toISOString(),
-      status: "paid",
+      status: isRefund ? "refunded" : "paid",
       check_number: paymentForm.method === "check" ? paymentForm.check_number.trim() || null : null,
       notes: paymentForm.notes.trim() || null,
       created_by: session.user.id,
@@ -1596,8 +1599,28 @@ function StaffPortal({ isAdmin }) {
       setStatus({ error: error.message, message: "" });
       return;
     }
-    setPaymentForm({ family_id: "", family_query: "", method: "cash", amount: "", check_number: "", notes: "" });
-    setStatus({ error: "", message: "Payment recorded." });
+    setPaymentForm({ family_id: "", family_query: "", type: "payment", method: "cash", amount: "", check_number: "", notes: "" });
+    setStatus({ error: "", message: isRefund ? "Refund recorded." : "Payment recorded." });
+    load();
+  };
+  const refundPayment = async (payment) => {
+    if (!window.confirm(`Record a refund for payment #${payment.id}?`)) return;
+    const { error } = await supabase.from("payments").insert({
+      family_id: Number(payment.family_id),
+      method: payment.method,
+      amount_cents: Number(payment.amount_cents || 0),
+      currency: payment.currency || "usd",
+      paid_at: new Date().toISOString(),
+      status: "refunded",
+      check_number: payment.method === "check" ? payment.check_number || null : null,
+      notes: `Refund for payment #${payment.id}${payment.notes ? `: ${payment.notes}` : ""}`,
+      created_by: session.user.id,
+    });
+    if (error) {
+      setStatus({ error: error.message, message: "" });
+      return;
+    }
+    setStatus({ error: "", message: "Refund recorded." });
     load();
   };
 
@@ -2172,12 +2195,16 @@ function StaffPortal({ isAdmin }) {
     const paidCents = familyPayments
       .filter((payment) => payment.status === "paid")
       .reduce((sum, payment) => sum + Number(payment.amount_cents || 0), 0);
+    const refundCents = familyPayments
+      .filter((payment) => payment.status === "refunded")
+      .reduce((sum, payment) => sum + Number(payment.amount_cents || 0), 0);
     const transactionPaid = paidCents / 100;
+    const transactionRefund = refundCents / 100;
     const paid = importedPaid + transactionPaid;
+    const totalRefund = refund + transactionRefund;
     const methods = Array.from(new Set([
       ...legacyMethods(legacyPayment),
       ...familyPayments
-        .filter((payment) => payment.status === "paid")
         .map((payment) => payment.method)
         .filter(Boolean),
     ]));
@@ -2190,25 +2217,38 @@ function StaffPortal({ isAdmin }) {
       pta: formatDonation(pta),
       adjust: formatDonation(adjust),
       due: formatDonation(due),
-      refund: formatDonation(refund),
+      refund: formatDonation(totalRefund),
       paid: formatDonation(paid),
-      balance: formatDonation(due - paid + refund),
+      balance: formatDonation(due - paid + totalRefund),
       method: methods.join(", "),
-      transactions: familyPayments.map((payment) => ({
-        id: payment.id,
-        method: payment.method || "",
-        amount: formatPaymentAmount(payment.amount_cents, payment.currency),
-        paid_at: formatTimestamp(payment.paid_at),
-        status: payment.status || "",
-        detail: payment.check_number
-          ? `Check #${payment.check_number}`
-          : payment.card_last4
-            ? `${payment.card_brand || "card"} ending ${payment.card_last4}`
-            : payment.stripe_checkout_session_id || payment.notes || "",
-      })),
+      transactions: familyPayments.map((payment) => {
+        const refundAlreadyRecorded = familyPayments.some((candidate) => (
+          candidate.status === "refunded"
+          && String(candidate.notes || "").startsWith(`Refund for payment #${payment.id}`)
+        ));
+        return {
+          id: payment.id,
+          family_id: payment.family_id,
+          method: payment.method || "",
+          paid: payment.status === "paid" ? formatPaymentAmount(payment.amount_cents, payment.currency) : "",
+          refund: payment.status === "refunded" ? formatPaymentAmount(payment.amount_cents, payment.currency) : "",
+          amount_cents: payment.amount_cents,
+          currency: payment.currency,
+          paid_at: formatTimestamp(payment.paid_at),
+          status: payment.status || "",
+          check_number: payment.check_number,
+          notes: payment.notes,
+          canRefund: payment.status === "paid" && ["cash", "check"].includes(payment.method) && !refundAlreadyRecorded,
+          detail: payment.check_number
+            ? `Check #${payment.check_number}`
+            : payment.card_last4
+              ? `${payment.card_brand || "card"} ending ${payment.card_last4}`
+              : payment.stripe_checkout_session_id || payment.notes || "",
+        };
+      }),
       sort_due: due,
       sort_paid: paid,
-      sort_balance: due - paid + refund,
+      sort_balance: due - paid + totalRefund,
     };
   }).filter((row) => hasFamilyId(row.fam_id) && (row.sort_due > 0 || row.sort_paid > 0));
   const paymentHistoryQuery = paymentHistorySearch.trim().toLowerCase();
@@ -2218,7 +2258,7 @@ function StaffPortal({ isAdmin }) {
         row.fam_id, row.email, row.name, row.tuition, row.pta, row.adjust, row.due,
         row.refund, row.paid, row.balance, row.method,
         ...row.transactions.flatMap((payment) => [
-          payment.id, payment.method, payment.amount, payment.status, payment.paid_at, payment.detail,
+          payment.id, payment.method, payment.paid, payment.refund, payment.status, payment.paid_at, payment.detail,
         ]),
       ].join(" ").toLowerCase();
       return haystack.includes(paymentHistoryQuery);
@@ -2233,7 +2273,7 @@ function StaffPortal({ isAdmin }) {
       ...visiblePaymentRows.flatMap((row) => [
         [row.fam_id, row.email, row.name, row.tuition, row.pta, row.adjust, row.due, row.refund, row.paid, row.balance, row.method, "", "", ""],
         ...row.transactions.map((payment) => [
-          row.fam_id, "", `Payment ${payment.id}`, "", "", "", "", "", payment.amount, "", payment.method,
+          row.fam_id, "", `Payment ${payment.id}`, "", "", "", "", payment.refund, payment.paid, "", payment.method,
           payment.status, payment.paid_at, payment.detail,
         ]),
       ]),
@@ -2571,6 +2611,13 @@ function StaffPortal({ isAdmin }) {
               </datalist>
             </label>
             <label>
+              <span>Type</span>
+              <select value={paymentForm.type} onChange={(event) => setPaymentForm({ ...paymentForm, type: event.target.value })}>
+                <option value="payment">Payment</option>
+                <option value="refund">Refund</option>
+              </select>
+            </label>
+            <label>
               <span>Method</span>
               <select value={paymentForm.method} onChange={(event) => setPaymentForm({ ...paymentForm, method: event.target.value })}>
                 <option value="cash">Cash</option>
@@ -2579,7 +2626,7 @@ function StaffPortal({ isAdmin }) {
             </label>
             <label>
               <span>Amount</span>
-              <input type="number" min="0.01" step="0.01" value={paymentForm.amount} onChange={(event) => setPaymentForm({ ...paymentForm, amount: event.target.value })} placeholder="0.00" required />
+              <input type="number" step="0.01" value={paymentForm.amount} onChange={(event) => setPaymentForm({ ...paymentForm, amount: event.target.value })} placeholder="0.00" required />
             </label>
             <label>
               <span>Check #</span>
@@ -2589,7 +2636,9 @@ function StaffPortal({ isAdmin }) {
               <span>Notes</span>
               <input value={paymentForm.notes} onChange={(event) => setPaymentForm({ ...paymentForm, notes: event.target.value })} />
             </label>
-            <button className="button-link" type="submit">Record payment</button>
+            <button className="button-link" type="submit">
+              {paymentForm.type === "refund" ? "Record refund" : "Record payment"}
+            </button>
           </form>
           <label className="standalone-field payment-history-search">
             <span>Search Payment History</span>
@@ -2644,10 +2693,12 @@ function StaffPortal({ isAdmin }) {
                                 <tr>
                                   <th>Payment</th>
                                   <th>Method</th>
-                                  <th>Amount</th>
+                                  <th>Paid</th>
+                                  <th>Refund</th>
                                   <th>Status</th>
                                   <th>Timestamp</th>
                                   <th>Detail</th>
+                                  <th>Action</th>
                                 </tr>
                               </thead>
                               <tbody>
@@ -2655,10 +2706,18 @@ function StaffPortal({ isAdmin }) {
                                   <tr key={payment.id}>
                                     <td>#{payment.id}</td>
                                     <td>{payment.method}</td>
-                                    <td>{payment.amount}</td>
+                                    <td>{payment.paid}</td>
+                                    <td>{payment.refund}</td>
                                     <td>{payment.status}</td>
                                     <td>{payment.paid_at}</td>
                                     <td>{payment.detail}</td>
+                                    <td>
+                                      {payment.canRefund && (
+                                        <button className="outline-link compact-action" type="button" onClick={() => refundPayment(payment)}>
+                                          Refund
+                                        </button>
+                                      )}
+                                    </td>
                                   </tr>
                                 ))}
                               </tbody>
