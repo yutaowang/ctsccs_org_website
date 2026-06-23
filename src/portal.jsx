@@ -64,6 +64,9 @@ const compareValues = (left, right) => {
 const sortedByLabel = (items, labelFor) => (
   [...items].sort((left, right) => compareValues(labelFor(left), labelFor(right)))
 );
+const familySortLabel = (family) => (
+  `${fullName(family) || ""} ${family?.email || ""} ${family?.legacy_family_id || family?.id || ""}`
+);
 
 const fetchAllRows = async (buildQuery, pageSize = 1000) => {
   const rows = [];
@@ -1512,11 +1515,25 @@ function StaffPortal({ isAdmin }) {
     const number = Number(value || 0);
     return Number.isFinite(number) ? number : 0;
   };
+  const paymentsByFamilyId = payments.reduce((groups, row) => {
+    const familyPayments = groups.get(row.family_id) || [];
+    familyPayments.push(row);
+    groups.set(row.family_id, familyPayments);
+    return groups;
+  }, new Map());
   const legacyPaymentForFamily = (family) => familyPaymentRecords.find((row) => (
     row.family_id === family.id
     || row.legacy_family_id === family.legacy_family_id
     || row.legacy_family_id === family.id
   ));
+  const legacyPaidTotal = (row) => [
+    row?.pay_1_cash, row?.pay_1_check, row?.pay_2_cash, row?.pay_2_check,
+    row?.pay_3_cash, row?.pay_3_check, row?.pay_4_cash, row?.pay_4_check,
+    row?.pay_5_cash, row?.pay_5_check,
+  ].reduce((sum, value) => sum + paymentNumber(value), 0);
+  const legacyRefundTotal = (row) => [
+    row?.pay_3_refund, row?.day_3_refund, row?.day_2_refund, row?.pay_4_refund, row?.pay_5_refund,
+  ].reduce((sum, value) => sum + paymentNumber(value), 0);
   const paymentDueForFamily = (family) => {
     const familyStudents = students.filter((student) => student.family_id === family.id);
     const familyCourses = familyStudents.flatMap((student) => (
@@ -1538,12 +1555,30 @@ function StaffPortal({ isAdmin }) {
       due: tuition + pta + adjust,
     };
   };
+  const paymentSummaryForFamily = (family) => {
+    const charges = paymentDueForFamily(family);
+    const familyPayments = paymentsByFamilyId.get(family.id) || [];
+    const paidCents = familyPayments
+      .filter((payment) => payment.status === "paid")
+      .reduce((sum, payment) => sum + Number(payment.amount_cents || 0), 0);
+    const refundCents = familyPayments
+      .filter((payment) => payment.status === "refunded")
+      .reduce((sum, payment) => sum + Number(payment.amount_cents || 0), 0);
+    const paid = legacyPaidTotal(charges.legacyPayment) + (paidCents / 100);
+    const refund = legacyRefundTotal(charges.legacyPayment) + (refundCents / 100);
+    return {
+      ...charges,
+      paid,
+      refund,
+      balance: charges.due - paid + refund,
+    };
+  };
   const paymentFamilyOptions = sortedByLabel(
     families.filter((family) => hasFamilyId(family.legacy_family_id || family.id)),
-    (family) => `${fullName(family) || ""} ${family.email || ""} ${family.legacy_family_id || family.id}`,
+    familySortLabel,
   );
   const paymentFamilySearchLabel = (family) => (
-    `${fullName(family) || "Family"} · FamID ${family.legacy_family_id || family.id} · ${family.email || "No email"} · Due ${formatDonation(paymentDueForFamily(family).due)}`
+    `${fullName(family) || "Family"} · FamID ${family.legacy_family_id || family.id} · ${family.email || "No email"} · Balance ${formatDonation(paymentSummaryForFamily(family).balance)}`
   );
   const resolvePaymentFamily = () => {
     const query = paymentForm.family_query.trim().toLowerCase();
@@ -1998,12 +2033,6 @@ function StaffPortal({ isAdmin }) {
     groups.set(student.family_id, rows);
     return groups;
   }, new Map());
-  const paymentsByFamilyId = payments.reduce((groups, row) => {
-    const familyPayments = groups.get(row.family_id) || [];
-    familyPayments.push(row);
-    groups.set(row.family_id, familyPayments);
-    return groups;
-  }, new Map());
   const accountByFamilyId = new Map(familyAccounts
     .filter((account) => account.family_id)
     .map((account) => [account.family_id, account]));
@@ -2069,7 +2098,7 @@ function StaffPortal({ isAdmin }) {
     if (String(selectedPrintFamilyId) === String(row.family_record_id)) setSelectedPrintFamilyId("");
     await load();
   };
-  const familySearchRows = families
+  const familySearchRows = sortedByLabel(families
     .filter((family) => hasFamilyId(family.legacy_family_id || family.id))
     .map((family) => {
       const familyStudents = studentsByFamilyId.get(family.id) || [];
@@ -2087,7 +2116,7 @@ function StaffPortal({ isAdmin }) {
         status: statusLabel,
         has_paid_payment: hasPaidPayment(family.id) || legacyPaidForFamily(family) > 0,
       };
-    });
+    }), (row) => `${row.parent || ""} ${row.email || ""} ${row.family_id || ""}`);
   const familyIdsWithProfile = new Set(families.map((family) => family.id));
   const familyEmailsWithProfile = new Set(families.map((family) => String(family.email || "").toLowerCase()).filter(Boolean));
   const authOnlyRows = familyAccounts
@@ -2106,8 +2135,11 @@ function StaffPortal({ isAdmin }) {
       status: account.confirmed_at ? "Validated account only" : "Registered account only",
       has_paid_payment: false,
     }));
-  const searchRows = !query ? [] : [...familySearchRows, ...authOnlyRows]
-    .filter((row) => Object.values(row).some((value) => String(value || "").toLowerCase().includes(query)));
+  const searchRows = !query ? [] : sortedByLabel(
+    [...familySearchRows, ...authOnlyRows]
+      .filter((row) => Object.values(row).some((value) => String(value || "").toLowerCase().includes(query))),
+    (row) => `${row.parent || ""} ${row.email || ""} ${row.family_id || ""}`,
+  );
   const searchActionRows = searchRows.map((row) => ({
     id: row.id,
     cells: [row.family_id, row.parent, row.student, row.email, row.phone, row.status],
@@ -2118,9 +2150,6 @@ function StaffPortal({ isAdmin }) {
         : <RowActions onDelete={() => deleteFamilySearchRow(row)} />
     ),
   }));
-  const printFamilyLabel = (family) => (
-    `${family.legacy_family_id || family.id} ${fullName(family) || family.email || ""}`
-  );
   const printFamilyOptions = sortedByLabel(Array.from(
     new Map(
       searchRows
@@ -2128,7 +2157,7 @@ function StaffPortal({ isAdmin }) {
         .filter(Boolean)
         .map((family) => [family.id, family]),
     ).values(),
-  ), printFamilyLabel);
+  ), familySortLabel);
   const selectedPrintFamily = families.find((family) => String(family.id) === String(selectedPrintFamilyId))
     || (printFamilyOptions.length === 1 ? printFamilyOptions[0] : null);
   const selectedPrintStudents = selectedPrintFamily
@@ -2156,7 +2185,7 @@ function StaffPortal({ isAdmin }) {
   const selectedPrintDonationTotal = selectedPrintStudents.reduce((sum, student) => (
     sum + donationTotal(adminRegisteredCoursesFor(selectedPrintRegistrations[student.id] || {}))
   ), 0);
-  const registrationRows = registrations.map((row) => {
+  const registrationRows = sortedByLabel(registrations.map((row) => {
     const student = students.find((item) => item.id === row.student_id);
     const family = families.find((item) => item.id === student?.family_id);
     return {
@@ -2169,15 +2198,7 @@ function StaffPortal({ isAdmin }) {
       session_2: classes.find((item) => item.id === row.session_2)?.short_name,
       session_3: classes.find((item) => item.id === row.session_3)?.short_name,
     };
-  }).filter((row) => hasFamilyId(row.family_id));
-  const legacyPaidTotal = (row) => [
-    row?.pay_1_cash, row?.pay_1_check, row?.pay_2_cash, row?.pay_2_check,
-    row?.pay_3_cash, row?.pay_3_check, row?.pay_4_cash, row?.pay_4_check,
-    row?.pay_5_cash, row?.pay_5_check,
-  ].reduce((sum, value) => sum + paymentNumber(value), 0);
-  const legacyRefundTotal = (row) => [
-    row?.pay_3_refund, row?.day_3_refund, row?.day_2_refund, row?.pay_4_refund, row?.pay_5_refund,
-  ].reduce((sum, value) => sum + paymentNumber(value), 0);
+  }).filter((row) => hasFamilyId(row.family_id)), (row) => `${row.parent || ""} ${row.family_id || ""}`);
   const legacyMethods = (row) => {
     const methods = [];
     if ([row?.pay_1_cash, row?.pay_2_cash, row?.pay_3_cash, row?.pay_4_cash, row?.pay_5_cash]
@@ -2186,22 +2207,10 @@ function StaffPortal({ isAdmin }) {
       .some((value) => paymentNumber(value) > 0)) methods.push("check");
     return methods;
   };
-  const paymentRows = families.map((family) => {
-    const charges = paymentDueForFamily(family);
-    const { legacyPayment, tuition, pta, adjust, due } = charges;
-    const refund = legacyRefundTotal(legacyPayment);
-    const importedPaid = legacyPaidTotal(legacyPayment);
+  const paymentRows = sortedByLabel(families.map((family) => {
+    const charges = paymentSummaryForFamily(family);
+    const { legacyPayment, tuition, pta, adjust, due, paid, refund, balance } = charges;
     const familyPayments = paymentsByFamilyId.get(family.id) || [];
-    const paidCents = familyPayments
-      .filter((payment) => payment.status === "paid")
-      .reduce((sum, payment) => sum + Number(payment.amount_cents || 0), 0);
-    const refundCents = familyPayments
-      .filter((payment) => payment.status === "refunded")
-      .reduce((sum, payment) => sum + Number(payment.amount_cents || 0), 0);
-    const transactionPaid = paidCents / 100;
-    const transactionRefund = refundCents / 100;
-    const paid = importedPaid + transactionPaid;
-    const totalRefund = refund + transactionRefund;
     const methods = Array.from(new Set([
       ...legacyMethods(legacyPayment),
       ...familyPayments
@@ -2217,9 +2226,9 @@ function StaffPortal({ isAdmin }) {
       pta: formatDonation(pta),
       adjust: formatDonation(adjust),
       due: formatDonation(due),
-      refund: formatDonation(totalRefund),
+      refund: formatDonation(refund),
       paid: formatDonation(paid),
-      balance: formatDonation(due - paid + totalRefund),
+      balance: formatDonation(balance),
       method: methods.join(", "),
       transactions: familyPayments.map((payment) => {
         const refundAlreadyRecorded = familyPayments.some((candidate) => (
@@ -2248,9 +2257,9 @@ function StaffPortal({ isAdmin }) {
       }),
       sort_due: due,
       sort_paid: paid,
-      sort_balance: due - paid + totalRefund,
+      sort_balance: balance,
     };
-  }).filter((row) => hasFamilyId(row.fam_id) && (row.sort_due > 0 || row.sort_paid > 0));
+  }).filter((row) => hasFamilyId(row.fam_id) && (row.sort_due > 0 || row.sort_paid > 0)), (row) => `${row.name || ""} ${row.email || ""} ${row.fam_id || ""}`);
   const paymentHistoryQuery = paymentHistorySearch.trim().toLowerCase();
   const visiblePaymentRows = paymentHistoryQuery
     ? paymentRows.filter((row) => {
