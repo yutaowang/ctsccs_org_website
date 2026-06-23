@@ -101,6 +101,11 @@ const csvEscape = (value) => {
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 const SAFETY_PATROL_DEPOSIT = 40;
+const isPfizerEmail = (email) => String(email || "").trim().toLowerCase().split("@").pop() === "pfizer.com";
+const isPfizerDepositWaived = (family, email) => Boolean(family?.pfizer_employee) && isPfizerEmail(email || family?.email);
+const safetyPatrolDepositForFamily = (family, email) => (
+  isPfizerDepositWaived(family, email) ? 0 : SAFETY_PATROL_DEPOSIT
+);
 
 const classStatusRank = (course) => (course?.is_open === false ? 1 : 0);
 
@@ -163,7 +168,7 @@ function Status({ status }) {
 function FamilyPortal() {
   const { session, recovering, finishRecovery } = useAuth();
   const [active, setActive] = useState(recovering ? "password" : "summary");
-  const [family, setFamily] = useState({ ...blank(familyFields), state: "CT" });
+  const [family, setFamily] = useState({ ...blank(familyFields), state: "CT", pfizer_employee: false });
   const [students, setStudents] = useState([]);
   const [student, setStudent] = useState(blank(studentFields));
   const [editingStudentId, setEditingStudentId] = useState(null);
@@ -274,7 +279,7 @@ function FamilyPortal() {
     );
     const result = await supabase.from("families")
       .upsert(
-        { ...payload, email: session.user.email, user_id: session.user.id },
+        { ...payload, pfizer_employee: Boolean(family.pfizer_employee), email: session.user.email, user_id: session.user.id },
         { onConflict: "user_id" },
       ).select().single();
     if (result.error) setStatus({ error: result.error.message, message: "" });
@@ -390,7 +395,8 @@ function FamilyPortal() {
   const hasRegisteredCourses = students.some((row) => (
     registeredCoursesFor(registrations[row.id] || {}).length > 0
   ));
-  const paymentTotal = hasRegisteredCourses ? familyDonationTotal + SAFETY_PATROL_DEPOSIT : 0;
+  const safetyPatrolDeposit = safetyPatrolDepositForFamily(family, session.user.email);
+  const paymentTotal = hasRegisteredCourses ? familyDonationTotal + safetyPatrolDeposit : 0;
   const paidTotalCents = familyPayments
     .filter((row) => row.status === "paid")
     .reduce((sum, row) => sum + Number(row.amount_cents || 0), 0);
@@ -484,8 +490,8 @@ function FamilyPortal() {
           })}
           <div className="donation-summary">
             <div><span>Donation subtotal</span><strong>{formatDonation(familyDonationTotal)}</strong></div>
-            <div><span>Safety Patrol Deposit</span><strong>{formatDonation(SAFETY_PATROL_DEPOSIT)}</strong></div>
-            <div className="donation-total-row"><span>Total</span><strong>{formatDonation(paymentTotal || familyDonationTotal + SAFETY_PATROL_DEPOSIT)}</strong></div>
+            <div><span>Safety Patrol Deposit</span><strong>{formatDonation(safetyPatrolDeposit)}</strong></div>
+            <div className="donation-total-row"><span>Total</span><strong>{formatDonation(paymentTotal || familyDonationTotal + safetyPatrolDeposit)}</strong></div>
           </div>
           <div className="payment-action no-print">
             <button
@@ -501,7 +507,7 @@ function FamilyPortal() {
             <strong>Notes</strong>
             <p>1. 填写付款信息 Fill out payment information on both copies;</p>
             <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
-            <p>3. Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty.</p>
+            <p>3. {safetyPatrolDeposit === 0 ? "Safety Patrol Deposit waived for eligible Pfizer employees." : "Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty."}</p>
           </div>
           <section className="office-use">
             <h3>For Office Use Only</h3>
@@ -656,6 +662,13 @@ function FamilyPortal() {
               <input value={family[field] || ""} onChange={(event) => setFamily({ ...family, [field]: event.target.value })} />
             </label>
           ))}
+          <label>
+            <span>Are you a Pfizer Employee?</span>
+            <select value={family.pfizer_employee ? "yes" : "no"} onChange={(event) => setFamily({ ...family, pfizer_employee: event.target.value === "yes" })}>
+              <option value="no">No</option>
+              <option value="yes">Yes</option>
+            </select>
+          </label>
           <label className="wide"><span>Email / username</span><input value={session.user.email} readOnly /></label>
           <button className="button-link" type="submit">Update profile</button>
         </form>
@@ -1552,7 +1565,7 @@ function StaffPortal({ isAdmin }) {
     const tuition = familyCourses.length
       ? donationTotal(familyCourses)
       : paymentNumber(legacyPayment?.registration_fee);
-    const pta = familyCourses.length ? SAFETY_PATROL_DEPOSIT : paymentNumber(legacyPayment?.patrol_deposit);
+    const pta = familyCourses.length ? safetyPatrolDepositForFamily(family) : paymentNumber(legacyPayment?.patrol_deposit);
     const adjust = paymentNumber(legacyPayment?.late_fee);
     return {
       legacyPayment,
@@ -2265,6 +2278,9 @@ function StaffPortal({ isAdmin }) {
   const selectedPrintDonationTotal = selectedPrintStudents.reduce((sum, student) => (
     sum + donationTotal(adminRegisteredCoursesFor(selectedPrintRegistrations[student.id] || {}))
   ), 0);
+  const selectedPrintSafetyPatrolDeposit = selectedPrintFamily
+    ? safetyPatrolDepositForFamily(selectedPrintFamily)
+    : SAFETY_PATROL_DEPOSIT;
   const registrationRows = sortedByLabel(registrations.map((row) => {
     const student = students.find((item) => item.id === row.student_id);
     const family = families.find((item) => item.id === student?.family_id);
@@ -2921,14 +2937,14 @@ function StaffPortal({ isAdmin }) {
               })}
               <div className="donation-summary">
                 <div><span>Donation subtotal</span><strong>{formatDonation(selectedPrintDonationTotal)}</strong></div>
-                <div><span>Safety Patrol Deposit</span><strong>{formatDonation(SAFETY_PATROL_DEPOSIT)}</strong></div>
-                <div className="donation-total-row"><span>Total</span><strong>{formatDonation(selectedPrintDonationTotal + SAFETY_PATROL_DEPOSIT)}</strong></div>
+                <div><span>Safety Patrol Deposit</span><strong>{formatDonation(selectedPrintSafetyPatrolDeposit)}</strong></div>
+                <div className="donation-total-row"><span>Total</span><strong>{formatDonation(selectedPrintDonationTotal + selectedPrintSafetyPatrolDeposit)}</strong></div>
               </div>
               <div className="registration-notes">
                 <strong>Notes</strong>
                 <p>1. 填写付款信息 Fill out payment information on both copies;</p>
                 <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
-                <p>3. Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty.</p>
+                <p>3. {selectedPrintSafetyPatrolDeposit === 0 ? "Safety Patrol Deposit waived for eligible Pfizer employees." : "Safety Patrol Deposit: $40 将在家长参与学校值日后退还 $40 will be refunded after parents participate in school safety patrol duty."}</p>
               </div>
               <section className="office-use">
                 <h3>For Office Use Only</h3>

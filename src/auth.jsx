@@ -161,6 +161,7 @@ export function LoginPage({ Link, navigate }) {
     zip: "",
     phone: "",
     wechat: "",
+    pfizer_employee: false,
   });
   const [busy, setBusy] = useState(false);
   const [message, setMessage] = useState("");
@@ -298,6 +299,13 @@ export function LoginPage({ Link, navigate }) {
             <label><RequiredLabel>Zip</RequiredLabel><input value={signupProfile.zip} inputMode="numeric" maxLength="5" pattern="[0-9]{5}" title="Zip must be exactly 5 digits." onChange={(e) => setSignupProfile({ ...signupProfile, zip: e.target.value })} required /></label>
             <label><RequiredLabel>Phone</RequiredLabel><input type="tel" value={signupProfile.phone} inputMode="tel" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="###-###-####" title="Phone must use ###-###-#### format." onChange={(e) => setSignupProfile({ ...signupProfile, phone: e.target.value })} required /></label>
             <label><span>Wechat</span><input value={signupProfile.wechat} onChange={(e) => setSignupProfile({ ...signupProfile, wechat: e.target.value })} /></label>
+            <label>
+              <span>Are you a Pfizer Employee?</span>
+              <select value={signupProfile.pfizer_employee ? "yes" : "no"} onChange={(e) => setSignupProfile({ ...signupProfile, pfizer_employee: e.target.value === "yes" })}>
+                <option value="no">No</option>
+                <option value="yes">Yes</option>
+              </select>
+            </label>
           </>
         )}
         <label className={mode === "signup" ? "wide" : ""}><RequiredLabel>{mode === "signup" ? "Email / Username" : "Email"}</RequiredLabel><input type="email" value={email} pattern="^[^@ ]+@[^@ ]+[.][^@ ]+$" title="Email must contain @ and ." onChange={(e) => setEmail(e.target.value)} required /></label>

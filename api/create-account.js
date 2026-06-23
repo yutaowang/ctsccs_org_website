@@ -61,6 +61,7 @@ function validateProfile(body) {
     zip: clean(profile.zip),
     phone: clean(profile.phone),
     wechat: clean(profile.wechat),
+    pfizer_employee: Boolean(profile.pfizer_employee),
   };
   const missing = [
     ["parent_first_name", "Parent First Name"],

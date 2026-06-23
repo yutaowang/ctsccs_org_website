@@ -7,6 +7,7 @@
 - Updated Payment History family lookup to show Balance instead of Due and sorted family-related admin lists by family name.
 - Added inline editing for Payment History Adjust amounts so late fees can be waived or changed per family, with Due and Balance recalculated from the saved adjustment.
 - Added editable Site Settings key-value rows, including an editable default `registration_change_deadline` row when the setting has not been saved yet.
+- Added a Pfizer employee question to family signup/profile and waived the Safety Patrol Deposit for eligible Pfizer employees using a `pfizer.com` family email.
 
 ## 2026-06-22
 

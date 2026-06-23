@@ -81,6 +81,12 @@ function parentName(family) {
     .join(" ");
 }
 
+function isPfizerDepositWaived(family, user) {
+  const email = String(family?.email || user?.email || "").trim().toLowerCase();
+  const domain = email.split("@").pop();
+  return Boolean(family?.pfizer_employee) && domain === "pfizer.com";
+}
+
 function encodeCheckoutParams(params, prefix = "") {
   const pairs = [];
   Object.entries(params).forEach(([key, value]) => {
@@ -216,16 +222,20 @@ export default async function handler(request, response) {
         .filter(Boolean)
     ));
 
-    const lineItems = [
-      ...courseLineItems,
-      {
+    const safetyPatrolDepositCents = isPfizerDepositWaived(family, user) ? 0 : SAFETY_PATROL_DEPOSIT_CENTS;
+    const safetyPatrolLineItems = safetyPatrolDepositCents > 0
+      ? [{
         price_data: {
           currency: "usd",
           product_data: { name: "Safety Patrol Deposit" },
-          unit_amount: SAFETY_PATROL_DEPOSIT_CENTS,
+          unit_amount: safetyPatrolDepositCents,
         },
         quantity: 1,
-      },
+      }]
+      : [];
+    const lineItems = [
+      ...courseLineItems,
+      ...safetyPatrolLineItems,
     ];
     if (!lineItems.length) {
       return json(response, 400, { error: "No payment amount is due." });
