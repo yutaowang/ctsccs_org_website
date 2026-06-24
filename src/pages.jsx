@@ -109,23 +109,60 @@ function About({ Link }) {
   );
 }
 
-const adminTeam = [
-  ["杨永华 Mr. Yonghua Yang", "校长 Principal", "yyang@ctsccs.org"],
-  ["于卫里 Ms. Weili Yu", "教务长 Provost", "wyu@ctsccs.org"],
-  ["向轶 Ms. Yi Xiang", "财务总监 Director of Finance", "yxiang@ctsccs.org"],
-  ["安玲 Ms. Ling An", "总务长 Director of School Services", "lan@ctsccs.org"],
-  ["刘泽亚 Ms. Zeya Liu", "总务长 Director of School Services", "zliu@ctsccs.org"],
-  ["王瑜涛 Mr. Yutao Wang", "信息技术部门 IT Department", "ywang@ctsccs.org"],
-];
-
 function Administration() {
+  const [adminTeam, setAdminTeam] = useState([]);
+  const [teamError, setTeamError] = useState("");
+  const [teamLoading, setTeamLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadAdminTeam = async () => {
+      if (!supabase) {
+        setTeamError("Admin team directory is unavailable.");
+        setTeamLoading(false);
+        return;
+      }
+      setTeamLoading(true);
+      const result = await supabase.from("admin_team_members")
+        .select("name_zh,name_en,title_zh,title_en,email,display_order")
+        .eq("is_public", true)
+        .order("display_order")
+        .order("last_name");
+      if (cancelled) return;
+      setTeamLoading(false);
+      if (result.error) {
+        setTeamError(result.error.message);
+        return;
+      }
+      setTeamError("");
+      setAdminTeam(result.data || []);
+    };
+    void loadAdminTeam();
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+
   return (
     <Page eyebrow="学校概况 Our School" title="管理团队 Management Team 2026–2027">
       <Section title="行政团队 Admin Team">
         <div className="table-wrap">
           <table>
             <thead><tr><th>姓名 Name</th><th>职务 Title</th><th>电子邮件 Email</th></tr></thead>
-            <tbody>{adminTeam.map((row) => <tr key={row[2]}>{row.map((cell, i) => <td key={cell}>{i === 2 ? <a href={`mailto:${cell}`}>{cell}</a> : cell}</td>)}</tr>)}</tbody>
+            <tbody>
+              {adminTeam.map((member) => (
+                <tr key={member.email}>
+                  <td>{[member.name_zh, member.name_en].filter(Boolean).join(" ")}</td>
+                  <td>{[member.title_zh, member.title_en].filter(Boolean).join(" ")}</td>
+                  <td><a href={`mailto:${member.email}`}>{member.email}</a></td>
+                </tr>
+              ))}
+              {!adminTeam.length && (
+                <tr>
+                  <td colSpan="3">{teamError || (teamLoading ? "Loading admin team..." : "No public admin team members.")}</td>
+                </tr>
+              )}
+            </tbody>
           </table>
         </div>
       </Section>

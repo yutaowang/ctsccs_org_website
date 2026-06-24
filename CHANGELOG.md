@@ -4,6 +4,8 @@
 
 - Corrected the 2026-2027 school year start date from September 7 to September 6, 2026, across the homepage, registration page, and school calendar.
 - Added the editable `school_year_start_date` Site Setting and connected public start-date displays to its value.
+- Added bilingual public-directory fields to `admin_team_members`, populated the six current admin team members, and changed the Management Team page to load them from Supabase.
+- Management Team data is fetched from Supabase whenever the page loads, so a browser refresh reflects table changes.
 
 ## 2026-06-23
 
