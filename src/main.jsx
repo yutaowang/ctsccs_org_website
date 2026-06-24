@@ -4,6 +4,15 @@ import { PageContent, pageRoutes } from "./pages";
 import { AuthProvider, LoginPage, ResetPasswordPage, useAuth } from "./auth";
 import { AdminPage } from "./admin";
 import { AccountPage } from "./portal";
+import { supabase } from "./supabase";
+import {
+  DEFAULT_SCHOOL_YEAR_START_DATE,
+  dateParts,
+  formatChineseDate,
+  formatEnglishDate,
+  formatMonthAbbreviation,
+  settingDate,
+} from "./site-settings";
 import "./styles.css";
 
 const navGroups = [
@@ -230,7 +239,8 @@ function Slideshow() {
   );
 }
 
-function Announcements() {
+function Announcements({ schoolStartDate }) {
+  const { day } = dateParts(schoolStartDate);
   return (
     <div className="content-grid">
       <section className="card announcements">
@@ -239,12 +249,15 @@ function Announcements() {
           <h2>标题新闻 Headlines</h2>
         </div>
         <article>
-          <div className="date-badge"><strong>07</strong><span>SEP</span></div>
+          <div className="date-badge">
+            <strong>{String(day).padStart(2, "0")}</strong>
+            <span>{formatMonthAbbreviation(schoolStartDate)}</span>
+          </div>
           <div>
             <h3>关于 2026–2027 学年通知 2026–2027 School Year Notice</h3>
             <ul>
-              <li>中文学校新学期将于 2026 年 9 月 7 日开始，第一节课上课时间为上午 9:30。</li>
-              <li>The new school year begins on September 7, 2026, with the first class starting at 9:30 AM.</li>
+              <li>中文学校新学期将于 {formatChineseDate(schoolStartDate)}开始，第一节课上课时间为上午 9:30。</li>
+              <li>The new school year begins on {formatEnglishDate(schoolStartDate)}, with the first class starting at 9:30 AM.</li>
               <li>2026 秋季所有课程将在 <strong>Waterford High School</strong> 进行，恢复课堂现场教学。</li>
               <li>All Fall 2026 classes will meet in person at <strong>Waterford High School</strong>.</li>
               <li>LCG 将 SAT、PSAT 合并为一节 90 分钟课程，收费调整为 $500。</li>
@@ -297,12 +310,12 @@ function QuickLinks() {
   );
 }
 
-function HomePage() {
+function HomePage({ schoolStartDate }) {
   return (
     <>
       <Slideshow />
       <QuickLinks />
-      <Announcements />
+      <Announcements schoolStartDate={schoolStartDate} />
     </>
   );
 }
@@ -329,6 +342,7 @@ function Footer() {
 
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
+  const [schoolStartDate, setSchoolStartDate] = useState(DEFAULT_SCHOOL_YEAR_START_DATE);
   const { path, navigate } = useRouter();
   const normalizedPath = path.length > 1 ? path.replace(/\/$/, "") : path;
   const isAdminPath = normalizedPath === "/admin";
@@ -339,6 +353,20 @@ function App() {
     document.title = normalizedPath === "/"
       ? "SCCS | 东南康州中文学校"
       : "SCCS | Southeastern Connecticut Chinese School";
+  }, [normalizedPath]);
+
+  useEffect(() => {
+    let cancelled = false;
+    const loadSchoolStartDate = async () => {
+      if (!supabase) return;
+      const result = await supabase.from("site_settings").select("value")
+        .eq("key", "school_year_start_date").maybeSingle();
+      if (!cancelled && !result.error) {
+        setSchoolStartDate(settingDate(result.data?.value, DEFAULT_SCHOOL_YEAR_START_DATE));
+      }
+    };
+    void loadSchoolStartDate();
+    return () => { cancelled = true; };
   }, [normalizedPath]);
 
   return (
@@ -354,8 +382,10 @@ function App() {
             />
           )}
           <main>
-            {normalizedPath === "/" && <HomePage />}
-            {pageRoutes.includes(normalizedPath) && <PageContent path={normalizedPath} Link={SiteLink} />}
+            {normalizedPath === "/" && <HomePage schoolStartDate={schoolStartDate} />}
+            {pageRoutes.includes(normalizedPath) && (
+              <PageContent path={normalizedPath} Link={SiteLink} schoolStartDate={schoolStartDate} />
+            )}
             {normalizedPath === "/login" && <LoginPage Link={SiteLink} navigate={navigate} />}
             {normalizedPath === "/reset-password" && <ResetPasswordPage Link={SiteLink} />}
             {normalizedPath === "/account" && <AccountPage Link={SiteLink} />}

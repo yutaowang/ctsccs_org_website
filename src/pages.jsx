@@ -1,6 +1,13 @@
 ﻿import React, { useEffect, useState } from "react";
 import { supabase } from "./supabase";
 
+import {
+  DEFAULT_SCHOOL_YEAR_START_DATE,
+  formatChineseDate,
+  formatEnglishDate,
+  formatShortDate,
+} from "./site-settings";
+
 const oldSite = "https://ctsccs.org/";
 
 const isLocalPath = (path) => (
@@ -207,11 +214,14 @@ function Catalog() {
   );
 }
 
-function Registration({ Link }) {
+function Registration({ Link, schoolStartDate = DEFAULT_SCHOOL_YEAR_START_DATE }) {
   return (
     <Page eyebrow="教学教务 Academics" title="课程注册 Registration">
       <Section>
-        <div className="notice-banner"><strong>2026 秋季开学日期 Fall 2026 Start Date</strong><span>2026 年 9 月 7 日 September 7, 2026</span></div>
+        <div className="notice-banner">
+          <strong>2026 秋季开学日期 Fall 2026 Start Date</strong>
+          <span>{formatChineseDate(schoolStartDate)} {formatEnglishDate(schoolStartDate)}</span>
+        </div>
         <ol className="numbered-list">
           <li><strong>注册期限 Registration Deadline</strong><p>请于 2026 年 9 月 21 日前完成注册缴费，在此之前注册的家庭免除 $25 注册费。</p><p>Please complete registration and payment by September 21, 2026. Families who register before this date will not be charged the $25 registration fee.</p></li>
           <li><strong>网上注册 Online Registration</strong><p>网上注册于 2026 年 7 月 20 日上午 9 时后开始。完成后请打印注册表，并同支票一同交到注册处。</p><p>Online registration opens after 9:00 AM on July 20, 2026. After registering, please print the registration summary and bring it with your payment check to the Registration Desk.</p></li>
@@ -231,7 +241,7 @@ function Registration({ Link }) {
 }
 
 const calendarEvents = [
-  ["9/7/26", "2026 秋季学期开学 Start of Fall 2026 Semester"],
+  [DEFAULT_SCHOOL_YEAR_START_DATE, "2026 秋季学期开学 Start of Fall 2026 Semester"],
   ["9/14/26", ""],
   ["9/21/26", "更改课程注册截止日 Last Day to Change Class Registration"],
   ["9/28/26", ""], ["10/5/26", ""], ["10/12/26", ""], ["10/19/26", ""], ["10/26/26", ""],
@@ -248,13 +258,16 @@ const calendarEvents = [
   ["5/3/27", ""], ["5/10/27", "期末考试 Final Exam"], ["5/17/27", "才艺表演 · 学年结束 Talent Show · End of Academic Year"],
 ];
 
-function Calendar() {
+function Calendar({ schoolStartDate = DEFAULT_SCHOOL_YEAR_START_DATE }) {
+  const displayedEvents = calendarEvents.map(([date, event], index) => (
+    [index === 0 ? formatShortDate(schoolStartDate) : date, event]
+  ));
   return (
     <Page eyebrow="教学教务 Academics" title="学校校历 2026–2027 School Calendar">
       <Section>
         <Download href="Forms/SCCS 2024-2025 School Calendar.pdf">下载校历 Download PDF</Download>
         <div className="calendar-grid">
-          {calendarEvents.map(([date, event]) => (
+          {displayedEvents.map(([date, event]) => (
             <div className={event.includes("No School") ? "no-school" : ""} key={date}>
               <strong>{date}</strong><span>{event || "上课日 School Day"}</span>
             </div>
@@ -672,7 +685,7 @@ const pages = {
 
 export const pageRoutes = Object.keys(pages);
 
-export function PageContent({ path, Link }) {
+export function PageContent({ path, Link, schoolStartDate }) {
   const Component = pages[path];
-  return <Component Link={Link} />;
+  return <Component Link={Link} schoolStartDate={schoolStartDate} />;
 }

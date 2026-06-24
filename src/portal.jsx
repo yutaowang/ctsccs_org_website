@@ -2175,17 +2175,17 @@ function StaffPortal({ isAdmin }) {
     ["grades", "Grades"], ["email", "Email Students"], ["password", "Password"],
   ];
   const tabs = isAdmin ? adminTabs : teacherTabs;
-  const siteSettingRows = siteSettings.some((row) => row.key === "registration_change_deadline")
-    ? siteSettings.map((row) => ({ ...row, exists: true }))
-    : [
-      {
-        key: "registration_change_deadline",
-        value: { date: "2026-09-21" },
-        updated_at: "",
-        exists: false,
-      },
-      ...siteSettings.map((row) => ({ ...row, exists: true })),
-    ];
+  const defaultSiteSettings = [
+    { key: "registration_change_deadline", value: { date: "2026-09-21" } },
+    { key: "school_year_start_date", value: { date: "2026-09-06" } },
+  ];
+  const savedSiteSettings = siteSettings.map((row) => ({ ...row, exists: true }));
+  const siteSettingRows = [
+    ...defaultSiteSettings
+      .filter((defaultRow) => !siteSettings.some((row) => row.key === defaultRow.key))
+      .map((row) => ({ ...row, updated_at: "", exists: false })),
+    ...savedSiteSettings,
+  ];
   const query = search.trim().toLowerCase();
   const studentsByFamilyId = students.reduce((groups, student) => {
     const rows = groups.get(student.family_id) || [];

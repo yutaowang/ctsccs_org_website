@@ -1,5 +1,10 @@
 # SCCS Website Change Log
 
+## 2026-06-24
+
+- Corrected the 2026-2027 school year start date from September 7 to September 6, 2026, across the homepage, registration page, and school calendar.
+- Added the editable `school_year_start_date` Site Setting and connected public start-date displays to its value.
+
 ## 2026-06-23
 
 - Added Admin Portal Payment History support for cash/check refunds, including refund buttons on paid cash/check transactions and negative Record Payment amounts that post to the Refund column.
