@@ -331,7 +331,7 @@ const chineseCourses = [
   ["Grade 8", "Aifang Li", "218", "$290", "09:30–11:05", "course_description/cn_Scholar.pdf"],
   ["Maliping 8 (Excluding Textbooks)", "Weili Yu", "210", "$290", "09:30–11:05", ""],
   ["Colloquial Mandarin Chinese", "Wenhua Jiao", "206", "$150", "12:00–12:45", "course_description/cn_CMC.pdf"],
-  ["AP Chinese and Culture", "Liurong Luo", "220", "$290", "09:30–11:05", "course_description/satii.pdf"],
+  ["AP Chinese and Culture", "Liurong Luo", "220", "$290", "09:30–11:05", "course_description/SATII.pdf"],
 ];
 
 const courseGroups = [
@@ -368,9 +368,9 @@ const courseGroups = [
       ["Dancing Beginner", "Claire Li", "222", "$150", "12:00–12:45", "course_description/dance_beginner.pdf"],
       ["Flute", "Katherine Zhang", "208", "$150", "12:00–12:45", "course_description/Flute.pdf"],
       ["Oil Pastel (5+)", "Krystal Chen", "224", "$300", "11:10–11:55", "course_description/OilPastel.pdf"],
-      ["Violin", "Joshua Payne", "218", "$150", "12:00–12:45", "course_description/violin.pdf"],
+      ["Violin", "Joshua Payne", "218", "$150", "12:00–12:45", "course_description/Violin.pdf"],
       ["Chinese Watercolor Painting (7+)", "Yujuan Zhai", "219", "$300", "11:10–11:55", ""],
-      ["Kids Basketball", "Aaron Chen", "Gym", "$150", "12:00–12:45", "course_description/basketball.pdf"],
+      ["Kids Basketball", "Aaron Chen", "Gym", "$150", "12:00–12:45", "course_description/Basketball.pdf"],
       ["Practical Course in Communication and Leadership", "Rich Derksen", "220", "$200", "12:00–12:45", "course_description/public%20speaking.pdf"],
     ],
   },
