@@ -2787,6 +2787,9 @@ footer {
     padding: 0 !important;
     box-shadow: none !important;
   }
+  .print-area {
+    zoom: 70%;
+  }
   .print-area .panel-heading {
     display: block !important;
     margin: 0 0 18px !important;
