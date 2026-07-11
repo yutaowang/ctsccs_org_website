@@ -148,11 +148,11 @@ export default async function handler(request, response) {
     await sendMail(emailConfig, {
       to: email,
       ...portalAccountTemplate({
-        title: "SCCS Teacher / TA Account",
+        title: "SCCS Teacher Account",
         loginUrl: `${emailConfig.siteUrl}/admin`,
         email,
         password,
-        roleName: "teacher / TA",
+        roleName: "Teacher",
       }),
     });
     return json(response, 200, { message: "Teacher login saved." });

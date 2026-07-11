@@ -1446,7 +1446,7 @@ function TeacherManager({ teachers, assignments = [], onReload, setStatus }) {
       <p className="staff-help">
         Use this page to create, search, update, and delete teacher records.
         Teacher email can be any valid email address and is not required to use <code>@ctsccs.org</code>.
-        Teacher portal login accounts use <code>sccs_teacher_ta_role</code>. Set a temporary password to let a teacher log in at <code>/admin</code>; they can change it on the Password tab after login.
+        Set a temporary password to let a teacher log in at <code>/admin</code>; they can change it on the Password tab after login.
       </p>
       <section className={`collapsible-editor ${formOpen ? "is-open" : ""}`}>
         <button className="collapsible-editor-toggle" type="button" onClick={() => setFormOpen(!formOpen)} aria-expanded={formOpen}>
@@ -1456,7 +1456,7 @@ function TeacherManager({ teachers, assignments = [], onReload, setStatus }) {
         {formOpen && (
           <form className="portal-form staff-user-form" onSubmit={saveTeacher}>
             <label><span>Short name</span><input value={form.short_name} onChange={(event) => setForm({ ...form, short_name: event.target.value })} placeholder="e.g. yzhao" /></label>
-            <label><span>Role</span><input value="sccs_teacher_ta_role" disabled /></label>
+            <label><span>Role</span><input value="Teacher" disabled /></label>
             <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
             <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
             <label><span>Email 1</span><input type="email" value={form.email_1} onChange={(event) => setForm({ ...form, email_1: event.target.value })} /></label>
@@ -2467,7 +2467,7 @@ function StaffPortal({ isAdmin }) {
 
   return (
     <PortalLayout
-      title={role === roles.superadmin ? "Administrator Portal" : isAdmin ? "Management Team Portal" : "Teacher / TA Portal"}
+      title={role === roles.superadmin ? "Administrator Portal" : isAdmin ? "Management Team Portal" : "Teacher Portal"}
       tabs={tabs}
       active={active}
       setActive={setActive}
