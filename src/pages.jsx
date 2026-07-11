@@ -383,11 +383,14 @@ const courseGroups = [
   },
 ];
 
-export const courseDescriptionLinks = Object.fromEntries(
-  courseGroups.flatMap((group) => group.courses)
-    .filter(([name, , , , , file]) => file)
-    .map(([name, , , , , file]) => [name.toLowerCase(), localPath(file)]),
-);
+export const courseDescriptionLinks = {
+  ...Object.fromEntries(
+    courseGroups.flatMap((group) => group.courses)
+      .filter(([name, , , , , file]) => file)
+      .map(([name, , , , , file]) => [name.toLowerCase(), localPath(file)]),
+  ),
+  "foundational music theory": localPath("course_description/Foundational_Music_Theory.pdf"),
+};
 
 export const courseDescriptionLinkFor = (courseName) => (
   courseDescriptionLinks[(courseName || "").toLowerCase()] || ""
