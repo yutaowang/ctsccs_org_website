@@ -113,6 +113,7 @@ const csvEscape = (value) => {
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 const SAFETY_PATROL_DEPOSIT = 40;
+const ONLINE_PAYMENTS_ENABLED = false;
 const isEligibleEmployeeEmail = (email) => (
   ["pfizer.com", "ctsccs.org"].includes(String(email || "").trim().toLowerCase().split("@").pop())
 );
@@ -557,16 +558,18 @@ function FamilyPortal() {
             <div><span>Safety Patrol Deposit</span><strong>{formatDonation(safetyPatrolDeposit)}</strong></div>
             <div className="donation-total-row"><span>Total</span><strong>{formatDonation(paymentTotal)}</strong></div>
           </div>
-          <div className="payment-action no-print">
-            <button
-              className={`button-link ${isPaid ? "is-paid" : ""}`}
-              type="button"
-              onClick={startOnlinePayment}
-              disabled={!paymentTotal || paymentBusy || isPaid}
-            >
-              {paymentButtonLabel}
-            </button>
-          </div>
+          {ONLINE_PAYMENTS_ENABLED && (
+            <div className="payment-action no-print">
+              <button
+                className={`button-link ${isPaid ? "is-paid" : ""}`}
+                type="button"
+                onClick={startOnlinePayment}
+                disabled={!paymentTotal || paymentBusy || isPaid}
+              >
+                {paymentButtonLabel}
+              </button>
+            </div>
+          )}
           <div className="registration-notes">
             <strong>Notes</strong>
             <p>1. 填写付款信息 Fill out payment information on both copies;</p>
