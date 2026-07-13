@@ -5,7 +5,6 @@ import {
   DEFAULT_SCHOOL_YEAR_START_DATE,
   formatChineseDate,
   formatEnglishDate,
-  formatShortDate,
 } from "./site-settings";
 
 const oldSite = "https://ctsccs.org/";
@@ -278,41 +277,43 @@ function Registration({ Link, schoolStartDate = DEFAULT_SCHOOL_YEAR_START_DATE }
 }
 
 const calendarEvents = [
-  [DEFAULT_SCHOOL_YEAR_START_DATE, "2026 秋季学期开学 Start of Fall 2026 Semester"],
-  ["9/14/26", ""],
-  ["9/21/26", "更改课程注册截止日 Last Day to Change Class Registration"],
-  ["9/28/26", ""], ["10/5/26", ""], ["10/12/26", ""], ["10/19/26", ""], ["10/26/26", ""],
-  ["11/2/26", "夏令时结束 Daylight Saving Time Ends"], ["11/9/26", ""], ["11/16/26", ""], ["11/23/26", ""],
-  ["11/30/26", "感恩节假期 · 停课 Thanksgiving Holiday · No School"],
-  ["12/7/26", ""], ["12/14/26", "期末考试 Final Exam"],
-  ["12/21/26", "中文演讲比赛 · 秋季学期结束 · 全勤要求 Speech Contest · End of Fall Semester · Full Attendance Required"],
-  ["12/28/26", "圣诞假期 · 停课 Christmas Holiday · No School"],
-  ["1/4/27", "新年假期 · 停课 New Year Holiday · No School"],
-  ["1/11/27", "2027 春季学期开学 Start of Spring 2027 Semester"], ["1/18/27", ""], ["1/25/27", ""],
-  ["2/1/27", ""], ["2/8/27", ""], ["2/15/27", "春节庆祝 Chinese New Year Celebration"], ["2/22/27", ""],
-  ["3/1/27", ""], ["3/8/27", "夏令时开始 Daylight Saving Time Starts"], ["3/15/27", ""], ["3/22/27", ""], ["3/29/27", ""],
-  ["4/5/27", ""], ["4/12/27", "春假 · 停课 Spring Break · No School"], ["4/19/27", ""], ["4/26/27", ""],
-  ["5/3/27", ""], ["5/10/27", "期末考试 Final Exam"], ["5/17/27", "才艺表演 · 学年结束 Talent Show · End of Academic Year"],
+  ["9/6/26", "秋季学期开学 First day of fall semester"],
+  ["9/13/26", ""],
+  ["9/20/26", "更改课程注册截止日 Last day to change class Registration"],
+  ["9/27/26", ""], ["10/4/26", ""], ["10/11/26", ""], ["10/18/26", ""], ["10/25/26", ""],
+  ["11/1/26", ""], ["11/8/26", ""], ["11/15/26", ""], ["11/22/26", ""],
+  ["11/29/26", "感恩节假期 · 停课 Thanksgiving holiday · No School"],
+  ["12/6/26", "期末考试 Final Exam"],
+  ["12/13/26", "演讲比赛 · 秋季学期结束 · 全员出席 Speech Contest · Final day of fall semester · All Present"],
+  ["12/20/26", "圣诞节假期 · 停课 Christmas Holiday · No School"],
+  ["12/27/26", "新年假期 · 停课 New Year Holiday · No School"],
+  ["1/3/27", "春季学期开学 First Day of Spring Semester"], ["1/10/27", ""], ["1/17/27", ""], ["1/24/27", ""],
+  ["1/31/27", "庆祝中国新年 · 所有中文课学生均须出席 Chinese New Year Celebration · All Chinese Language class students present"],
+  ["2/7/27", ""], ["2/14/27", ""], ["2/21/27", ""], ["2/28/27", ""],
+  ["3/7/27", ""], ["3/14/27", ""], ["3/21/27", ""], ["3/28/27", ""],
+  ["4/4/27", ""], ["4/11/27", "春假 Spring Break"], ["4/18/27", ""], ["4/25/27", ""],
+  ["5/2/27", ""], ["5/9/27", "期末考试 Final Exam"],
+  ["5/16/27", "才艺表演 · 学年结束 Talent Show · Final day of school year"],
 ];
 
-function Calendar({ schoolStartDate = DEFAULT_SCHOOL_YEAR_START_DATE }) {
-  const displayedEvents = calendarEvents.map(([date, event], index) => (
-    [index === 0 ? formatShortDate(schoolStartDate) : date, event]
-  ));
+function Calendar() {
   return (
     <Page eyebrow="教学教务 Academics" title="学校校历 2026–2027 School Calendar">
       <Section>
-        <Download href="Forms/SCCS 2024-2025 School Calendar.pdf">下载校历 Download PDF</Download>
+        <Download href="Forms/SCCS 2026-2027 School Calendar.pdf">下载校历 Download PDF</Download>
         <div className="calendar-grid">
-          {displayedEvents.map(([date, event]) => (
+          {calendarEvents.map(([date, event]) => (
             <div className={event.includes("No School") ? "no-school" : ""} key={date}>
               <strong>{date}</strong><span>{event || "上课日 School Day"}</span>
             </div>
           ))}
         </div>
         <div className="note-box">
-          <p>注：如果遇到雪天停课，学校会在当天早上 8 点之前通过电话通知家长，请确保电话号码已在在线系统中注册。</p>
-          <p>Snow day cancellations will be announced by telephone no later than 8 AM.</p>
+          <p>注：如遇雪天停课，学校将在当天上午 8 点前通过 SCCS 电话、电子邮件或微信发布通知。请确保您的电话号码已在网上系统中登记。</p>
+          <p>NOTE: Snow Day cancellations will be announced via SCCS telephone/email/WeChat no later than 8 AM on the day of the occurrence. Please make sure your phone is registered in the online system.</p>
+          <p>2026 年 12 月 13 日：需要使用礼堂。12/13/26: Auditorium will be needed.</p>
+          <p>2027 年 1 月 31 日：需要使用礼堂。1/31/27: Auditorium will be needed.</p>
+          <p>2027 年 5 月 16 日：需要使用礼堂。5/16/27: Auditorium will be needed.</p>
         </div>
       </Section>
     </Page>
