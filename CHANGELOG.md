@@ -1,5 +1,9 @@
 # SCCS Website Change Log
 
+## 2026-07-13
+
+- Added the editable `online_registration_open_at` Site Setting and connected the public Registration page to its date and time.
+
 ## 2026-06-24
 
 - Corrected the 2026-2027 school year start date from September 7 to September 6, 2026, across the homepage, registration page, and school calendar.

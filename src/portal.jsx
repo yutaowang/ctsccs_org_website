@@ -2178,6 +2178,7 @@ function StaffPortal({ isAdmin }) {
   ];
   const tabs = isAdmin ? adminTabs : teacherTabs;
   const defaultSiteSettings = [
+    { key: "online_registration_open_at", value: { datetime: "2026-07-20T09:00:00-04:00" } },
     { key: "registration_change_deadline", value: { date: "2026-09-21" } },
     { key: "school_year_start_date", value: { date: "2026-09-06" } },
   ];

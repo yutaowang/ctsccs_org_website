@@ -6,12 +6,14 @@ import { AdminPage } from "./admin";
 import { AccountPage } from "./portal";
 import { supabase } from "./supabase";
 import {
+  DEFAULT_ONLINE_REGISTRATION_OPEN_AT,
   DEFAULT_SCHOOL_YEAR_START_DATE,
   dateParts,
   formatChineseDate,
   formatEnglishDate,
   formatMonthAbbreviation,
   settingDate,
+  settingDateTime,
 } from "./site-settings";
 import "./styles.css";
 
@@ -343,6 +345,7 @@ function Footer() {
 function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [schoolStartDate, setSchoolStartDate] = useState(DEFAULT_SCHOOL_YEAR_START_DATE);
+  const [registrationOpenAt, setRegistrationOpenAt] = useState(DEFAULT_ONLINE_REGISTRATION_OPEN_AT);
   const { path, navigate } = useRouter();
   const normalizedPath = path.length > 1 ? path.replace(/\/$/, "") : path;
   const isAdminPath = normalizedPath === "/admin";
@@ -357,15 +360,20 @@ function App() {
 
   useEffect(() => {
     let cancelled = false;
-    const loadSchoolStartDate = async () => {
+    const loadSiteSettings = async () => {
       if (!supabase) return;
-      const result = await supabase.from("site_settings").select("value")
-        .eq("key", "school_year_start_date").maybeSingle();
+      const result = await supabase.from("site_settings").select("key, value")
+        .in("key", ["school_year_start_date", "online_registration_open_at"]);
       if (!cancelled && !result.error) {
-        setSchoolStartDate(settingDate(result.data?.value, DEFAULT_SCHOOL_YEAR_START_DATE));
+        const settings = new Map((result.data || []).map((row) => [row.key, row.value]));
+        setSchoolStartDate(settingDate(settings.get("school_year_start_date"), DEFAULT_SCHOOL_YEAR_START_DATE));
+        setRegistrationOpenAt(settingDateTime(
+          settings.get("online_registration_open_at"),
+          DEFAULT_ONLINE_REGISTRATION_OPEN_AT,
+        ));
       }
     };
-    void loadSchoolStartDate();
+    void loadSiteSettings();
     return () => { cancelled = true; };
   }, [normalizedPath]);
 
@@ -384,7 +392,12 @@ function App() {
           <main>
             {normalizedPath === "/" && <HomePage schoolStartDate={schoolStartDate} />}
             {pageRoutes.includes(normalizedPath) && (
-              <PageContent path={normalizedPath} Link={SiteLink} schoolStartDate={schoolStartDate} />
+              <PageContent
+                path={normalizedPath}
+                Link={SiteLink}
+                schoolStartDate={schoolStartDate}
+                registrationOpenAt={registrationOpenAt}
+              />
             )}
             {normalizedPath === "/login" && <LoginPage Link={SiteLink} navigate={navigate} />}
             {normalizedPath === "/reset-password" && <ResetPasswordPage Link={SiteLink} />}

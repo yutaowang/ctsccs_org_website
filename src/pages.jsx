@@ -2,9 +2,12 @@
 import { supabase } from "./supabase";
 
 import {
+  DEFAULT_ONLINE_REGISTRATION_OPEN_AT,
   DEFAULT_SCHOOL_YEAR_START_DATE,
   formatChineseDate,
+  formatChineseDateTime,
   formatEnglishDate,
+  formatEnglishDateTime,
 } from "./site-settings";
 
 const oldSite = "https://ctsccs.org/";
@@ -250,7 +253,11 @@ function Catalog() {
   );
 }
 
-function Registration({ Link, schoolStartDate = DEFAULT_SCHOOL_YEAR_START_DATE }) {
+function Registration({
+  Link,
+  schoolStartDate = DEFAULT_SCHOOL_YEAR_START_DATE,
+  registrationOpenAt = DEFAULT_ONLINE_REGISTRATION_OPEN_AT,
+}) {
   return (
     <Page eyebrow="教学教务 Academics" title="课程注册 Registration">
       <Section>
@@ -260,7 +267,7 @@ function Registration({ Link, schoolStartDate = DEFAULT_SCHOOL_YEAR_START_DATE }
         </div>
         <ol className="numbered-list">
           <li><strong>注册期限 Registration Deadline</strong><p>请于 2026 年 9 月 21 日前完成注册缴费，在此之前注册的家庭免除 $25 注册费。</p><p>Please complete registration and payment by September 21, 2026. Families who register before this date will not be charged the $25 registration fee.</p></li>
-          <li><strong>网上注册 Online Registration</strong><p>网上注册于 2026 年 7 月 20 日上午 9 时后开始。完成后请打印注册表，并同支票一同交到注册处。</p><p>Online registration opens after 9:00 AM on July 20, 2026. After registering, please print the registration summary and bring it with your payment check to the Registration Desk.</p></li>
+          <li><strong>网上注册 Online Registration</strong><p>网上注册于 {formatChineseDateTime(registrationOpenAt)}后开始。完成后请打印注册表，并同支票一同交到注册处。</p><p>Online registration opens after {formatEnglishDateTime(registrationOpenAt)}. After registering, please print the registration summary and bring it with your payment check to the Registration Desk.</p></li>
           <li><strong>家庭账户 Family Account</strong><p>每个学生家庭需要一个家庭账户。请加入微信号以方便学校联系，不要重复建立新账户。</p><p>Each family needs one family account. Please include your WeChat ID if available so the school can communicate with you. Do not create duplicate accounts.</p></li>
           <li><strong>课程 Courses</strong><p>具体课程、时间、地点和收费情况，请查看 <Link to="/courses">课程安排</Link>。</p><p>For course names, times, classrooms and donation amounts, please visit the <Link to="/courses">Courses</Link> page.</p></li>
           <li><strong>课本 Textbooks</strong><p>课本在开学第一天由任课老师发放。改课或退课时，请将课本退回学校办公室。</p><p>Textbooks are distributed by teachers on the first day of school. If you change or drop a class, please return the textbook to the school office.</p></li>
@@ -726,7 +733,13 @@ const pages = {
 
 export const pageRoutes = Object.keys(pages);
 
-export function PageContent({ path, Link, schoolStartDate }) {
+export function PageContent({ path, Link, schoolStartDate, registrationOpenAt }) {
   const Component = pages[path];
-  return <Component Link={Link} schoolStartDate={schoolStartDate} />;
+  return (
+    <Component
+      Link={Link}
+      schoolStartDate={schoolStartDate}
+      registrationOpenAt={registrationOpenAt}
+    />
+  );
 }
