@@ -1,5 +1,6 @@
 export const DEFAULT_SCHOOL_YEAR_START_DATE = "2026-09-06";
 export const DEFAULT_ONLINE_REGISTRATION_OPEN_AT = "2026-07-20T09:00:00-04:00";
+export const DEFAULT_REGISTRATION_CHANGE_DEADLINE = "2026-09-21";
 
 export function settingDate(value, fallback = "") {
   if (!value) return fallback;

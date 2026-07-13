@@ -3,6 +3,7 @@ import { supabase } from "./supabase";
 
 import {
   DEFAULT_ONLINE_REGISTRATION_OPEN_AT,
+  DEFAULT_REGISTRATION_CHANGE_DEADLINE,
   DEFAULT_SCHOOL_YEAR_START_DATE,
   formatChineseDate,
   formatChineseDateTime,
@@ -257,6 +258,7 @@ function Registration({
   Link,
   schoolStartDate = DEFAULT_SCHOOL_YEAR_START_DATE,
   registrationOpenAt = DEFAULT_ONLINE_REGISTRATION_OPEN_AT,
+  registrationChangeDeadline = DEFAULT_REGISTRATION_CHANGE_DEADLINE,
 }) {
   return (
     <Page eyebrow="教学教务 Academics" title="课程注册 Registration">
@@ -266,13 +268,13 @@ function Registration({
           <span>{formatChineseDate(schoolStartDate)} {formatEnglishDate(schoolStartDate)}</span>
         </div>
         <ol className="numbered-list">
-          <li><strong>注册期限 Registration Deadline</strong><p>请于 2026 年 9 月 21 日前完成注册缴费，在此之前注册的家庭免除 $25 注册费。</p><p>Please complete registration and payment by September 21, 2026. Families who register before this date will not be charged the $25 registration fee.</p></li>
+          <li><strong>注册期限 Registration Deadline</strong><p>请于 {formatChineseDate(registrationChangeDeadline)}前完成注册缴费，在此之前注册的家庭免除 $25 注册费。</p><p>Please complete registration and payment by {formatEnglishDate(registrationChangeDeadline)}. Families who register before this date will not be charged the $25 registration fee.</p></li>
           <li><strong>网上注册 Online Registration</strong><p>网上注册于 {formatChineseDateTime(registrationOpenAt)}后开始。完成后请打印注册表，并同支票一同交到注册处。</p><p>Online registration opens after {formatEnglishDateTime(registrationOpenAt)}. After registering, please print the registration summary and bring it with your payment check to the Registration Desk.</p></li>
           <li><strong>家庭账户 Family Account</strong><p>每个学生家庭需要一个家庭账户。请加入微信号以方便学校联系，不要重复建立新账户。</p><p>Each family needs one family account. Please include your WeChat ID if available so the school can communicate with you. Do not create duplicate accounts.</p></li>
           <li><strong>课程 Courses</strong><p>具体课程、时间、地点和收费情况，请查看 <Link to="/courses">课程安排</Link>。</p><p>For course names, times, classrooms and donation amounts, please visit the <Link to="/courses">Courses</Link> page.</p></li>
           <li><strong>课本 Textbooks</strong><p>课本在开学第一天由任课老师发放。改课或退课时，请将课本退回学校办公室。</p><p>Textbooks are distributed by teachers on the first day of school. If you change or drop a class, please return the textbook to the school office.</p></li>
           <li><strong>付款与邮寄 Payment and Mailing</strong><p>支票请开给 SCCS，邮寄至 SCCS PO Box 766, East Lyme, CT 06333。银行退票罚款 $25。</p><p>Please make checks payable to SCCS and mail them to SCCS, PO Box 766, East Lyme, CT 06333. Returned checks are subject to a $25 fee.</p></li>
-          <li><strong>加课、转课、退课 Add, Change or Drop Classes</strong><p>请于 2026 年 9 月 21 日前在线办理。该日期后学校不再接受转课或退课请求。</p><p>Please complete class additions, changes or drops online by September 21, 2026. After that date, course changes and drops will no longer be accepted.</p></li>
+          <li><strong>加课、转课、退课 Add, Change or Drop Classes</strong><p>请于 {formatChineseDate(registrationChangeDeadline)}前在线办理。该日期后学校不再接受转课或退课请求。</p><p>Please complete class additions, changes or drops online by {formatEnglishDate(registrationChangeDeadline)}. After that date, course changes and drops will no longer be accepted.</p></li>
         </ol>
         <div className="action-row">
           <Link className="button-link" to="/login">进入网上注册 Online Registration</Link>
@@ -733,13 +735,20 @@ const pages = {
 
 export const pageRoutes = Object.keys(pages);
 
-export function PageContent({ path, Link, schoolStartDate, registrationOpenAt }) {
+export function PageContent({
+  path,
+  Link,
+  schoolStartDate,
+  registrationOpenAt,
+  registrationChangeDeadline,
+}) {
   const Component = pages[path];
   return (
     <Component
       Link={Link}
       schoolStartDate={schoolStartDate}
       registrationOpenAt={registrationOpenAt}
+      registrationChangeDeadline={registrationChangeDeadline}
     />
   );
 }

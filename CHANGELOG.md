@@ -3,6 +3,7 @@
 ## 2026-07-13
 
 - Added the editable `online_registration_open_at` Site Setting and connected the public Registration page to its date and time.
+- Connected both public registration-deadline notices to the existing `registration_change_deadline` Site Setting.
 
 ## 2026-06-24
 

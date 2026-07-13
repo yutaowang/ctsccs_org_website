@@ -7,6 +7,7 @@ import { AccountPage } from "./portal";
 import { supabase } from "./supabase";
 import {
   DEFAULT_ONLINE_REGISTRATION_OPEN_AT,
+  DEFAULT_REGISTRATION_CHANGE_DEADLINE,
   DEFAULT_SCHOOL_YEAR_START_DATE,
   dateParts,
   formatChineseDate,
@@ -346,6 +347,7 @@ function App() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [schoolStartDate, setSchoolStartDate] = useState(DEFAULT_SCHOOL_YEAR_START_DATE);
   const [registrationOpenAt, setRegistrationOpenAt] = useState(DEFAULT_ONLINE_REGISTRATION_OPEN_AT);
+  const [registrationChangeDeadline, setRegistrationChangeDeadline] = useState(DEFAULT_REGISTRATION_CHANGE_DEADLINE);
   const { path, navigate } = useRouter();
   const normalizedPath = path.length > 1 ? path.replace(/\/$/, "") : path;
   const isAdminPath = normalizedPath === "/admin";
@@ -363,13 +365,21 @@ function App() {
     const loadSiteSettings = async () => {
       if (!supabase) return;
       const result = await supabase.from("site_settings").select("key, value")
-        .in("key", ["school_year_start_date", "online_registration_open_at"]);
+        .in("key", [
+          "school_year_start_date",
+          "online_registration_open_at",
+          "registration_change_deadline",
+        ]);
       if (!cancelled && !result.error) {
         const settings = new Map((result.data || []).map((row) => [row.key, row.value]));
         setSchoolStartDate(settingDate(settings.get("school_year_start_date"), DEFAULT_SCHOOL_YEAR_START_DATE));
         setRegistrationOpenAt(settingDateTime(
           settings.get("online_registration_open_at"),
           DEFAULT_ONLINE_REGISTRATION_OPEN_AT,
+        ));
+        setRegistrationChangeDeadline(settingDate(
+          settings.get("registration_change_deadline"),
+          DEFAULT_REGISTRATION_CHANGE_DEADLINE,
         ));
       }
     };
@@ -397,6 +407,7 @@ function App() {
                 Link={SiteLink}
                 schoolStartDate={schoolStartDate}
                 registrationOpenAt={registrationOpenAt}
+                registrationChangeDeadline={registrationChangeDeadline}
               />
             )}
             {normalizedPath === "/login" && <LoginPage Link={SiteLink} navigate={navigate} />}
