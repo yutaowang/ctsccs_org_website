@@ -54,7 +54,7 @@ const navGroups = [
   },
 ];
 
-const slides = [
+const heroImages = [
   "/Images/hero-children-laughing.png",
   "/Images/hero-chinese-reading.png",
   "/Images/hero-calligraphy-class.png",
@@ -65,7 +65,26 @@ const slides = [
   "/Images/hero-art-class.png",
   "/Images/hero-music-class.png",
   "/Images/hero-outdoor-community.png",
+  "/Images/hero-multicultural-lantern-craft.png",
+  "/Images/hero-family-library-reading.png",
+  "/Images/hero-family-dumpling-workshop.png",
+  "/Images/hero-multicultural-science-lab.png",
+  "/Images/hero-multicultural-music-ensemble.png",
+  "/Images/hero-multicultural-family-picnic.png",
+  "/Images/hero-language-matching-game.png",
+  "/Images/hero-multicultural-ribbon-dance.png",
+  "/Images/hero-family-food-drive.png",
+  "/Images/hero-multicultural-chess-club.png",
 ];
+
+function randomHeroSlides(count) {
+  const shuffled = [...heroImages];
+  for (let index = shuffled.length - 1; index > 0; index -= 1) {
+    const randomIndex = Math.floor(Math.random() * (index + 1));
+    [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
+  }
+  return shuffled.slice(0, count);
+}
 
 function useRouter() {
   const [path, setPath] = useState(window.location.pathname);
@@ -195,6 +214,7 @@ function Navigation({ menuOpen, closeMenu, currentPath }) {
 
 function Slideshow() {
   const [activeSlide, setActiveSlide] = useState(0);
+  const [slides] = useState(() => randomHeroSlides(5));
 
   useEffect(() => {
     const timer = window.setInterval(() => {
