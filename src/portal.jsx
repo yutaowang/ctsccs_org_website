@@ -1457,9 +1457,9 @@ function TeacherManager({ teachers, assignments = [], onReload, setStatus }) {
         <div><span>Teacher Management</span><h2>Teacher</h2></div>
       </div>
       <p className="staff-help">
-        Use this page to create, search, update, and delete teacher records.
-        Teacher email can be any valid email address and is not required to use <code>@ctsccs.org</code>.
-        Set a temporary password to let a teacher log in at <code>/admin</code>; they can change it on the Password tab after login.
+        Create, search, edit, or delete teacher records here.
+        An <code>@ctsccs.org</code> address is required to sign in to the <code>/admin</code> portal; enter it in the Email 1 field.
+        A teacher may enter a personal email address in the Email 2 field. Set a temporary password for their first sign-in or use the auto-generated one; they can change it from the Password tab afterward.
       </p>
       <section className={`collapsible-editor ${formOpen ? "is-open" : ""}`}>
         <button className="collapsible-editor-toggle" type="button" onClick={() => setFormOpen(!formOpen)} aria-expanded={formOpen}>
