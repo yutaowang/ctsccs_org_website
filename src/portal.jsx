@@ -1229,10 +1229,7 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
       <div className="panel-heading">
         <div><span>Class Management</span><h2>Classes</h2></div>
       </div>
-      <p className="staff-help">
-        Use this page to create, search, update, and delete course records.
-        Teacher assignment is saved to <code>teacher_classes</code>; class details are saved to <code>classes</code>.
-      </p>
+      <p className="staff-help">Use this page to create, search, update, and delete course records; teacher assignments are saved to <code>teacher_classes</code>, while class details are saved to <code>classes</code>.</p>
       <section className={`collapsible-editor ${formOpen ? "is-open" : ""}`}>
         <button className="collapsible-editor-toggle" type="button" onClick={() => setFormOpen(!formOpen)} aria-expanded={formOpen}>
           <span>{form.id ? "Edit class" : "Create class"}</span>
