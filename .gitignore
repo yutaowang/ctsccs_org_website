@@ -11,3 +11,4 @@ supabase/seed/*.sql
 backups/
 __pycache__/
 *.py[cod]
+DATABASE_TABLES.md
