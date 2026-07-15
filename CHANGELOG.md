@@ -2,6 +2,7 @@
 
 ## 2026-07-13
 
+- Added an automatically generated 8-digit temporary password to the new-teacher form while preserving the existing account creation and email flow.
 - Added the editable `online_registration_open_at` Site Setting and connected the public Registration page to its date and time.
 - Connected both public registration-deadline notices to the existing `registration_change_deadline` Site Setting.
 - Added ten diverse, photorealistic school-community hero images and changed the homepage carousel to select five images at random for each page load.

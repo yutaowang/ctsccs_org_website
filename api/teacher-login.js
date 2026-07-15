@@ -114,7 +114,7 @@ export default async function handler(request, response) {
     const password = String(request.body?.password || "");
     if (!teacherId) throw new Error("Teacher record is required.");
     if (!EMAIL_PATTERN.test(email) || email.includes("..")) throw new Error("A valid teacher email is required.");
-    if (password.length < 10) throw new Error("Temporary password must be at least 10 characters.");
+    if (password.length < 8) throw new Error("Temporary password must be at least 8 characters.");
 
     const existingUser = await findAuthUser(configuration, email);
     let userId = existingUser?.id;

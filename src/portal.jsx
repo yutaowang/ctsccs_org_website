@@ -1301,6 +1301,13 @@ function ClassManager({ classes, classTimes, teachers, assignments, registration
 
 function TeacherManager({ teachers, assignments = [], onReload, setStatus }) {
   const { session } = useAuth();
+  const generateTemporaryPassword = () => {
+    const digits = new Uint8Array(8);
+    window.crypto.getRandomValues(digits);
+    return Array.from(digits, (value, index) => (
+      index === 0 ? String((value % 9) + 1) : String(value % 10)
+    )).join("");
+  };
   const emptyTeacher = {
     id: "",
     short_name: "",
@@ -1312,7 +1319,11 @@ function TeacherManager({ teachers, assignments = [], onReload, setStatus }) {
     phone_2: "",
     temporary_password: "",
   };
-  const [form, setForm] = useState(emptyTeacher);
+  const newTeacher = () => ({
+    ...emptyTeacher,
+    temporary_password: generateTemporaryPassword(),
+  });
+  const [form, setForm] = useState(newTeacher);
   const [teacherSearch, setTeacherSearch] = useState("");
   const [formOpen, setFormOpen] = useState(false);
   const [busy, setBusy] = useState(false);
@@ -1375,7 +1386,7 @@ function TeacherManager({ teachers, assignments = [], onReload, setStatus }) {
           return;
         }
       }
-      setForm(emptyTeacher);
+      setForm(newTeacher());
       setStatus({
         error: "",
         message: temporaryPassword
@@ -1422,7 +1433,7 @@ function TeacherManager({ teachers, assignments = [], onReload, setStatus }) {
         : result.error.message;
       setStatus({ error: message, message: "" });
     } else {
-      if (form.id === teacher.id) setForm(emptyTeacher);
+      if (form.id === teacher.id) setForm(newTeacher());
       setStatus({ error: "", message: "Teacher deleted." });
       await onReload();
     }
@@ -1462,13 +1473,13 @@ function TeacherManager({ teachers, assignments = [], onReload, setStatus }) {
             <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
             <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
             <label><span>Email 1</span><input type="email" value={form.email_1} onChange={(event) => setForm({ ...form, email_1: event.target.value })} /></label>
-            <label><span>Temporary password</span><input type="password" minLength="10" autoComplete="new-password" value={form.temporary_password} onChange={(event) => setForm({ ...form, temporary_password: event.target.value })} placeholder={form.id ? "Leave blank to keep login unchanged" : "Optional teacher login password"} /></label>
+            <label><span>Temporary password</span><input type="password" minLength="8" autoComplete="new-password" value={form.temporary_password} onChange={(event) => setForm({ ...form, temporary_password: event.target.value })} placeholder={form.id ? "Leave blank to keep login unchanged" : "Automatically generated"} /></label>
             <label><span>Phone 1</span><input value={form.phone_1} onChange={(event) => setForm({ ...form, phone_1: event.target.value })} /></label>
             <label><span>Email 2</span><input type="email" value={form.email_2} onChange={(event) => setForm({ ...form, email_2: event.target.value })} /></label>
             <label><span>Phone 2</span><input value={form.phone_2} onChange={(event) => setForm({ ...form, phone_2: event.target.value })} /></label>
             <div className="button-row">
               <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update teacher" : "Create teacher"}</button>
-              {form.id && <button className="outline-link" type="button" onClick={() => setForm(emptyTeacher)}>Cancel edit</button>}
+              {form.id && <button className="outline-link" type="button" onClick={() => setForm(newTeacher())}>Cancel edit</button>}
             </div>
           </form>
         )}
