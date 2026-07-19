@@ -570,6 +570,24 @@ main {
   margin-top: 8px;
 }
 
+.announcements .onsite-registration-info span {
+  display: block;
+}
+
+.announcements .onsite-registration-info strong {
+  display: block;
+  margin-bottom: 4px;
+  color: var(--navy);
+}
+
+.announcements .onsite-registration-highlight {
+  width: fit-content;
+  padding: 2px 8px;
+  color: #7a2e00 !important;
+  background: #ffe08a;
+  border-radius: 3px;
+}
+
 .announcements a,
 .text-link {
   color: var(--blue);

@@ -113,7 +113,7 @@ const csvEscape = (value) => {
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
 const SAFETY_PATROL_DEPOSIT = 40;
-const ONLINE_PAYMENTS_ENABLED = true;
+const ONLINE_PAYMENTS_ENABLED = false;
 const isEligibleEmployeeEmail = (email) => (
   ["pfizer.com", "ctsccs.org"].includes(String(email || "").trim().toLowerCase().split("@").pop())
 );

@@ -287,6 +287,18 @@ function Announcements({ schoolStartDate }) {
               <li>LCG will combine SAT and PSAT into one 90-minute course with tuition adjusted to $500.</li>
               <li>Norwich 家庭可选择现场注册，也可以 <SiteLink to="/registration">在线注册课程</SiteLink>。</li>
               <li>Norwich families may register on site or complete <SiteLink to="/registration">online registration</SiteLink>.</li>
+              <li className="onsite-registration-info">
+                <strong className="onsite-registration-highlight">现场注册信息</strong>
+                <span>时间：2026年8月30日（星期日）上午10:00至下午1:00</span>
+                <span>地点：金冠酒家（Golden Palace Chinese Restaurant）</span>
+                <span>地址：2173 Norwich New London Tpke, Uncasville, CT 06382</span>
+              </li>
+              <li className="onsite-registration-info">
+                <strong>On-site Registration Information</strong>
+                <span>Time: Sunday, August 30, 2026, 10:00 AM–1:00 PM</span>
+                <span>Location: Golden Palace Chinese Restaurant</span>
+                <span>Address: 2173 Norwich New London Tpke, Uncasville, CT 06382</span>
+              </li>
             </ul>
           </div>
         </article>
