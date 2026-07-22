@@ -388,7 +388,7 @@ const courseGroups = [
     id: "sat",
     label: "PSAT & SAT+",
     courses: [
-      ["SAT / PSAT", "Matthew Simpson", "222", "$500", "09:30–11:05", ""],
+      ["SAT / PSAT", "Matthew Simpson", "222", "$500", "09:30–11:05", "course_description/SAT.pdf"],
     ],
   },
 ];
@@ -402,6 +402,7 @@ export const courseDescriptionLinks = {
   "grade 6": localPath("course_description/cn_Challenger.pdf"),
   "maliping 6": localPath("course_description/cn_Experimenter.pdf"),
   "math kangaroo l1-l2": localPath("course_description/Math-Kangaroo-Curriculum-for-grades-1-and-2.pdf"),
+  "sat/psat": localPath("course_description/SAT.pdf"),
   "foundational music theory": localPath("course_description/Foundational_Music_Theory.pdf"),
 };
 
