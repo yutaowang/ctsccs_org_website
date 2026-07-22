@@ -399,6 +399,7 @@ export const courseDescriptionLinks = {
       .filter(([name, , , , , file]) => file)
       .map(([name, , , , , file]) => [name.toLowerCase(), localPath(file)]),
   ),
+  "math kangaroo l1-l2": localPath("course_description/Math-Kangaroo-Curriculum-for-grades-1-and-2.pdf"),
   "foundational music theory": localPath("course_description/Foundational_Music_Theory.pdf"),
 };
 
