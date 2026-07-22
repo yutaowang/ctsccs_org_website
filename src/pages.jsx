@@ -332,8 +332,8 @@ function Calendar() {
 const chineseCourses = [
   ["Children Spoken Mandarin (5+)", "Ziyan Xu", "206", "$290", "09:30–11:05", "course_description/cn_beginner.pdf"],
   ["Grade 1", "Yulan Zhang", "208", "$290", "09:30–11:05", "course_description/cn_Pioneer.pdf"],
-  ["Grade 2", "Yaqin Li", "224", "$290", "09:30–11:05", ""],
-  ["Grade 3", "Ren Hu", "214", "$290", "09:30–11:05", ""],
+  ["Grade 2", "Yaqin Li", "224", "$290", "09:30–11:05", "course_description/cn_Traveler.pdf"],
+  ["Grade 3", "Ren Hu", "214", "$290", "09:30–11:05", "course_description/cn_Victor.pdf"],
   ["Grade 4", "Yan Zhuang", "212", "$290", "09:30–11:05", "course_description/cn_Discoverer.pdf"],
   ["Grade 5", "Zeya Liu", "215", "$290", "09:30–11:05", "course_description/cn_Creator.pdf"],
   ["Maliping 5", "Chongmin Ji", "216", "$350", "09:30–11:05", ""],
@@ -379,7 +379,7 @@ const courseGroups = [
       ["Flute", "Katherine Zhang", "208", "$150", "12:00–12:45", "course_description/Flute.pdf"],
       ["Oil Pastel (5+)", "Krystal Chen", "224", "$300", "11:10–11:55", "course_description/OilPastel.pdf"],
       ["Violin", "Joshua Payne", "218", "$150", "12:00–12:45", "course_description/Violin.pdf"],
-      ["Chinese Watercolor Painting (7+)", "Yujuan Zhai", "219", "$300", "11:10–11:55", ""],
+      ["Chinese Watercolor Painting (7+)", "Yujuan Zhai", "219", "$300", "11:10–11:55", "course_description/Chinese_Watercolor_Painting.pdf"],
       ["Kids Basketball", "Aaron Chen", "Gym", "$150", "12:00–12:45", "course_description/Basketball.pdf"],
       ["Practical Course in Communication and Leadership", "Rich Derksen", "220", "$200", "12:00–12:45", "course_description/public%20speaking.pdf"],
     ],
@@ -399,6 +399,8 @@ export const courseDescriptionLinks = {
       .filter(([name, , , , , file]) => file)
       .map(([name, , , , , file]) => [name.toLowerCase(), localPath(file)]),
   ),
+  "grade 6": localPath("course_description/cn_Challenger.pdf"),
+  "maliping 6": localPath("course_description/cn_Experimenter.pdf"),
   "math kangaroo l1-l2": localPath("course_description/Math-Kangaroo-Curriculum-for-grades-1-and-2.pdf"),
   "foundational music theory": localPath("course_description/Foundational_Music_Theory.pdf"),
 };
