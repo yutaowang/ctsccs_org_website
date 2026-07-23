@@ -406,9 +406,110 @@ export const courseDescriptionLinks = {
   "foundational music theory": localPath("course_description/Foundational_Music_Theory.pdf"),
 };
 
-export const courseDescriptionLinkFor = (courseName) => (
-  courseDescriptionLinks[(courseName || "").toLowerCase()] || ""
-);
+const courseDescriptionLinksByShortName = {
+  cn1: localPath("course_description/cn_beginner.pdf"),
+  cn2: localPath("course_description/cn_Pioneer.pdf"),
+  cn3: localPath("course_description/cn_Traveler.pdf"),
+  cn4: localPath("course_description/cn_Victor.pdf"),
+  cn5: localPath("course_description/cn_Discoverer.pdf"),
+  cn6: localPath("course_description/cn_Creator.pdf"),
+  cn7: localPath("course_description/cn_Experimenter.pdf"),
+  cn8: localPath("course_description/cn_Challenger.pdf"),
+  cn9: localPath("course_description/cn_Investor.pdf"),
+  cn10: localPath("course_description/cn_Scholar.pdf"),
+  cn13: localPath("course_description/cn_CMC.pdf"),
+  cn14: localPath("course_description/SATII.pdf"),
+  ma1: localPath("course_description/math_grade3.pdf"),
+  ma2: localPath("course_description/math_grade4.pdf"),
+  ma3: localPath("course_description/math_grade5.pdf"),
+  ma4: localPath("course_description/math_grade6.pdf"),
+  ma6: localPath("course_description/math_pre_algrbra.pdf"),
+  ma7: localPath("course_description/math_algebra.pdf"),
+  ma8: localPath("course_description/math_league.pdf"),
+  ma9: localPath("course_description/geometry.pdf"),
+  ma10: localPath("course_description/artlc.pdf"),
+  ma21: localPath("course_description/ComputerScienceCourseListing.pdf"),
+  ma22: localPath("course_description/cs_robotics.pdf"),
+  art1: localPath("course_description/academic_art.pdf"),
+  art2: localPath("course_description/chess.pdf"),
+  art3: localPath("course_description/chess.pdf"),
+  art4: localPath("course_description/dance_beginner.pdf"),
+  art5: localPath("course_description/Flute.pdf"),
+  art6: localPath("course_description/OilPastel.pdf"),
+  art7: localPath("course_description/Violin.pdf"),
+  art8: localPath("course_description/Chinese_Watercolor_Painting.pdf"),
+  art9: localPath("course_description/Basketball.pdf"),
+  art11: localPath("course_description/public%20speaking.pdf"),
+  art12: localPath("course_description/Foundational_Music_Theory.pdf"),
+  "psat-math": localPath("course_description/SAT.pdf"),
+  "sat-math": localPath("course_description/SAT.pdf"),
+  "psat-rw": localPath("course_description/SAT.pdf"),
+  "sat-rw": localPath("course_description/SAT.pdf"),
+};
+
+const courseDescriptionLinksById = {
+  14: courseDescriptionLinksByShortName.cn13,
+  21: courseDescriptionLinksByShortName.ma1,
+  22: courseDescriptionLinksByShortName.ma2,
+  23: courseDescriptionLinksByShortName.ma3,
+  24: courseDescriptionLinksByShortName.ma4,
+  25: courseDescriptionLinksByShortName.ma6,
+  26: courseDescriptionLinksByShortName.ma7,
+  27: courseDescriptionLinksByShortName.ma8,
+  31: courseDescriptionLinksByShortName["psat-math"],
+  32: courseDescriptionLinksByShortName["sat-math"],
+  34: courseDescriptionLinksByShortName["psat-rw"],
+  35: courseDescriptionLinksByShortName["sat-rw"],
+  42: courseDescriptionLinksByShortName.art8,
+  45: courseDescriptionLinksByShortName.art1,
+  47: courseDescriptionLinksByShortName.art3,
+  48: courseDescriptionLinksByShortName.art2,
+  49: courseDescriptionLinksByShortName.art4,
+  50: courseDescriptionLinksByShortName.art7,
+  51: courseDescriptionLinksByShortName.art5,
+  53: courseDescriptionLinksByShortName.art9,
+  1057: courseDescriptionLinksByShortName.cn2,
+  1058: courseDescriptionLinksByShortName.cn3,
+  1059: courseDescriptionLinksByShortName.cn4,
+  1060: courseDescriptionLinksByShortName.cn5,
+  1061: courseDescriptionLinksByShortName.cn6,
+  1062: courseDescriptionLinksByShortName.cn7,
+  1063: courseDescriptionLinksByShortName.cn9,
+  1064: courseDescriptionLinksByShortName.cn10,
+  1070: courseDescriptionLinksByShortName.cn13,
+  1071: courseDescriptionLinksByShortName.art6,
+  1084: courseDescriptionLinksByShortName.cn1,
+  1085: courseDescriptionLinksByShortName.cn14,
+  1089: courseDescriptionLinksByShortName.art11,
+  1091: courseDescriptionLinksByShortName.ma9,
+  1092: courseDescriptionLinksByShortName.ma10,
+  1094: courseDescriptionLinksByShortName.ma22,
+  2093: courseDescriptionLinksByShortName.cn8,
+  2094: courseDescriptionLinksByShortName.ma21,
+  2097: courseDescriptionLinksByShortName.art12,
+  2098: localPath("course_description/Math-Kangaroo-Curriculum-for-grades-1-and-2.pdf"),
+};
+
+const normalizedCourseName = (value) => String(value || "")
+  .trim()
+  .toLowerCase()
+  .replace(/^[a-z]+\d+\s*:\s*/i, "")
+  .replace(/\s+/g, " ");
+
+export const courseDescriptionLinkFor = (course) => {
+  if (course && typeof course === "object") {
+    const idLink = courseDescriptionLinksById[String(course.id)];
+    if (idLink) return idLink;
+
+    const shortNameLink = courseDescriptionLinksByShortName[
+      String(course.short_name || "").trim().toLowerCase()
+    ];
+    if (shortNameLink) return shortNameLink;
+  }
+
+  const name = typeof course === "string" ? course : course?.name;
+  return courseDescriptionLinks[normalizedCourseName(name)] || "";
+};
 
 const databaseCourseTypeGroups = {
   CHN: { id: "chinese", label: "中文课 Chinese", order: 0 },
@@ -452,7 +553,7 @@ function Courses() {
         course.classroom || "",
         course.donation == null ? "" : `$${course.donation}`,
         course.display_time || course.class_times?.display_time || "",
-        courseDescriptionLinkFor(course.name),
+        courseDescriptionLinkFor(course),
       ]];
       return groups;
     }, {}),

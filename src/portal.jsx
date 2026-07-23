@@ -428,7 +428,7 @@ function FamilyPortal() {
   const courseDetails = (id) => {
     const course = classes.find((row) => row.id === id);
     if (!course) return null;
-    const descriptionLink = courseDescriptionLinkFor(course.name || course.short_name);
+    const descriptionLink = courseDescriptionLinkFor(course);
     return {
       ...course,
       teacher: teacherDisplayName(course, teachers, assignments),
@@ -2346,7 +2346,7 @@ function StaffPortal({ isAdmin }) {
       teacher: teacherDisplayName(course, teachers, assignments),
       time: course.class_times?.display_time || course.display_time || "Time TBD",
       classroom: course.classroom || "Room TBD",
-      descriptionLink: courseDescriptionLinkFor(course.name || course.short_name),
+      descriptionLink: courseDescriptionLinkFor(course),
     };
   };
   const adminRegisteredCoursesFor = (registration) => [1, 2, 3]
