@@ -399,6 +399,7 @@ export const courseDescriptionLinks = {
       .filter(([name, , , , , file]) => file)
       .map(([name, , , , , file]) => [name.toLowerCase(), localPath(file)]),
   ),
+  "grade 3/maliping primary": localPath("course_description/Grade 3_MLP_Primary_course_description.pdf"),
   "grade 6": localPath("course_description/cn_Challenger.pdf"),
   "maliping 6": localPath("course_description/cn_Experimenter.pdf"),
   "math kangaroo l1-l2": localPath("course_description/Math-Kangaroo-Curriculum-for-grades-1-and-2.pdf"),
