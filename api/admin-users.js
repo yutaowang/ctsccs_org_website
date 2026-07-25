@@ -1,4 +1,4 @@
-import { mailConfig, portalAccountTemplate, sendMail } from "./mail.js";
+import { mailConfig, portalAccountTemplate, sendMail } from "../lib/mail.js";
 
 const STAFF_ROLE = "sccs_admin_team_role";
 const SUPERADMIN_ROLE = "sccs_superadmin_role";

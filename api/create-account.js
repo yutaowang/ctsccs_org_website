@@ -1,4 +1,4 @@
-import { EMAIL_PATTERN, escapeHtml, mailConfig, sendMail } from "./mail.js";
+import { EMAIL_PATTERN, escapeHtml, mailConfig, sendMail } from "../lib/mail.js";
 
 const attempts = new Map();
 const STATE_CODES = new Set([

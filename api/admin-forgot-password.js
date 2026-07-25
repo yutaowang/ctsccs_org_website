@@ -1,5 +1,5 @@
 import { randomBytes, randomInt } from "node:crypto";
-import { EMAIL_PATTERN, mailConfig, sendMail } from "./mail.js";
+import { EMAIL_PATTERN, mailConfig, sendMail } from "../lib/mail.js";
 
 const STAFF_ROLES = new Set([
   "sccs_superadmin_role",

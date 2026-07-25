@@ -1,4 +1,4 @@
-import { mailConfig, portalAccountTemplate, sendMail } from "./mail.js";
+import { mailConfig, portalAccountTemplate, sendMail } from "../lib/mail.js";
 
 const TEACHER_ROLE = "sccs_teacher_ta_role";
 const MANAGER_ROLES = new Set(["sccs_superadmin_role", "sccs_admin_team_role"]);
