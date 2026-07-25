@@ -144,10 +144,11 @@ through Google Workspace SMTP. The service-role key and SMTP password stay on
 the server and must never use a `VITE_*` prefix.
 
 The staff portal uses `/api/admin-forgot-password`. It generates a temporary
-password, updates the eligible Supabase Auth staff account, and emails the
-credentials. Teacher mail is sent to `sccs.teachers.email_1`; administrator and
-admin-team mail is sent to the email stored in the corresponding staff profile.
-The public response does not reveal whether a staff account exists.
+password only when the `@ctsccs.org` address exists in Supabase Auth and also
+matches `teachers.email_1`, an administrator profile email, an admin-team profile
+email, or the superadministrator role. It emails the credentials directly to the
+same login address from `ywang@ctsccs.org`. Portal authorization remains enforced
+after sign-in. The public response does not reveal whether an account exists.
 
 Add these values to **Vercel > Project Settings > Environment Variables** for
 Production, Preview, and Development as appropriate:

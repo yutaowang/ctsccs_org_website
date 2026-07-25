@@ -1,5 +1,16 @@
 # SCCS Website Change Log
 
+## 2026-07-25
+
+- Added a `Forgot Password?` flow to the Admin Portal that generates a strong temporary password and sends it to the user's `@ctsccs.org` login email.
+- Configured Admin Portal password emails to come from `ywang@ctsccs.org` with the portal URL, username, and generated password.
+- Restricted password regeneration to email addresses that exist in Supabase Auth and also match `teachers.email_1`, an administrator profile email, an admin-team profile email, or the superadministrator account.
+- Kept password-reset responses generic and added request throttling so the public form does not reveal whether a portal account exists.
+- Added SMTP delivery diagnostics that record accepted and rejected recipient counts without logging email addresses or generated passwords.
+- Added a dry-run-first teacher Portal account provisioning script with safe conflict handling and rollback for incomplete new accounts.
+- Created 14 missing teacher Portal accounts, assigned their `sccs_teacher_ta_role` mappings, and emailed temporary credentials to their `@ctsccs.org` addresses.
+- Verified all 24 requested teacher email addresses now have matching Supabase Auth accounts and correct teacher-role mappings.
+
 ## 2026-07-13
 
 - Added an automatically generated 8-digit temporary password to the new-teacher form while preserving the existing account creation and email flow.

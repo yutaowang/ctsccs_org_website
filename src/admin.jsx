@@ -95,7 +95,7 @@ export function AdminPage({ Link }) {
           <h2>{forgotPassword ? "Forget Password" : "Staff sign in"}</h2>
           <p>
             {forgotPassword
-              ? "Enter your ctsccs.org username. A new password will be sent to the email address on file."
+              ? "Enter your ctsccs.org username. A new password will be sent to that email address."
               : "For administrators, management team members, teachers, and TAs only."}
           </p>
         </div>

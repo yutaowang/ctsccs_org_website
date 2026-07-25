@@ -1,14 +1,10 @@
 import { randomBytes, randomInt } from "node:crypto";
-import { EMAIL_PATTERN, mailConfig, sendMail } from "../lib/mail.js";
+import { mailConfig, sendMail } from "../lib/mail.js";
 
-const STAFF_ROLES = new Set([
-  "sccs_superadmin_role",
-  "sccs_admin_team_role",
-  "sccs_teacher_ta_role",
-]);
 const STAFF_EMAIL = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@ctsccs\.org$/i;
+const PASSWORD_EMAIL_FROM = "ywang@ctsccs.org";
 const GENERIC_MESSAGE =
-  "If an eligible staff account exists, a new password has been sent to the email address on file.";
+  "If an account exists, a new password has been sent to that ctsccs.org email address.";
 const attempts = new Map();
 
 function json(response, status, body) {
@@ -78,7 +74,7 @@ function isRateLimited(request, email) {
   return ipCount > 10 || accountCount > 3;
 }
 
-async function findAuthUser(config, email) {
+export async function findAuthUser(config, email) {
   for (let page = 1; ; page += 1) {
     const result = await supabaseRequest(
       config,
@@ -95,36 +91,43 @@ async function findAuthUser(config, email) {
   }
 }
 
-async function staffRole(config, userId) {
-  const result = await supabaseRequest(
-    config,
-    `/rest/v1/user_roles?select=role,teacher_id&user_id=eq.${encodeURIComponent(userId)}&limit=1`,
-    { profile: "sccs" },
+export async function isKnownPortalEmail(config, email, userId) {
+  const encodedEmail = encodeURIComponent(email);
+  const encodedUserId = encodeURIComponent(userId);
+  const [teacher, administrator, adminTeam, superAdministrator] =
+    await Promise.all([
+      supabaseRequest(
+        config,
+        `/rest/v1/teachers?select=id&email_1=ilike.${encodedEmail}&limit=1`,
+        { profile: "sccs" },
+      ),
+      supabaseRequest(
+        config,
+        `/rest/v1/admins?select=user_id&email=ilike.${encodedEmail}&limit=1`,
+        { profile: "sccs" },
+      ),
+      supabaseRequest(
+        config,
+        `/rest/v1/admin_team_members?select=user_id&email=ilike.${encodedEmail}&limit=1`,
+        { profile: "sccs" },
+      ),
+      supabaseRequest(
+        config,
+        `/rest/v1/user_roles?select=user_id&user_id=eq.${encodedUserId}&role=eq.sccs_superadmin_role&limit=1`,
+        { profile: "sccs" },
+      ),
+    ]);
+  const failed = [teacher, administrator, adminTeam, superAdministrator].find(
+    (result) => !result.ok,
   );
-  if (!result.ok) {
-    throw new Error(result.data?.message || "Could not verify staff role.");
+  if (failed) {
+    throw new Error(
+      failed.data?.message || "Could not verify the portal email address.",
+    );
   }
-  const role = result.data?.[0];
-  return STAFF_ROLES.has(role?.role) ? role : null;
-}
-
-async function profileEmail(config, userId, role) {
-  let path;
-  if (role.role === "sccs_teacher_ta_role") {
-    if (!role.teacher_id) return null;
-    path = `/rest/v1/teachers?select=email_1&id=eq.${encodeURIComponent(role.teacher_id)}&limit=1`;
-  } else if (role.role === "sccs_admin_team_role") {
-    path = `/rest/v1/admin_team_members?select=email&user_id=eq.${encodeURIComponent(userId)}&limit=1`;
-  } else {
-    path = `/rest/v1/admins?select=email&user_id=eq.${encodeURIComponent(userId)}&limit=1`;
-  }
-  const result = await supabaseRequest(config, path, { profile: "sccs" });
-  if (!result.ok) {
-    throw new Error(result.data?.message || "Could not load staff email.");
-  }
-  return String(result.data?.[0]?.email_1 || result.data?.[0]?.email || "")
-    .trim()
-    .toLowerCase();
+  return [teacher, administrator, adminTeam, superAdministrator].some(
+    (result) => result.data?.length > 0,
+  );
 }
 
 function shuffle(value) {
@@ -191,14 +194,14 @@ export default async function handler(request, response) {
   try {
     const config = configuration();
     const user = await findAuthUser(config, username);
-    if (!user) return json(response, 200, { message: GENERIC_MESSAGE });
+    if (!user) {
+      console.info("Admin password request did not match an Auth user.");
+      return json(response, 200, { message: GENERIC_MESSAGE });
+    }
 
-    const role = await staffRole(config, user.id);
-    if (!role) return json(response, 200, { message: GENERIC_MESSAGE });
-
-    const destination = await profileEmail(config, user.id, role);
-    if (!EMAIL_PATTERN.test(destination) || destination.includes("..")) {
-      console.warn("Admin password email is missing for an eligible account.");
+    const knownPortalEmail = await isKnownPortalEmail(config, username, user.id);
+    if (!knownPortalEmail) {
+      console.info("Admin password request did not match a portal directory email.");
       return json(response, 200, { message: GENERIC_MESSAGE });
     }
 
@@ -213,9 +216,14 @@ export default async function handler(request, response) {
     }
 
     const emailConfig = mailConfig("Admin password email service");
-    await sendMail(emailConfig, {
-      to: destination,
+    const delivery = await sendMail(emailConfig, {
+      from: { name: "SCCS", address: PASSWORD_EMAIL_FROM },
+      to: username,
       ...passwordEmail({ username, password }),
+    });
+    console.info("Admin password email accepted by SMTP.", {
+      accepted: delivery.accepted.length,
+      rejected: delivery.rejected.length,
     });
     return json(response, 200, { message: GENERIC_MESSAGE });
   } catch (error) {
