@@ -130,7 +130,7 @@ export function AdminPage({ Link }) {
             setMessage("");
           }}
         >
-          {forgotPassword ? "Return to sign in" : "Forget Password?"}
+          {forgotPassword ? "Return to sign in" : "Forgot Password?"}
         </button>
         <p className="admin-help">Unauthorized accounts cannot enter. Contact the SCCS IT department for access.</p>
         <Link className="text-link" to="/">Return to public website</Link>
