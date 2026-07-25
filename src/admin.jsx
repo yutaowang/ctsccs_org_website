@@ -25,13 +25,16 @@ export function AdminPage({ Link }) {
   const { session, loading, role, signOut, refreshRole } = useAuth();
   const [identifier, setIdentifier] = useState("");
   const [password, setPassword] = useState("");
+  const [forgotPassword, setForgotPassword] = useState(false);
   const [checking, setChecking] = useState(false);
   const [error, setError] = useState("");
+  const [message, setMessage] = useState("");
 
   const login = async (event) => {
     event.preventDefault();
     setChecking(true);
     setError("");
+    setMessage("");
     const email = identifier.trim().toLowerCase();
     if (!email.endsWith("@ctsccs.org")) {
       setChecking(false);
@@ -59,6 +62,27 @@ export function AdminPage({ Link }) {
     setChecking(false);
   };
 
+  const requestPassword = async (event) => {
+    event.preventDefault();
+    setChecking(true);
+    setError("");
+    setMessage("");
+    try {
+      const response = await fetch("/api/admin-forgot-password", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ email: identifier }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || "Password request failed.");
+      setMessage(result.message);
+    } catch (requestError) {
+      setError(requestError.message);
+    } finally {
+      setChecking(false);
+    }
+  };
+
   if (!isSupabaseConfigured) {
     return <AdminShell><div className="form-message error">Supabase is not configured.</div></AdminShell>;
   }
@@ -68,23 +92,46 @@ export function AdminPage({ Link }) {
     return (
       <AdminShell>
         <div className="admin-login-intro">
-          <h2>Staff sign in</h2>
-          <p>For administrators, management team members, teachers, and TAs only.</p>
+          <h2>{forgotPassword ? "Forget Password" : "Staff sign in"}</h2>
+          <p>
+            {forgotPassword
+              ? "Enter your ctsccs.org username. A new password will be sent to the email address on file."
+              : "For administrators, management team members, teachers, and TAs only."}
+          </p>
         </div>
-        <form className="auth-form admin-login-form" onSubmit={login}>
+        <form
+          className="auth-form admin-login-form"
+          onSubmit={forgotPassword ? requestPassword : login}
+        >
           <label>
             <span>ctsccs.org email</span>
             <input type="email" value={identifier} onChange={(event) => setIdentifier(event.target.value)} autoComplete="username" required />
           </label>
-          <label>
-            <span>Password</span>
-            <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required />
-          </label>
+          {!forgotPassword && (
+            <label>
+              <span>Password</span>
+              <input type="password" value={password} onChange={(event) => setPassword(event.target.value)} autoComplete="current-password" required />
+            </label>
+          )}
           {error && <div className="form-message error">{error}</div>}
+          {message && <div className="form-message success">{message}</div>}
           <button className="button-link" type="submit" disabled={checking}>
-            {checking ? "Signing in..." : "Sign in to staff portal"}
+            {checking
+              ? (forgotPassword ? "Sending..." : "Signing in...")
+              : (forgotPassword ? "Send a new password" : "Sign in to staff portal")}
           </button>
         </form>
+        <button
+          className="admin-forgot-link"
+          type="button"
+          onClick={() => {
+            setForgotPassword((current) => !current);
+            setError("");
+            setMessage("");
+          }}
+        >
+          {forgotPassword ? "Return to sign in" : "Forget Password?"}
+        </button>
         <p className="admin-help">Unauthorized accounts cannot enter. Contact the SCCS IT department for access.</p>
         <Link className="text-link" to="/">Return to public website</Link>
       </AdminShell>

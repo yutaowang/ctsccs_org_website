@@ -2562,6 +2562,18 @@ footer {
 .admin-login-intro h2 { margin: 0; color: var(--navy); }
 .admin-login-intro p, .admin-help { color: #657187; font-size: 0.76rem; }
 .admin-login-form { margin-bottom: 18px; }
+.admin-forgot-link {
+  margin: -6px 0 14px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--navy);
+  font: inherit;
+  font-size: 0.76rem;
+  font-weight: 800;
+  text-decoration: underline;
+  cursor: pointer;
+}
 .staff-help {
   max-width: 980px;
   margin: 0 0 18px;
