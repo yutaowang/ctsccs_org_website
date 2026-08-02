@@ -697,7 +697,7 @@ function CommunityServices() {
 }
 
 const sponsors = [
-  ["邦联地产", "http://www.rmaxunited.com/", "Images/banglian.png"],
+  ["Right Step", "https://angelai.com/partner/jinweiru/", "/Images/right_step_logo.jpg"],
   ["United Way", "http://liveunited.org/", "Images/UnitedWay.jpg"],
   ["Wayne Realty LLC", "http://www.waynerealtyllc.com/mortgage.html", "Images/banner_Qian.gif"],
 ];
@@ -709,7 +709,15 @@ function Sponsors() {
         <p className="lead">社区朋友的慷慨支持帮助学校开展日常运营、购置教材和教学材料、支持教师培训、教育活动和拓展课程。感谢所有友情赞助者，所有捐助都直接用于支持 SCCS 教育项目。</p>
         <p className="lead">The generosity of our community supports school operations, books and teaching materials, teacher training, educational events and enrichment activities. Thanks to our Proud Sponsors, 100% of contributed funds directly support SCCS educational programs.</p>
         <div className="sponsor-grid">
-          {sponsors.map(([name, href, image]) => <ExternalLink href={href} key={name}><img src={`${oldSite}${image}`} alt={name} /><strong>{name}</strong></ExternalLink>)}
+          {sponsors.map(([name, href, image]) => (
+            <ExternalLink href={href} key={name}>
+              <img
+                src={isLocalPath(image) ? localPath(image) : `${oldSite}${image}`}
+                alt={name}
+              />
+              <strong>{name}</strong>
+            </ExternalLink>
+          ))}
         </div>
       </Section>
     </Page>
