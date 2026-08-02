@@ -697,7 +697,7 @@ function CommunityServices() {
 }
 
 const sponsors = [
-  ["Right Step", "https://angelai.com/partner/jinweiru/", "/Images/right_step_logo.jpg"],
+  ["Right Step Mortgage LLC", "https://angelai.com/partner/jinweiru/", "/Images/right_step_logo.jpg"],
   ["United Way", "http://liveunited.org/", "Images/UnitedWay.jpg"],
   ["Home & Business Tech Solutions", "https://ctsccs.org/", "Images/hbt.png"],
 ];
