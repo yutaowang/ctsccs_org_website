@@ -699,7 +699,7 @@ function CommunityServices() {
 const sponsors = [
   ["Right Step", "https://angelai.com/partner/jinweiru/", "/Images/right_step_logo.jpg"],
   ["United Way", "http://liveunited.org/", "Images/UnitedWay.jpg"],
-  ["Wayne Realty LLC", "http://www.waynerealtyllc.com/mortgage.html", "Images/banner_Qian.gif"],
+  ["Home & Business Tech Solutions", "https://ctsccs.org/", "Images/hbt.png"],
 ];
 
 function Sponsors() {
