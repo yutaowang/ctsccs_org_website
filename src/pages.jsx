@@ -286,10 +286,10 @@ function Registration({
 }
 
 const calendarEvents = [
-  ["9/6/26", "秋季学期开学 First day of fall semester"],
-  ["9/13/26", ""],
-  ["9/20/26", "更改课程注册截止日 Last day to change class Registration"],
-  ["9/27/26", ""], ["10/4/26", ""], ["10/11/26", ""], ["10/18/26", ""], ["10/25/26", ""],
+  // ["9/6/26", "秋季学期开学 First day of fall semester"],
+  ["9/13/26", "秋季学期开学 First day of fall semester"],
+  ["9/20/26", ""],
+  ["9/27/26", "更改课程注册截止日 Last day to change class Registration"], ["10/4/26", ""], ["10/11/26", ""], ["10/18/26", ""], ["10/25/26", ""],
   ["11/1/26", ""], ["11/8/26", ""], ["11/15/26", ""], ["11/22/26", ""],
   ["11/29/26", "感恩节假期 · 停课 Thanksgiving holiday · No School"],
   ["12/6/26", "期末考试 Final Exam"],
