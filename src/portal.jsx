@@ -574,7 +574,8 @@ function FamilyPortal() {
             <strong>Notes</strong>
             <p>1. 填写付款信息 Fill out payment information on both copies;</p>
             <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
-            <p>3. {safetyPatrolDeposit === 0 ? "符合条件的 Pfizer/SCCS 员工或 Waterford 居民可免交安全巡逻押金。 Safety Patrol Deposit waived for eligible Pfizer/SCCS employees or Waterford residents." : "安全巡逻押金：$40。家长参加学校安全巡逻值日后将退还 $40。 Safety Patrol Deposit: $40 will be refunded after parents participate in school safety patrol duty."}</p>
+            <p>3. 我们愿意遵守东南康州中文学校所制定的校规，并同意对违反校规所造成的后果负责 We agree to comply with SCCS rules and policies described in the student handbook.  We understand that we will be responsible for consequences of any violations.</p>
+            <p>4. {safetyPatrolDeposit === 0 ? "符合条件的 Pfizer/SCCS 员工或 Waterford 居民可免交安全巡逻押金。 Safety Patrol Deposit waived for eligible Pfizer/SCCS employees or Waterford residents." : "安全巡逻押金：$40。家长参加学校安全巡逻值日后将退还 $40。 Safety Patrol Deposit: $40 will be refunded after parents participate in school safety patrol duty."}</p>
           </div>
           <section className="office-use">
             <h3>For Office Use Only</h3>
