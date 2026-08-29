@@ -598,7 +598,7 @@ function Courses() {
                 <th><StackedText zh="课程" en="Class Name" /></th>
                 <th><StackedText zh="教师" en="Teacher" /></th>
                 <th><StackedText zh="教室" en="Room" /></th>
-                <th><StackedText zh="捐款" en="Donation" /></th>
+                <th><StackedText zh="学费" en="Tuition" /></th>
                 <th><StackedText zh="时间" en="Time" /></th>
                 <th><StackedText zh="介绍" en="Introduction" /></th>
               </tr>
