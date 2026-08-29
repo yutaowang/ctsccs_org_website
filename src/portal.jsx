@@ -586,12 +586,12 @@ function FamilyPortal() {
               <div><span>Total Amount Received $</span><i /></div>
               <div><span>Check #</span><i /></div>
               <div><span>Cash $</span><i /></div>
-              <div><span>Payment Received By:</span><i /></div>
+              <div><span>Payment Received By:</span><i /></div>              
+              <div><span>Print Name:</span><i /></div>
+              <div><span>Signature and Date:</span><i /></div>
               <div><span>Paid By:</span><i /></div>
               <div><span>Print Name:</span><i /></div>
-              <div><span>Signature:</span><i /></div>
-              <div><span>Print Name:</span><i /></div>
-              <div><span>Signature:</span><i /></div>
+              <div><span>Signature and Date:</span><i /></div>
             </div>
           </section>
         </div>
