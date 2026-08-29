@@ -553,7 +553,7 @@ function FamilyPortal() {
             );
           })}
           <div className="donation-summary">
-            <div><span>Donation subtotal</span><strong>{formatDonation(familyDonationSubtotal)}</strong></div>
+            <div><span>Tuition subtotal</span><strong>{formatDonation(familyDonationSubtotal)}</strong></div>
             {isWaterfordResident(family) && <div><span>Waterford class discount</span><strong>-{formatDonation(familyDonationSubtotal - familyDonationTotal)}</strong></div>}
             <div><span>Safety Patrol Deposit</span><strong>{formatDonation(safetyPatrolDeposit)}</strong></div>
             <div className="donation-total-row"><span>Total</span><strong>{formatDonation(paymentTotal)}</strong></div>
@@ -3019,7 +3019,7 @@ function StaffPortal({ isAdmin }) {
                 );
               })}
               <div className="donation-summary">
-                <div><span>Donation subtotal</span><strong>{formatDonation(selectedPrintDonationSubtotal)}</strong></div>
+                <div><span>Tuition subtotal</span><strong>{formatDonation(selectedPrintDonationSubtotal)}</strong></div>
                 {selectedPrintFamily && isWaterfordResident(selectedPrintFamily) && (
                   <div><span>Waterford class discount</span><strong>-{formatDonation(selectedPrintDonationSubtotal - selectedPrintDonationTotal)}</strong></div>
                 )}
