@@ -1977,7 +1977,7 @@ footer {
 }
 .office-use h3 {
   margin: 0 0 12px;
-  font-size: 0.78rem;
+  font-size: 1rem;
   text-decoration: underline;
 }
 .office-use-grid {
@@ -1990,14 +1990,15 @@ footer {
   align-items: baseline;
   gap: 6px;
   min-width: 0;
-  font-size: 0.68rem;
+  font-size: 0.82rem;
   font-weight: 700;
+  line-height: 1.35;
 }
 .office-use-grid strong,
 .office-use-grid i {
   flex: 1;
   min-width: 54px;
-  min-height: 1em;
+  min-height: 1.35em;
   border-bottom: 1px solid currentColor;
   font-style: normal;
   overflow-wrap: anywhere;
@@ -2949,21 +2950,26 @@ footer {
     font-size: 8.5pt !important;
   }
   .office-use {
-    margin-top: 22px !important;
-    padding-top: 12px !important;
+    margin-top: 16px !important;
+    padding-top: 10px !important;
     break-inside: avoid;
     page-break-inside: avoid;
   }
   .office-use h3 {
-    margin-bottom: 10px !important;
-    font-size: 10pt !important;
+    margin: 0 0 9px !important;
+    font-size: 15pt !important;
   }
   .office-use-grid {
-    gap: 8px 18px !important;
+    gap: 9px 18px !important;
     grid-template-columns: repeat(3, 1fr) !important;
   }
   .office-use-grid > div {
-    font-size: 8.5pt !important;
+    font-size: 12pt !important;
+    line-height: 1.35 !important;
+  }
+  .office-use-grid strong,
+  .office-use-grid i {
+    min-height: 1.35em !important;
   }
   .student-no-registration,
   .empty-state {
