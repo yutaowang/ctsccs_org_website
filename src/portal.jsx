@@ -1537,6 +1537,7 @@ function StaffPortal({ isAdmin }) {
   const [settingEdit, setSettingEdit] = useState(null);
   const [search, setSearch] = useState("");
   const [paymentHistorySearch, setPaymentHistorySearch] = useState("");
+  const [paymentHistorySort, setPaymentHistorySort] = useState(null);
   const [adjustEdit, setAdjustEdit] = useState(null);
   const [selectedPrintFamilyId, setSelectedPrintFamilyId] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
@@ -2437,12 +2438,16 @@ function StaffPortal({ isAdmin }) {
         };
       }),
       sort_due: due,
+      sort_tuition: tuition,
+      sort_pta: pta,
+      sort_adjust: adjust,
+      sort_refund: refund,
       sort_paid: paid,
       sort_balance: balance,
     };
   }).filter((row) => hasFamilyId(row.fam_id) && (row.sort_due > 0 || row.sort_paid > 0)), (row) => `${row.name || ""} ${row.email || ""} ${row.fam_id || ""}`);
   const paymentHistoryQuery = paymentHistorySearch.trim().toLowerCase();
-  const visiblePaymentRows = paymentHistoryQuery
+  const filteredPaymentRows = paymentHistoryQuery
     ? paymentRows.filter((row) => {
       const haystack = [
         row.fam_id, row.email, row.name, row.tuition, row.pta, row.adjust, row.due,
@@ -2454,6 +2459,42 @@ function StaffPortal({ isAdmin }) {
       return haystack.includes(paymentHistoryQuery);
     })
     : paymentRows;
+  const paymentHistorySortKeys = {
+    tuition: "sort_tuition",
+    pta: "sort_pta",
+    adjust: "sort_adjust",
+    due: "sort_due",
+    refund: "sort_refund",
+    paid: "sort_paid",
+    balance: "sort_balance",
+  };
+  const visiblePaymentRows = paymentHistorySort
+    ? filteredPaymentRows.slice().sort((left, right) => {
+      const sortKey = paymentHistorySortKeys[paymentHistorySort.key] || paymentHistorySort.key;
+      const result = compareValues(left[sortKey], right[sortKey]);
+      return paymentHistorySort.direction === "asc" ? result : -result;
+    })
+    : filteredPaymentRows;
+  const togglePaymentHistorySort = (key) => {
+    setPaymentHistorySort((current) => (
+      current?.key === key
+        ? { key, direction: current.direction === "asc" ? "desc" : "asc" }
+        : { key, direction: "asc" }
+    ));
+  };
+  const paymentHistoryColumns = [
+    ["fam_id", "FamID"],
+    ["email", "Email"],
+    ["name", "Name"],
+    ["tuition", "Tuition"],
+    ["pta", "PTA"],
+    ["adjust", "Adjust"],
+    ["due", "Due"],
+    ["refund", "Refund"],
+    ["paid", "Paid"],
+    ["balance", "Balance"],
+    ["method", "Method"],
+  ];
   const exportPaymentHistory = () => {
     const rows = [
       [
@@ -2845,17 +2886,25 @@ function StaffPortal({ isAdmin }) {
               <table className="data-table payment-history-table">
                 <thead>
                   <tr>
-                    <th>FamID</th>
-                    <th>Email</th>
-                    <th>Name</th>
-                    <th>Tuition</th>
-                    <th>PTA</th>
-                    <th>Adjust</th>
-                    <th>Due</th>
-                    <th>Refund</th>
-                    <th>Paid</th>
-                    <th>Balance</th>
-                    <th>Method</th>
+                    {paymentHistoryColumns.map(([key, label]) => (
+                      <th
+                        aria-sort={paymentHistorySort?.key === key
+                          ? (paymentHistorySort.direction === "asc" ? "ascending" : "descending")
+                          : "none"}
+                        key={key}
+                      >
+                        <button
+                          className={`sort-header ${paymentHistorySort?.key === key ? "is-active" : ""}`}
+                          type="button"
+                          onClick={() => togglePaymentHistorySort(key)}
+                        >
+                          <span>{label}</span>
+                          <span aria-hidden="true">
+                            {paymentHistorySort?.key === key && paymentHistorySort.direction === "desc" ? "v" : "^"}
+                          </span>
+                        </button>
+                      </th>
+                    ))}
                   </tr>
                 </thead>
                 <tbody>
