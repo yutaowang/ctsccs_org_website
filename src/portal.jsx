@@ -174,6 +174,35 @@ function Status({ status }) {
   );
 }
 
+const attendanceStatuses = [
+  ["absent", "Absent"],
+  ["excused", "Excused"],
+  ["late", "Late"],
+  ["present", "Present"],
+];
+
+function AttendanceStatusCheckboxes({ value, onChange, disabled = false, label }) {
+  return (
+    <fieldset className="attendance-status-options" aria-label={label} disabled={disabled}>
+      {attendanceStatuses.map(([statusValue, statusLabel]) => (
+        <label
+          className={`attendance-status-option status-${statusValue} ${value === statusValue ? "is-selected" : ""}`}
+          key={statusValue}
+        >
+          <input
+            type="checkbox"
+            checked={value === statusValue}
+            onChange={(event) => {
+              if (event.target.checked) onChange(statusValue);
+            }}
+          />
+          <span>{statusLabel}</span>
+        </label>
+      ))}
+    </fieldset>
+  );
+}
+
 function FamilyPortal() {
   const { session, recovering, finishRecovery } = useAuth();
   const [active, setActive] = useState(recovering ? "password" : "summary");
@@ -1545,6 +1574,8 @@ function StaffPortal({ isAdmin }) {
   const [selectedPrintFamilyId, setSelectedPrintFamilyId] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [attendanceBusyKeys, setAttendanceBusyKeys] = useState(() => new Set());
+  const [attendanceBulkBusy, setAttendanceBulkBusy] = useState(false);
   const [expandedAttendanceDates, setExpandedAttendanceDates] = useState({});
   const [examName, setExamName] = useState("");
   const [gradeScores, setGradeScores] = useState({});
@@ -1961,8 +1992,12 @@ function StaffPortal({ isAdmin }) {
         const student = students.find((item) => item.id === row.student_id);
         return {
           id: row.id,
+          class_id: row.class_id,
+          student_id: row.student_id,
           date: row.class_date,
-          recorded_at: row.recorded_at ? new Date(row.recorded_at).toLocaleString() : "",
+          recorded_at: row.updated_at || row.recorded_at
+            ? new Date(row.updated_at || row.recorded_at).toLocaleString()
+            : "",
           student: fullName(student) || row.student_id,
           status: row.status,
           notes: row.notes || "",
@@ -1998,22 +2033,91 @@ function StaffPortal({ isAdmin }) {
     }));
   };
 
-  const saveAttendance = async (studentId, classId, statusValue) => {
+  const saveAttendance = async (studentId, classId, classDate, statusValue) => {
+    if (!classDate) {
+      setStatus({ error: "Please select an attendance date.", message: "" });
+      return;
+    }
+    const busyKey = `${classId}:${studentId}:${classDate}`;
+    setAttendanceBusyKeys((current) => new Set(current).add(busyKey));
+    try {
+      const result = await supabase.from("attendance").upsert({
+        class_id: classId,
+        student_id: studentId,
+        class_date: classDate,
+        status: statusValue,
+        recorded_by: session.user.id,
+      }, { onConflict: "class_id,student_id,class_date" }).select("*").single();
+      if (result.error) throw result.error;
+      setAttendanceRecords((current) => {
+        const existingIndex = current.findIndex((row) => (
+          row.class_id === result.data.class_id
+          && row.student_id === result.data.student_id
+          && row.class_date === result.data.class_date
+        ));
+        if (existingIndex < 0) return [...current, result.data];
+        return current.map((row, index) => (index === existingIndex ? result.data : row));
+      });
+      setExpandedAttendanceDates((current) => ({ ...current, [classDate]: true }));
+      setStatus({ error: "", message: "Attendance saved." });
+    } catch (error) {
+      setStatus({ error: error.message || "Could not save attendance.", message: "" });
+    } finally {
+      setAttendanceBusyKeys((current) => {
+        const next = new Set(current);
+        next.delete(busyKey);
+        return next;
+      });
+    }
+  };
+
+  const markAllPresent = async () => {
     if (!attendanceDate) {
       setStatus({ error: "Please select an attendance date.", message: "" });
       return;
     }
-    const result = await supabase.from("attendance").upsert({
-      class_id: classId,
-      student_id: studentId,
-      class_date: attendanceDate,
-      status: statusValue,
-      recorded_by: session.user.id,
-    }, { onConflict: "class_id,student_id,class_date" });
-    setStatus(result.error
-      ? { error: result.error.message, message: "" }
-      : { error: "", message: "Attendance saved." });
-    if (!result.error) await load();
+    const classId = Number(selectedClassValue);
+    const studentsToMark = rosterRows.filter((row) => row.student_id != null);
+    if (!classId || !studentsToMark.length) return;
+
+    const busyKeys = studentsToMark.map((row) => `${classId}:${row.student_id}:${attendanceDate}`);
+    setAttendanceBusyKeys((current) => {
+      const next = new Set(current);
+      busyKeys.forEach((key) => next.add(key));
+      return next;
+    });
+    setAttendanceBulkBusy(true);
+    try {
+      const result = await supabase.from("attendance").upsert(
+        studentsToMark.map((row) => ({
+          class_id: classId,
+          student_id: row.student_id,
+          class_date: attendanceDate,
+          status: "present",
+          recorded_by: session.user.id,
+        })),
+        { onConflict: "class_id,student_id,class_date" },
+      ).select("*");
+      if (result.error) throw result.error;
+
+      const savedRows = result.data || [];
+      const savedKeys = new Set(savedRows.map((row) => `${row.class_id}:${row.student_id}:${row.class_date}`));
+      setAttendanceRecords((current) => [
+        ...current.filter((row) => !savedKeys.has(`${row.class_id}:${row.student_id}:${row.class_date}`)),
+        ...savedRows,
+      ]);
+      setExpandedAttendanceDates((current) => ({ ...current, [attendanceDate]: true }));
+      setStatus({ error: "", message: `${savedRows.length} students marked Present.` });
+    } catch (error) {
+      setStatus({ error: error.message || "Could not mark all students present.", message: "" });
+    } finally {
+      setAttendanceBulkBusy(false);
+      setAttendanceBusyKeys((current) => {
+        const next = new Set(current);
+        busyKeys.forEach((key) => next.delete(key));
+        return next;
+      });
+    }
   };
 
   const gradeHistoryRows = useMemo(() => (
@@ -2582,6 +2686,14 @@ function StaffPortal({ isAdmin }) {
                   <span>Attendance date</span>
                   <input type="date" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} />
                 </label>
+                <button
+                  className="button-link"
+                  type="button"
+                  onClick={markAllPresent}
+                  disabled={!attendanceDate || !rosterRows.length || attendanceBusyKeys.size > 0 || attendanceBulkBusy}
+                >
+                  {attendanceBulkBusy ? "Marking..." : "Mark All Present"}
+                </button>
               </div>
               {!rosterRows.length && <div className="empty-state">No students are registered for this class.</div>}
               {rosterRows.map((row) => (
@@ -2590,16 +2702,12 @@ function StaffPortal({ isAdmin }) {
                     <strong>{row.student}</strong>
                     <span>{attendanceForSelectedDate[row.student_id]?.recorded_at ? `Last saved ${new Date(attendanceForSelectedDate[row.student_id].recorded_at).toLocaleString()}` : "No record for this date"}</span>
                   </div>
-                  <select
+                  <AttendanceStatusCheckboxes
                     value={attendanceForSelectedDate[row.student_id]?.status || ""}
-                    onChange={(event) => saveAttendance(row.student_id, Number(selectedClassValue), event.target.value)}
-                  >
-                    <option value="" disabled>Select status</option>
-                    <option value="absent">Absent</option>
-                    <option value="excused">Excused</option>
-                    <option value="late">Late</option>
-                    <option value="present">Present</option>
-                  </select>
+                    onChange={(nextStatus) => saveAttendance(row.student_id, Number(selectedClassValue), attendanceDate, nextStatus)}
+                    disabled={attendanceBusyKeys.has(`${Number(selectedClassValue)}:${row.student_id}:${attendanceDate}`)}
+                    label={`Attendance status for ${row.student}`}
+                  />
                 </div>
               ))}
               <div className="attendance-history">
@@ -2627,7 +2735,7 @@ function StaffPortal({ isAdmin }) {
                               <tr>
                                 <th>Recorded</th>
                                 <th>Student</th>
-                                <th>Status</th>
+                                <th>Attendance status</th>
                                 <th>Notes</th>
                               </tr>
                             </thead>
@@ -2636,7 +2744,14 @@ function StaffPortal({ isAdmin }) {
                                 <tr key={row.id}>
                                   <td>{row.recorded_at}</td>
                                   <td>{row.student}</td>
-                                  <td>{row.status}</td>
+                                  <td>
+                                    <AttendanceStatusCheckboxes
+                                      value={row.status}
+                                      onChange={(nextStatus) => saveAttendance(row.student_id, row.class_id, row.date, nextStatus)}
+                                      disabled={attendanceBusyKeys.has(`${row.class_id}:${row.student_id}:${row.date}`)}
+                                      label={`Attendance status for ${row.student} on ${row.date}`}
+                                    />
+                                  </td>
                                   <td>{row.notes}</td>
                                 </tr>
                               ))}

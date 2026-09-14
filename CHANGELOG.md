@@ -1,5 +1,12 @@
 # SCCS Website Change Log
 
+## 2026-09-14
+
+- Replaced Teacher Portal attendance status dropdowns with four mutually exclusive checkboxes for Absent, Excused, Late, and Present.
+- Added the same editable status checkboxes to Attendance History and update only the saved attendance row instead of reloading the full staff portal.
+- Added a Mark All Present action that saves the entire selected class and date in one batch.
+- Automatically synchronizes attendance edits with Attendance History and expands the updated date for immediate review.
+
 ## 2026-09-13
 
 - Added database-managed PTA Leaders with private matching emails, active/public flags, administrator CRUD, and the public Administration page reading the same directory.
