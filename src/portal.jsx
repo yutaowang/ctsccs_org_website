@@ -1574,6 +1574,7 @@ function StaffPortal({ isAdmin }) {
   const [selectedPrintFamilyId, setSelectedPrintFamilyId] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [adminAttendanceDate, setAdminAttendanceDate] = useState(() => new Date().toISOString().slice(0, 10));
   const [attendanceBusyKeys, setAttendanceBusyKeys] = useState(() => new Set());
   const [attendanceBulkBusy, setAttendanceBulkBusy] = useState(false);
   const [expandedAttendanceDates, setExpandedAttendanceDates] = useState({});
@@ -2026,6 +2027,48 @@ function StaffPortal({ isAdmin }) {
       }))
       .sort((left, right) => compareValues(right.date, left.date));
   }, [attendanceHistoryRows]);
+  const adminAttendanceRows = useMemo(() => {
+    const studentsById = new Map(students.map((student) => [student.id, student]));
+    const recordsByClass = new Map();
+    attendanceRecords
+      .filter((record) => record.class_date === adminAttendanceDate)
+      .forEach((record) => {
+        if (!recordsByClass.has(record.class_id)) recordsByClass.set(record.class_id, new Map());
+        recordsByClass.get(record.class_id).set(record.student_id, record.status);
+      });
+
+    return visibleClasses.map((course) => {
+      const studentIds = Array.from(new Set(
+        registrations
+          .filter((registration) => (
+            [registration.session_1, registration.session_2, registration.session_3].includes(course.id)
+          ))
+          .map((registration) => registration.student_id)
+          .filter((studentId) => studentsById.has(studentId)),
+      ));
+      const statuses = recordsByClass.get(course.id) || new Map();
+      const counts = { present: 0, excused: 0, late: 0, absent: 0 };
+      studentIds.forEach((studentId) => {
+        const statusValue = statuses.get(studentId);
+        if (Object.hasOwn(counts, statusValue)) counts[statusValue] += 1;
+      });
+      const absentStudents = studentIds
+        .filter((studentId) => statuses.get(studentId) === "absent")
+        .map((studentId) => {
+          const student = studentsById.get(studentId);
+          return [fullName(student), student?.chinese_name].filter(Boolean).join(" · ") || String(studentId);
+        })
+        .sort(compareValues);
+      return {
+        id: course.id,
+        name: course.name || course.short_name || `Class ${course.id}`,
+        time: course.class_times?.display_time || course.display_time || "",
+        total: studentIds.length,
+        ...counts,
+        absentStudents,
+      };
+    });
+  }, [adminAttendanceDate, attendanceRecords, registrations, students, visibleClasses]);
   const toggleAttendanceDate = (date) => {
     setExpandedAttendanceDates((current) => ({
       ...current,
@@ -2296,6 +2339,7 @@ function StaffPortal({ isAdmin }) {
 
   const adminTabs = [
     ["classes", "Classes"], ["teachers", "Teachers"], ["rosters", "Rosters"],
+    ["attendance_summary", "Attendance"],
     ["registrations", "Registration Summary"], ["payments", "Payment History"],
     ["search", "Family Search"], ["print", "Print Registration"],
     ["pta", "PTA Leaders"],
@@ -2650,6 +2694,53 @@ function StaffPortal({ isAdmin }) {
       <Status status={status} />
       {active === "classes" && (isAdmin ? <ClassManager classes={classes} classTimes={classTimes} teachers={teachers} assignments={assignments} registrations={registrations} onReload={load} setStatus={setStatus} /> : <div className="portal-panel"><div className="panel-heading"><div><span>课程</span><h2>My Classes</h2></div></div><DataTable columns={[["id", "ID"], ["name", "Name"], ["count", "Registered"], ["available", "Available"], ["teacher", "Teacher"], ["room", "Room"], ["time", "Time"]]} rows={classRows} /></div>)}
       {active === "teachers" && <TeacherManager teachers={teachers} assignments={assignments} onReload={load} setStatus={setStatus} />}
+      {active === "attendance_summary" && (
+        <div className="portal-panel admin-attendance-panel">
+          <div className="panel-heading">
+            <div><span>每日出勤统计</span><h2>Attendance</h2></div>
+            <button className="outline-link" type="button" onClick={load}>Refresh</button>
+          </div>
+          <label className="standalone-field">
+            <span>Attendance date</span>
+            <input type="date" value={adminAttendanceDate} onChange={(event) => setAdminAttendanceDate(event.target.value)} />
+          </label>
+          <p className="admin-attendance-help">
+            Total Students uses the current class roster. Students without a saved status are included only in the total.
+          </p>
+          <div className="data-table-wrap admin-attendance-table">
+            <table className="data-table">
+              <thead>
+                <tr>
+                  <th>Class</th>
+                  <th>Time</th>
+                  <th>Total Students</th>
+                  <th>Present</th>
+                  <th>Excused</th>
+                  <th>Late</th>
+                  <th>Absent</th>
+                  <th>Absent Students</th>
+                </tr>
+              </thead>
+              <tbody>
+                {adminAttendanceRows.map((row) => (
+                  <tr className={row.absent ? "has-absences" : ""} key={row.id}>
+                    <td><strong>{row.name}</strong></td>
+                    <td>{row.time}</td>
+                    <td>{row.total}</td>
+                    <td>{row.present}</td>
+                    <td>{row.excused}</td>
+                    <td>{row.late}</td>
+                    <td className="admin-attendance-absent-count"><strong>{row.absent}</strong></td>
+                    <td className="admin-attendance-absent-names">
+                      {row.absentStudents.length ? row.absentStudents.join(", ") : <span>None</span>}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
       {["rosters", "attendance", "grades", "email"].includes(active) && (
         <div className={`portal-panel ${active === "rosters" ? "print-area" : ""}`}>
           <div className="panel-heading">

@@ -2435,6 +2435,43 @@ footer {
 .attendance-history-table .attendance-status-options {
   min-width: 390px;
 }
+.admin-attendance-table .data-table {
+  min-width: 980px;
+}
+.admin-attendance-help {
+  margin: -6px 0 16px;
+  color: #647087;
+  font-size: 0.72rem;
+}
+.admin-attendance-table th:nth-child(n + 3):nth-child(-n + 7),
+.admin-attendance-table td:nth-child(n + 3):nth-child(-n + 7) {
+  text-align: center;
+}
+.admin-attendance-table tr.has-absences td {
+  background: #fff8f7;
+}
+.admin-attendance-table tr.has-absences:hover td {
+  background: #ffefec;
+}
+.admin-attendance-absent-count strong {
+  display: inline-flex;
+  min-width: 30px;
+  min-height: 30px;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  background: #ae3f36;
+  border-radius: 50%;
+}
+.admin-attendance-absent-names {
+  min-width: 230px;
+  color: #9b2f2f;
+  font-weight: 800;
+}
+.admin-attendance-absent-names span {
+  color: #758096;
+  font-weight: 600;
+}
 .grades-panel,
 .grades-entry {
   display: grid;
