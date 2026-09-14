@@ -54,6 +54,17 @@ const navGroups = [
   },
 ];
 
+const midAutumnHeroImages = [
+  "/Images/hero-mid-autumn-mooncake-workshop.webp",
+  "/Images/hero-mid-autumn-lantern-walk.webp",
+  "/Images/hero-mid-autumn-family-tea.webp",
+];
+const midAutumnHeroAlt = {
+  "/Images/hero-mid-autumn-mooncake-workshop.webp": "Families making mooncakes together for the Mid-Autumn Festival",
+  "/Images/hero-mid-autumn-lantern-walk.webp": "Children carrying glowing lanterns during a Mid-Autumn Festival gathering",
+  "/Images/hero-mid-autumn-family-tea.webp": "A family sharing tea and mooncakes during the Mid-Autumn Festival",
+};
+
 const heroImages = [
   "/Images/hero-children-laughing.png",
   "/Images/hero-chinese-reading.png",
@@ -78,12 +89,12 @@ const heroImages = [
 ];
 
 function randomHeroSlides(count) {
-  const shuffled = [...heroImages];
+  const shuffled = heroImages.filter((image) => !midAutumnHeroImages.includes(image));
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
     const randomIndex = Math.floor(Math.random() * (index + 1));
     [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
   }
-  return shuffled.slice(0, count);
+  return [...midAutumnHeroImages, ...shuffled].slice(0, count);
 }
 
 function useRouter() {
@@ -233,7 +244,7 @@ function Slideshow() {
         <img
           className={index === activeSlide ? "is-active" : ""}
           src={slide}
-          alt={`SCCS 校园活动照片 ${index + 1}`}
+          alt={midAutumnHeroAlt[slide] || `SCCS 校园活动照片 ${index + 1}`}
           key={slide}
         />
       ))}
