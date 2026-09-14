@@ -70,6 +70,7 @@ const midAutumnHeroAlt = {
 };
 
 const heroImages = [
+  ...midAutumnHeroImages,
   "/Images/hero-children-laughing.png",
   "/Images/hero-chinese-reading.png",
   "/Images/hero-calligraphy-class.png",
@@ -93,12 +94,12 @@ const heroImages = [
 ];
 
 function randomHeroSlides(count) {
-  const shuffled = heroImages.filter((image) => !midAutumnHeroImages.includes(image));
+  const shuffled = [...heroImages];
   for (let index = shuffled.length - 1; index > 0; index -= 1) {
     const randomIndex = Math.floor(Math.random() * (index + 1));
     [shuffled[index], shuffled[randomIndex]] = [shuffled[randomIndex], shuffled[index]];
   }
-  return [...midAutumnHeroImages, ...shuffled].slice(0, count);
+  return shuffled.slice(0, count);
 }
 
 function useRouter() {
