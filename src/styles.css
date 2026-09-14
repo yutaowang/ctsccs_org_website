@@ -2460,8 +2460,11 @@ footer {
   align-items: center;
   justify-content: center;
   color: #fff;
-  background: #ae3f36;
+  background: #38875a;
   border-radius: 50%;
+}
+.admin-attendance-table tr.has-absences .admin-attendance-absent-count strong {
+  background: #ae3f36;
 }
 .admin-attendance-absent-names {
   min-width: 230px;

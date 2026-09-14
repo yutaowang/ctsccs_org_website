@@ -2,6 +2,7 @@
 
 ## 2026-09-14
 
+- Displayed zero absences in green on the Admin Attendance report and positive absence counts in red.
 - Restricted Teacher Portal attendance entry dates to Sundays while leaving Admin report dates database-driven.
 - Changed the Admin Attendance date selector to list unique saved dates from `sccs.attendance`, newest first.
 - Changed the Teacher Attendance date default to the most recent Sunday class date while keeping special dates selectable.
