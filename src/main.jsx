@@ -58,11 +58,15 @@ const midAutumnHeroImages = [
   "/Images/hero-mid-autumn-mooncake-workshop.webp",
   "/Images/hero-mid-autumn-lantern-walk.webp",
   "/Images/hero-mid-autumn-family-tea.webp",
+  "/Images/hero-mid-autumn-osmanthus-family.webp",
+  "/Images/hero-mid-autumn-osmanthus-still-life.webp",
 ];
 const midAutumnHeroAlt = {
   "/Images/hero-mid-autumn-mooncake-workshop.webp": "Families making mooncakes together for the Mid-Autumn Festival",
   "/Images/hero-mid-autumn-lantern-walk.webp": "Children carrying glowing lanterns during a Mid-Autumn Festival gathering",
   "/Images/hero-mid-autumn-family-tea.webp": "A family sharing tea and mooncakes during the Mid-Autumn Festival",
+  "/Images/hero-mid-autumn-osmanthus-family.webp": "A family arranging mooncakes beneath blooming osmanthus and the full moon",
+  "/Images/hero-mid-autumn-osmanthus-still-life.webp": "Osmanthus blossoms, mooncakes, and tea beneath the Mid-Autumn full moon",
 };
 
 const heroImages = [
