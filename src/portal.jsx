@@ -70,10 +70,32 @@ const familySortLabel = (family) => (
   `${fullName(family) || ""} ${family?.email || ""} ${family?.legacy_family_id || family?.id || ""}`
 );
 
+const transientSupabaseError = (result) => {
+  const errorText = [
+    result?.error?.message,
+    result?.error?.details,
+    result?.error?.hint,
+    result?.error?.code,
+  ].filter(Boolean).join(" ").toLowerCase();
+  return Number(result?.status) >= 500
+    || Number(result?.status) === 429
+    || /failed to get api key info|bad gateway|gateway timeout|fetch failed|network|timeout/.test(errorText);
+};
+
+const runSupabaseQuery = async (operation, attempts = 4) => {
+  let result;
+  for (let attempt = 0; attempt < attempts; attempt += 1) {
+    result = await operation();
+    if (!result.error || !transientSupabaseError(result) || attempt === attempts - 1) return result;
+    await new Promise((resolve) => window.setTimeout(resolve, 500 * (attempt + 1) + Math.random() * 250));
+  }
+  return result;
+};
+
 const fetchAllRows = async (buildQuery, pageSize = 1000) => {
   const rows = [];
   for (let from = 0; ; from += pageSize) {
-    const result = await buildQuery().range(from, from + pageSize - 1);
+    const result = await runSupabaseQuery(() => buildQuery().range(from, from + pageSize - 1));
     if (result.error) return { data: rows, error: result.error };
     rows.push(...(result.data || []));
     if (!result.data || result.data.length < pageSize) {
@@ -1607,7 +1629,7 @@ function StaffPortal({ isAdmin }) {
         fetchAllRows(() => supabase.from("family_registrations").select("*")),
         fetchAllRows(() => supabase.from("user_roles").select("*").order("created_at")),
         fetchAllRows(() => supabase.from("site_settings").select("*").order("key")),
-        supabase.rpc("waterford_billing_snapshot"),
+        runSupabaseQuery(() => supabase.rpc("waterford_billing_snapshot")),
       );
     }
     const results = await Promise.all(requests);
@@ -1649,9 +1671,6 @@ function StaffPortal({ isAdmin }) {
     }
   };
   useEffect(() => { load(); }, [role, teacherId]);
-  useEffect(() => {
-    if (active === "classes") load();
-  }, [active]);
 
   const registrationByStudentId = new Map(registrations.map((row) => [row.student_id, row]));
   const paymentNumber = (value) => {
