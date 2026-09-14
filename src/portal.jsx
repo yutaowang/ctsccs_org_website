@@ -121,6 +121,15 @@ const formatTimestamp = (value) => {
   if (Number.isNaN(date.getTime())) return "";
   return date.toLocaleString();
 };
+const mostRecentSunday = () => {
+  const date = new Date();
+  date.setHours(12, 0, 0, 0);
+  date.setDate(date.getDate() - date.getDay());
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return `${year}-${month}-${day}`;
+};
 const csvEscape = (value) => {
   const text = String(value ?? "");
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
@@ -1595,8 +1604,8 @@ function StaffPortal({ isAdmin }) {
   const [adjustEdit, setAdjustEdit] = useState(null);
   const [selectedPrintFamilyId, setSelectedPrintFamilyId] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
-  const [attendanceDate, setAttendanceDate] = useState(() => new Date().toISOString().slice(0, 10));
-  const [adminAttendanceDate, setAdminAttendanceDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const [attendanceDate, setAttendanceDate] = useState(mostRecentSunday);
+  const [adminAttendanceDate, setAdminAttendanceDate] = useState(mostRecentSunday);
   const [attendanceBusyKeys, setAttendanceBusyKeys] = useState(() => new Set());
   const [attendanceBulkBusy, setAttendanceBulkBusy] = useState(false);
   const [expandedAttendanceDates, setExpandedAttendanceDates] = useState({});
@@ -2720,7 +2729,7 @@ function StaffPortal({ isAdmin }) {
             <button className="outline-link" type="button" onClick={load}>Refresh</button>
           </div>
           <label className="standalone-field">
-            <span>Attendance date</span>
+            <span>Class date</span>
             <input type="date" value={adminAttendanceDate} onChange={(event) => setAdminAttendanceDate(event.target.value)} />
           </label>
           <p className="admin-attendance-help">
@@ -2793,7 +2802,7 @@ function StaffPortal({ isAdmin }) {
             <div className="attendance-panel">
               <div className="attendance-toolbar">
                 <label className="standalone-field">
-                  <span>Attendance date</span>
+                  <span>Class date</span>
                   <input type="date" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} />
                 </label>
                 <button
