@@ -2,6 +2,8 @@
 import { useAuth } from "./auth";
 import { courseDescriptionLinkFor } from "./pages";
 import { supabase } from "./supabase";
+import { PtaManager } from "./pta-manager.jsx";
+import { isWaterfordResident, patrolDepositFromBilling, tuitionForRegistrations } from "../lib/tuition.js";
 
 const roles = {
   family: "sccs_family_role",
@@ -81,19 +83,8 @@ const fetchAllRows = async (buildQuery, pageSize = 1000) => {
 };
 
 const donationAmount = (course) => Number(course?.donation || 0);
-const donationTotal = (courses) => courses.reduce((sum, course) => sum + donationAmount(course), 0);
-const isSatPsatCourse = (course) => /\b(P?SAT|PSAT)\b/i.test(`${course?.name || ""} ${course?.short_name || ""}`);
-const waterfordClassDiscountForCourses = (courses) => (
-  courses
-    .filter((course) => !isSatPsatCourse(course))
-    .reduce((maximum, course) => Math.max(maximum, donationAmount(course)), 0)
-);
-const donationTotalForFamily = (studentCourseGroups, family) => {
-  const subtotal = studentCourseGroups.reduce((sum, courses) => sum + donationTotal(courses), 0);
-  if (!isWaterfordResident(family)) return subtotal;
-  const discount = studentCourseGroups.reduce((sum, courses) => sum + waterfordClassDiscountForCourses(courses), 0);
-  return Math.max(subtotal - discount, 0);
-};
+const donationTotal = (courses) => [...new Map(courses.map((course) => [course.id, course])).values()]
+  .reduce((sum, course) => sum + donationAmount(course), 0);
 const registeredClassIds = (registration) => [1, 2, 3]
   .map((number) => registration?.[`session_${number}`])
   .filter(Boolean);
@@ -112,24 +103,11 @@ const csvEscape = (value) => {
   const text = String(value ?? "");
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
 };
-const SAFETY_PATROL_DEPOSIT = 40;
 const ONLINE_PAYMENTS_ENABLED = false;
 const isEligibleEmployeeEmail = (email) => (
   ["pfizer.com", "ctsccs.org"].includes(String(email || "").trim().toLowerCase().split("@").pop())
 );
-const isEmployeeDepositWaived = (family, email) => (
-  Boolean(family?.pfizer_employee) && isEligibleEmployeeEmail(email || family?.email)
-);
 const isWaterfordCity = (city) => String(city || "").trim().toLowerCase() === "waterford";
-const hasWaterfordAddress = (family) => (
-  [family?.address, family?.city]
-    .map((value) => String(value || "").trim().toLowerCase())
-    .some((value) => value === "waterford" || /\bwaterford\b/.test(value))
-);
-const isWaterfordResident = (family) => Boolean(family?.waterford_resident) || isWaterfordCity(family?.city) || hasWaterfordAddress(family);
-const safetyPatrolDepositForFamily = (family, email) => (
-  isEmployeeDepositWaived(family, email) || isWaterfordResident(family) ? 0 : SAFETY_PATROL_DEPOSIT
-);
 const missingFamilyWaiverColumn = (error) => {
   const text = String(error?.message || error?.details || error?.hint || "");
   return (
@@ -207,6 +185,10 @@ function FamilyPortal() {
   const [teachers, setTeachers] = useState([]);
   const [assignments, setAssignments] = useState([]);
   const [registrations, setRegistrations] = useState({});
+  const [waterfordSeats, setWaterfordSeats] = useState([]);
+  const [deposits, setDeposits] = useState([]);
+  const [seatUsage, setSeatUsage] = useState(null);
+  const [tuitionReady, setTuitionReady] = useState(false);
   const [familyPayments, setFamilyPayments] = useState([]);
   const [registrationDeadline, setRegistrationDeadline] = useState("");
   const [newPassword, setNewPassword] = useState("");
@@ -214,6 +196,7 @@ function FamilyPortal() {
   const [paymentBusy, setPaymentBusy] = useState(false);
 
   const load = async () => {
+    setTuitionReady(false);
     const [classResult, familyResult, settingResult] = await Promise.all([
       supabase.from("public_course_schedule")
         .select("id, name, short_name, type, classroom, teacher_short_name, teacher_name, class_time_id, display_time, donation")
@@ -240,6 +223,20 @@ function FamilyPortal() {
       return;
     }
     setFamily(familyResult.data);
+    const billingResult = await supabase.rpc("waterford_billing_snapshot", { target_family_id: familyResult.data.id });
+    if (billingResult.error || !billingResult.data?.usage || patrolDepositFromBilling(familyResult.data.id, billingResult.data?.deposits) === null) {
+      setStatus({ error: "Could not load free seat allocations. Tuition is unavailable; please refresh.", message: "" });
+      return;
+    }
+    const billing = billingResult.data;
+    setDeposits(billing.deposits);
+    setWaterfordSeats(billing.seats);
+    setSeatUsage(billing.usage);
+    // Retain enrolled classes even when staff close them to new registrations.
+    const registeredIds = new Set(billing.registrations.flatMap(registeredClassIds));
+    const scheduleById = new Map((classResult.data || []).map((course) => [course.id, course]));
+    setClasses(billing.classes.filter((course) => course.is_open || registeredIds.has(course.id))
+      .map((course) => ({ ...scheduleById.get(course.id), ...course })));
     const [studentResult, paymentResult] = await Promise.all([
       supabase.from("students")
         .select("*").eq("family_id", familyResult.data.id).order("created_at"),
@@ -259,15 +256,11 @@ function FamilyPortal() {
     setStudents(rows);
     if (!rows.length) {
       setRegistrations({});
+      setTuitionReady(true);
       return;
     }
-    const registrationResult = await supabase.from("class_registrations")
-      .select("*").in("student_id", rows.map((row) => row.id));
-    if (!registrationResult.error) {
-      setRegistrations(Object.fromEntries(
-        (registrationResult.data || []).map((row) => [row.student_id, row]),
-      ));
-    }
+    setRegistrations(Object.fromEntries(billing.registrations.map((row) => [row.student_id, row])));
+    setTuitionReady(true);
   };
 
   useEffect(() => {
@@ -442,12 +435,12 @@ function FamilyPortal() {
     .filter(Boolean);
   const familyCourseGroups = students.map((row) => registeredCoursesFor(registrations[row.id] || {}));
   const familyDonationSubtotal = familyCourseGroups.reduce((sum, courses) => sum + donationTotal(courses), 0);
-  const familyDonationTotal = donationTotalForFamily(familyCourseGroups, family);
+  const familyDonationTotal = tuitionForRegistrations(Object.values(registrations), classes, waterfordSeats);
   const hasRegisteredCourses = students.some((row) => (
     registeredCoursesFor(registrations[row.id] || {}).length > 0
   ));
   const safetyPatrolDeposit = hasRegisteredCourses
-    ? safetyPatrolDepositForFamily(family, session.user.email)
+    ? patrolDepositFromBilling(family.id, deposits)
     : 0;
   const paymentTotal = hasRegisteredCourses ? familyDonationTotal + safetyPatrolDeposit : 0;
   const paidTotalCents = familyPayments
@@ -500,7 +493,7 @@ function FamilyPortal() {
         <div className="portal-panel print-area">
           <div className="panel-heading">
             <div><span>账户概览</span><h2>Family Summary</h2></div>
-            <button className="outline-link no-print" type="button" onClick={() => window.print()}>
+            <button className="outline-link no-print" type="button" onClick={() => window.print()} disabled={!tuitionReady}>
               Print registration summary
             </button>
           </div>
@@ -552,19 +545,25 @@ function FamilyPortal() {
               </div>
             );
           })}
-          <div className="donation-summary">
+          {tuitionReady ? <div className="donation-summary">
             <div><span>Tuition subtotal</span><strong>{formatDonation(familyDonationSubtotal)}</strong></div>
-            {isWaterfordResident(family) && <div><span>Waterford class discount</span><strong>-{formatDonation(familyDonationSubtotal - familyDonationTotal)}</strong></div>}
+            {isWaterfordResident(family) && <div><span>Waterford Chinese tuition discount</span><strong>-{formatDonation(familyDonationSubtotal - familyDonationTotal)}</strong></div>}
             <div><span>Safety Patrol Deposit</span><strong>{formatDonation(safetyPatrolDeposit)}</strong></div>
             <div className="donation-total-row"><span>Total</span><strong>{formatDonation(paymentTotal)}</strong></div>
-          </div>
+          </div> : <p role="status">学费信息暂不可用，请刷新。 Tuition unavailable; please refresh.</p>}
+          {tuitionReady && isWaterfordResident(family) && <p>
+            本学年全校免费中文课程席位已使用 {seatUsage?.used || 0}/20，剩余 {20 - (seatUsage?.used || 0)}。
+            本家庭已分配 {waterfordSeats.filter((seat) => seat.seat_number != null).length} 席。
+            Free Chinese seats: {seatUsage?.used || 0}/20 used school-wide; {waterfordSeats.filter((seat) => seat.seat_number != null).length} allocated to this family.
+            名额以成功保存的报名为准，退课后按报名顺序补位。 Seats are assigned after registration is saved; cancellations release seats to the next registration.
+          </p>}
           {ONLINE_PAYMENTS_ENABLED && (
             <div className="payment-action no-print">
               <button
                 className={`button-link ${isPaid ? "is-paid" : ""}`}
                 type="button"
                 onClick={startOnlinePayment}
-                disabled={!paymentTotal || paymentBusy || isPaid}
+                disabled={!tuitionReady || !paymentTotal || paymentBusy || isPaid}
               >
                 {paymentButtonLabel}
               </button>
@@ -575,7 +574,7 @@ function FamilyPortal() {
             <p>1. 填写付款信息 Fill out payment information on both copies;</p>
             <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
             <p>3. 我们愿意遵守东南康州中文学校所制定的校规，并同意对违反校规所造成的后果负责 We agree to comply with SCCS rules and policies described in the student handbook.  We understand that we will be responsible for consequences of any violations.</p>
-            <p>4. {safetyPatrolDeposit === 0 ? "符合条件的 Pfizer/SCCS 员工或 Waterford 居民可免交安全巡逻押金。 Safety Patrol Deposit waived for eligible Pfizer/SCCS employees or Waterford residents." : "安全巡逻押金：$40。家长参加学校安全巡逻值日后将退还 $40。 Safety Patrol Deposit: $40 will be refunded after parents participate in school safety patrol duty."}</p>
+            <p>4. {safetyPatrolDeposit === 0 && hasRegisteredCourses ? "符合条件的员工、行政团队成员、教师或 PTA Leaders 家庭可免交安全巡逻押金。 Safety Patrol Deposit waived for eligible employees, Admin Team members, teachers or PTA leaders." : "安全巡逻押金：每家庭 $40，Waterford 居民不会自动豁免。家长完成安全巡逻值日后退还。 Safety Patrol Deposit: $40 per family, including Waterford residents; refundable after safety patrol duty."}</p>
           </div>
           <section className="office-use">
             <h3>For Office Use Only</h3>
@@ -698,7 +697,7 @@ function FamilyPortal() {
                       >
                         <option value="">No class</option>
                         {sortedByLabel(
-                          classes.filter((course) => Number(course.class_time_id) === number),
+                          classes.filter((course) => Number(course.class_time_id) === number && (course.is_open !== false || course.id === registrations[row.id]?.[`session_${number}`])),
                           (course) => course.name || course.short_name || "",
                         ).map((course) => (
                           <option value={course.id} key={course.id}>
@@ -1517,6 +1516,10 @@ function StaffPortal({ isAdmin }) {
   const [families, setFamilies] = useState([]);
   const [familyAccounts, setFamilyAccounts] = useState([]);
   const [registrations, setRegistrations] = useState([]);
+  const [waterfordSeats, setWaterfordSeats] = useState([]);
+  const [deposits, setDeposits] = useState([]);
+  const [seatUsage, setSeatUsage] = useState(null);
+  const [tuitionReady, setTuitionReady] = useState(false);
   const [attendanceRecords, setAttendanceRecords] = useState([]);
   const [gradeRecords, setGradeRecords] = useState([]);
   const [payments, setPayments] = useState([]);
@@ -1554,6 +1557,7 @@ function StaffPortal({ isAdmin }) {
   const [rosterEmailBusy, setRosterEmailBusy] = useState(false);
 
   const load = async () => {
+    setTuitionReady(false);
     const requests = [
       fetchAllRows(() => supabase.from("classes").select("*, class_times(display_time)").order("name")),
       fetchAllRows(() => supabase.from("class_times").select("*").order("id")),
@@ -1571,6 +1575,7 @@ function StaffPortal({ isAdmin }) {
         fetchAllRows(() => supabase.from("family_registrations").select("*")),
         fetchAllRows(() => supabase.from("user_roles").select("*").order("created_at")),
         fetchAllRows(() => supabase.from("site_settings").select("*").order("key")),
+        supabase.rpc("waterford_billing_snapshot"),
       );
     }
     const results = await Promise.all(requests);
@@ -1590,6 +1595,16 @@ function StaffPortal({ isAdmin }) {
       setFamilyPaymentRecords(results[10].data || []);
       setUserRoles(results[11].data || []);
       setSiteSettings(results[12].data || []);
+      const billing = results[13].data;
+      setDeposits(billing?.deposits || []);
+      setWaterfordSeats(billing?.seats || []);
+      setSeatUsage(billing?.usage);
+      if (billing) {
+        setRegistrations(billing.registrations);
+        const detailsById = new Map((results[0].data || []).map((course) => [course.id, course]));
+        setClasses(billing.classes.map((course) => ({ ...detailsById.get(course.id), ...course })));
+      }
+      setTuitionReady(!firstError && Boolean(billing?.usage) && (results[5].data || []).every((family) => patrolDepositFromBilling(family.id, billing?.deposits) !== null));
       const accountResult = await fetch("/api/family-accounts", {
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
@@ -1641,9 +1656,9 @@ function StaffPortal({ isAdmin }) {
     const familyCourses = familyCourseGroups.flat();
     const legacyPayment = legacyPaymentForFamily(family);
     const tuition = familyCourses.length
-      ? donationTotalForFamily(familyCourseGroups, family)
+      ? tuitionForRegistrations(familyStudents.map((student) => registrationByStudentId.get(student.id)).filter(Boolean), classes, waterfordSeats)
       : paymentNumber(legacyPayment?.registration_fee);
-    const pta = familyCourses.length ? safetyPatrolDepositForFamily(family) : paymentNumber(legacyPayment?.patrol_deposit);
+    const pta = familyCourses.length ? patrolDepositFromBilling(family.id, deposits) : paymentNumber(legacyPayment?.patrol_deposit);
     const adjust = paymentNumber(legacyPayment?.late_fee);
     return {
       legacyPayment,
@@ -2179,6 +2194,7 @@ function StaffPortal({ isAdmin }) {
     ["classes", "Classes"], ["teachers", "Teachers"], ["rosters", "Rosters"],
     ["registrations", "Registration Summary"], ["payments", "Payment History"],
     ["search", "Family Search"], ["print", "Print Registration"],
+    ["pta", "PTA Leaders"],
   ];
   if (role === roles.superadmin) adminTabs.push(["staff", "ADMINS"], ["settings", "Site Settings"]);
   adminTabs.push(["password", "Password"]);
@@ -2359,11 +2375,11 @@ function StaffPortal({ isAdmin }) {
   ));
   const selectedPrintDonationSubtotal = selectedPrintCourseGroups.reduce((sum, courses) => sum + donationTotal(courses), 0);
   const selectedPrintDonationTotal = selectedPrintFamily
-    ? donationTotalForFamily(selectedPrintCourseGroups, selectedPrintFamily)
+    ? tuitionForRegistrations(Object.values(selectedPrintRegistrations), classes, waterfordSeats)
     : selectedPrintDonationSubtotal;
   const selectedPrintHasRegisteredCourses = selectedPrintCourseGroups.some((courses) => courses.length > 0);
   const selectedPrintSafetyPatrolDeposit = selectedPrintFamily && selectedPrintHasRegisteredCourses
-    ? safetyPatrolDepositForFamily(selectedPrintFamily)
+    ? patrolDepositFromBilling(selectedPrintFamily.id, deposits)
     : 0;
   const registrationRows = sortedByLabel(registrations.map((row) => {
     const student = students.find((item) => item.id === row.student_id);
@@ -2377,6 +2393,8 @@ function StaffPortal({ isAdmin }) {
       session_1: classes.find((item) => item.id === row.session_1)?.short_name,
       session_2: classes.find((item) => item.id === row.session_2)?.short_name,
       session_3: classes.find((item) => item.id === row.session_3)?.short_name,
+      waterford_seats: waterfordSeats.filter((seat) => seat.student_id === row.student_id)
+        .map((seat) => `${classes.find((course) => course.id === seat.class_id)?.short_name || seat.class_id}: ${seat.seat_number == null ? "Waiting" : `Free #${seat.seat_number}`}`).join(", "),
     };
   }).filter((row) => hasFamilyId(row.family_id)), (row) => `${row.parent || ""} ${row.family_id || ""}`);
   const legacyMethods = (row) => {
@@ -2810,8 +2828,13 @@ function StaffPortal({ isAdmin }) {
           )}
         </div>
       )}
-      {active === "registrations" && <div className="portal-panel"><div className="panel-heading"><div><span>所有注册课程信息</span><h2>Registration Summary</h2></div></div><DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student_id", "Student ID"], ["student", "Student"], ["session_1", "Session 1"], ["session_2", "Session 2"], ["session_3", "Session 3"]]} rows={registrationRows} /></div>}
-      {active === "payments" && (
+      {active === "registrations" && <div className="portal-panel">
+        <div className="panel-heading"><div><span>所有注册课程信息</span><h2>Registration Summary</h2></div><button type="button" className="outline-link" onClick={load}>Refresh</button></div>
+        {isAdmin && seatUsage && <p>This school year · Waterford 免费中文课程席位 Free Chinese seats: {seatUsage.used}/20 used · {20 - seatUsage.used} remaining · {seatUsage.waiting} waiting</p>}
+        <DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student_id", "Student ID"], ["student", "Student"], ["session_1", "Session 1"], ["session_2", "Session 2"], ["session_3", "Session 3"], ...(isAdmin ? [["waterford_seats", "Waterford Seats"]] : [])]} rows={registrationRows} />
+      </div>}
+      {active === "payments" && !tuitionReady && <p>学费信息暂不可用，请刷新。 Tuition unavailable; please refresh.</p>}
+      {active === "payments" && tuitionReady && (
         <div className="portal-panel">
           <div className="panel-heading">
             <div><span>支付记录</span><h2>Payment History</h2></div>
@@ -2997,7 +3020,7 @@ function StaffPortal({ isAdmin }) {
         <div className="portal-panel print-area">
           <div className="panel-heading">
             <div><span>打印注册信息</span><h2>Print Registration</h2></div>
-            <button className="outline-link no-print" type="button" onClick={() => window.print()} disabled={!selectedPrintFamily}>Print</button>
+            <button className="outline-link no-print" type="button" onClick={() => window.print()} disabled={!selectedPrintFamily || !tuitionReady}>Print</button>
           </div>
           {!query && <div className="empty-state no-print">Use Family Search first, then return here to print the family summary.</div>}
           {query && printFamilyOptions.length > 1 && (
@@ -3014,7 +3037,8 @@ function StaffPortal({ isAdmin }) {
             </label>
           )}
           {query && !printFamilyOptions.length && <div className="empty-state no-print">No matching family found. Refine Family Search and try again.</div>}
-          {selectedPrintFamily && (
+          {selectedPrintFamily && !tuitionReady && <p>Tuition unavailable; please refresh.</p>}
+          {selectedPrintFamily && tuitionReady && (
             <>
               <div className="panel-heading print-summary-heading">
                 <div><span>账户概览</span><h2>Family Summary</h2></div>
@@ -3070,7 +3094,7 @@ function StaffPortal({ isAdmin }) {
               <div className="donation-summary">
                 <div><span>Tuition subtotal</span><strong>{formatDonation(selectedPrintDonationSubtotal)}</strong></div>
                 {selectedPrintFamily && isWaterfordResident(selectedPrintFamily) && (
-                  <div><span>Waterford class discount</span><strong>-{formatDonation(selectedPrintDonationSubtotal - selectedPrintDonationTotal)}</strong></div>
+                  <div><span>Waterford Chinese tuition discount ({waterfordSeats.filter((seat) => seat.family_id === selectedPrintFamily.id && seat.seat_number != null).length} seats)</span><strong>-{formatDonation(selectedPrintDonationSubtotal - selectedPrintDonationTotal)}</strong></div>
                 )}
                 <div><span>Safety Patrol Deposit</span><strong>{formatDonation(selectedPrintSafetyPatrolDeposit)}</strong></div>
                 <div className="donation-total-row"><span>Total</span><strong>{formatDonation(selectedPrintDonationTotal + selectedPrintSafetyPatrolDeposit)}</strong></div>
@@ -3079,7 +3103,7 @@ function StaffPortal({ isAdmin }) {
                 <strong>Notes</strong>
                 <p>1. 填写付款信息 Fill out payment information on both copies;</p>
                 <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
-                <p>3. {selectedPrintSafetyPatrolDeposit === 0 ? "符合条件的 Pfizer/SCCS 员工或 Waterford 居民可免交安全巡逻押金。 Safety Patrol Deposit waived for eligible Pfizer/SCCS employees or Waterford residents." : "安全巡逻押金：$40。家长参加学校安全巡逻值日后将退还 $40。 Safety Patrol Deposit: $40 will be refunded after parents participate in school safety patrol duty."}</p>
+                <p>3. {selectedPrintSafetyPatrolDeposit === 0 && selectedPrintHasRegisteredCourses ? "符合条件的员工、行政团队成员、教师或 PTA Leaders 家庭可免交安全巡逻押金。 Safety Patrol Deposit waived for eligible employees, Admin Team members, teachers or PTA leaders." : "安全巡逻押金：每家庭 $40，Waterford 居民不会自动豁免。家长完成安全巡逻值日后退还。 Safety Patrol Deposit: $40 per family, including Waterford residents; refundable after safety patrol duty."}</p>
               </div>
               <section className="office-use">
                 <h3>For Office Use Only</h3>
@@ -3103,6 +3127,7 @@ function StaffPortal({ isAdmin }) {
         </div>
       )}
       {active === "staff" && <StaffUserManager />}
+      {isAdmin && active === "pta" && <PtaManager onChange={load} />}
       {active === "settings" && (
         <div className="portal-panel">
           <div className="panel-heading"><div><span>网站配置</span><h2>Site Settings</h2></div></div>

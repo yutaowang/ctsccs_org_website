@@ -1,5 +1,16 @@
 # SCCS Website Change Log
 
+## 2026-09-13
+
+- Added database-managed PTA Leaders with private matching emails, active/public flags, administrator CRUD, and the public Administration page reading the same directory.
+- Seeded confirmed household matching emails for PTA Leaders 罗雪梅, 吴霞 and 曾百灵; 伍緎榛 remains listed without an email.
+- Admin Team, teacher primary/secondary emails, and active PTA Leader emails now waive the household Safety Patrol Deposit. Billing, printouts and Stripe use the same server-computed decision; linked households match their Auth email rather than an editable profile email.
+
+- Replaced the Waterford highest-price-per-student discount with 20 school-wide Chinese language course seats per school year, allocated on successful registration and released on cancellation to the oldest waiting registration.
+- Added a seat ledger for the current annual database, hard quota constraints, serialized allocation, and family/admin seat counts. Billing and Stripe use a consistent database snapshot of registrations and awards.
+- Waterford residency no longer waives the $40 household Safety Patrol Deposit; existing qualifying employee waivers are unchanged.
+- Added PostgreSQL integration tests for concurrent registration, cancellation, annual database reset and RLS, plus tuition and Stripe regression tests.
+
 ## 2026-07-25
 
 - Added a `Forgot Password?` flow to the Admin Portal that generates a strong temporary password and sends it to the user's `@ctsccs.org` login email.

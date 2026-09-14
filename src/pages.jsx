@@ -113,9 +113,26 @@ function About({ Link }) {
 }
 
 function Administration() {
+  const [ptaLeaders, setPtaLeaders] = useState([]);
+  const [ptaStatus, setPtaStatus] = useState("Loading PTA leaders...");
   const [adminTeam, setAdminTeam] = useState([]);
   const [teamError, setTeamError] = useState("");
   const [teamLoading, setTeamLoading] = useState(true);
+
+  useEffect(() => {
+    let cancelled = false;
+    const load = async () => {
+      if (!supabase) { setPtaStatus("PTA directory is unavailable."); return; }
+      const result = await supabase.from("pta_leaders")
+        .select("id,name_zh,name_en,display_order")
+        .eq("is_active", true).eq("is_public", true).order("display_order").order("id");
+      if (cancelled) return;
+      setPtaLeaders(result.data || []);
+      setPtaStatus(result.error ? "PTA directory is temporarily unavailable." : "No public PTA leaders.");
+    };
+    void load();
+    return () => { cancelled = true; };
+  }, []);
 
   useEffect(() => {
     let cancelled = false;
@@ -177,7 +194,8 @@ function Administration() {
         </Section>
         <Section title="家长会 PTA Leaders">
           <ul className="people-list">
-            {["罗雪梅 Ms. Xuemei Luo", "伍緎榛 Ms. Annie Sufen Chong", "吴霞 Ms. Xia Wu", "曾百灵 Ms. Bailing Zeng", "待定 TBD"].map((name) => <li key={name}>{name}</li>)}
+            {ptaLeaders.map((member) => <li key={member.id}>{[member.name_zh, member.name_en].filter(Boolean).join(" ")}</li>)}
+            {!ptaLeaders.length && <li>{ptaStatus}</li>}
           </ul>
         </Section>
       </div>

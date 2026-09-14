@@ -1,4 +1,4 @@
-const SAFETY_PATROL_DEPOSIT_CENTS = 4000;
+import { hasFreeWaterfordSeat, patrolDepositFromBilling } from "../lib/tuition.js";
 const STRIPE_API_VERSION = "2026-02-25.clover";
 
 function json(response, status, body) {
@@ -79,27 +79,6 @@ function parentName(family) {
     .map((value) => String(value || "").trim())
     .filter(Boolean)
     .join(" ");
-}
-
-function isEmployeeDepositWaived(family, user) {
-  const email = String(family?.email || user?.email || "").trim().toLowerCase();
-  const domain = email.split("@").pop();
-  return Boolean(family?.pfizer_employee) && ["pfizer.com", "ctsccs.org"].includes(domain);
-}
-
-function isWaterfordDepositWaived(family) {
-  const waterfordFields = [family?.address, family?.city]
-    .map((value) => String(value || "").trim().toLowerCase());
-  return Boolean(family?.waterford_resident)
-    || waterfordFields.some((value) => value === "waterford" || /\bwaterford\b/.test(value));
-}
-
-function isSafetyPatrolDepositWaived(family, user) {
-  return isEmployeeDepositWaived(family, user) || isWaterfordDepositWaived(family);
-}
-
-function isSatPsatCourse(course) {
-  return /\b(P?SAT|PSAT)\b/i.test(`${course?.name || ""} ${course?.short_name || ""}`);
 }
 
 function encodeCheckoutParams(params, prefix = "") {
@@ -195,46 +174,30 @@ export default async function handler(request, response) {
       return json(response, 400, { error: "Please add a student and register classes before paying online." });
     }
 
-    const studentIds = students.map((student) => student.id);
-    const registrationsResult = await supabaseRequest(
-      configuration,
-      `/rest/v1/class_registrations?select=student_id,session_1,session_2,session_3&student_id=in.(${studentIds.join(",")})`,
-      { profile: "sccs", token },
-    );
-    if (!registrationsResult.ok) throw new Error(registrationsResult.data?.message || "Could not load registrations.");
-    const registrations = registrationsResult.data || [];
+    const billingResult = await supabaseRequest(configuration, "/rest/v1/rpc/waterford_billing_snapshot", {
+      method: "POST", profile: "sccs", token, body: { target_family_id: family.id },
+    });
+    if (!billingResult.ok || !billingResult.data?.usage) {
+      throw new Error("Could not verify free seat allocations. Please try again.");
+    }
+    const { seats, registrations, classes, deposits } = billingResult.data;
+    const deposit = patrolDepositFromBilling(family.id, deposits);
+    if (deposit === null) throw new Error("Could not verify Safety Patrol Deposit eligibility.");
     const classIds = Array.from(new Set(registrations.flatMap(idsForRegistration)));
     if (!classIds.length) {
       return json(response, 400, { error: "Please register at least one class before paying online." });
     }
 
-    const classesResult = await supabaseRequest(
-      configuration,
-      `/rest/v1/classes?select=id,name,short_name,donation&id=in.(${classIds.join(",")})`,
-      { profile: "sccs", token },
-    );
-    if (!classesResult.ok) throw new Error(classesResult.data?.message || "Could not load classes.");
-    const classesById = new Map((classesResult.data || []).map((course) => [course.id, course]));
+    const classesById = new Map(classes.map((course) => [course.id, course]));
     const studentsById = new Map(students.map((student) => [student.id, student]));
 
-    const waterfordClassDiscount = isWaterfordDepositWaived(family);
     const courseLineItems = registrations.flatMap((registration) => {
-      const registeredClasses = idsForRegistration(registration)
-        .map((classId) => classesById.get(classId))
-        .filter((course) => course && !isSatPsatCourse(course));
-      const freeClassAmount = waterfordClassDiscount
-        ? registeredClasses.reduce((maximum, course) => Math.max(maximum, Math.round(Number(course?.donation || 0) * 100)), 0)
-        : 0;
-      let freeClassApplied = false;
-      return idsForRegistration(registration)
+      return [...new Set(idsForRegistration(registration))]
         .map((classId) => {
           const course = classesById.get(classId);
           const amount = Math.round(Number(course?.donation || 0) * 100);
           if (!course || amount <= 0) return null;
-          if (!freeClassApplied && freeClassAmount > 0 && amount === freeClassAmount) {
-            freeClassApplied = true;
-            return null;
-          }
+          if (hasFreeWaterfordSeat(course, registration.student_id, seats)) return null;
           return {
             price_data: {
               currency: "usd",
@@ -249,7 +212,7 @@ export default async function handler(request, response) {
         .filter(Boolean);
     });
 
-    const safetyPatrolDepositCents = isSafetyPatrolDepositWaived(family, user) ? 0 : SAFETY_PATROL_DEPOSIT_CENTS;
+    const safetyPatrolDepositCents = deposit * 100;
     const safetyPatrolLineItems = safetyPatrolDepositCents > 0
       ? [{
         price_data: {
@@ -292,6 +255,8 @@ export default async function handler(request, response) {
       cancel_url: `${configuration.siteUrl}/account?payment=cancelled`,
       metadata: {
         family_id: String(family.id),
+        waterford_seat_ids: seats.filter((seat) => seat.seat_number != null)
+          .map((seat) => `${seat.student_id}:${seat.class_id}`).join(","),
         legacy_family_id: family.legacy_family_id ? String(family.legacy_family_id) : "",
         user_id: user.id,
       },
