@@ -2,6 +2,7 @@
 
 ## 2026-09-14
 
+- Limited the Admin Attendance report to active classes that have saved attendance records on the selected date.
 - Added five generated Mid-Autumn Festival photographs to the full homepage hero image pool, which randomly selects five slides per visit, and optimized them as WebP assets.
 - Displayed zero absences in green on the Admin Attendance report and positive absence counts in red.
 - Restricted Teacher Portal attendance entry dates to Sundays while leaving Admin report dates database-driven.

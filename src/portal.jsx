@@ -2077,7 +2077,7 @@ function StaffPortal({ isAdmin }) {
         recordsByClass.get(record.class_id).set(record.student_id, record.status);
       });
 
-    return rosterClasses.map((course) => {
+    return rosterClasses.filter((course) => recordsByClass.has(course.id)).map((course) => {
       const studentIds = Array.from(new Set(
         registrations
           .filter((registration) => (
@@ -2758,7 +2758,9 @@ function StaffPortal({ isAdmin }) {
           <p className="admin-attendance-help">
             Total Students uses the current class roster. Students without a saved status are included only in the total.
           </p>
-          {!adminAttendanceDates.length ? <div className="empty-state">No attendance records are available.</div> : <div className="data-table-wrap admin-attendance-table">
+          {!adminAttendanceDates.length ? <div className="empty-state">No attendance records are available.</div> : !adminAttendanceRows.length ? (
+            <div className="empty-state">No active classes have attendance records for this date.</div>
+          ) : <div className="data-table-wrap admin-attendance-table">
             <table className="data-table">
               <thead>
                 <tr>
