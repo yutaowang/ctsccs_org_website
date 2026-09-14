@@ -2,7 +2,7 @@
 
 ## 2026-09-14
 
-- Added an administrator Attendance page with per-class daily totals, status counts, and highlighted absent student names.
+- Added an administrator Attendance page for active classes with per-class daily totals, status counts, and highlighted absent student names.
 - Replaced Teacher Portal attendance status dropdowns with four mutually exclusive checkboxes for Absent, Excused, Late, and Present.
 - Added the same editable status checkboxes to Attendance History and update only the saved attendance row instead of reloading the full staff portal.
 - Added a Mark All Present action that saves the entire selected class and date in one batch.

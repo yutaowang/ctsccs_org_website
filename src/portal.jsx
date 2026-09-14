@@ -2037,7 +2037,7 @@ function StaffPortal({ isAdmin }) {
         recordsByClass.get(record.class_id).set(record.student_id, record.status);
       });
 
-    return visibleClasses.map((course) => {
+    return rosterClasses.map((course) => {
       const studentIds = Array.from(new Set(
         registrations
           .filter((registration) => (
@@ -2068,7 +2068,7 @@ function StaffPortal({ isAdmin }) {
         absentStudents,
       };
     });
-  }, [adminAttendanceDate, attendanceRecords, registrations, students, visibleClasses]);
+  }, [adminAttendanceDate, attendanceRecords, registrations, rosterClasses, students]);
   const toggleAttendanceDate = (date) => {
     setExpandedAttendanceDates((current) => ({
       ...current,
