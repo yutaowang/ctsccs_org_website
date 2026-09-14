@@ -1605,7 +1605,7 @@ function StaffPortal({ isAdmin }) {
   const [selectedPrintFamilyId, setSelectedPrintFamilyId] = useState("");
   const [selectedClass, setSelectedClass] = useState("");
   const [attendanceDate, setAttendanceDate] = useState(mostRecentSunday);
-  const [adminAttendanceDate, setAdminAttendanceDate] = useState(mostRecentSunday);
+  const [adminAttendanceDate, setAdminAttendanceDate] = useState("");
   const [attendanceBusyKeys, setAttendanceBusyKeys] = useState(() => new Set());
   const [attendanceBulkBusy, setAttendanceBulkBusy] = useState(false);
   const [expandedAttendanceDates, setExpandedAttendanceDates] = useState({});
@@ -2055,11 +2055,18 @@ function StaffPortal({ isAdmin }) {
       }))
       .sort((left, right) => compareValues(right.date, left.date));
   }, [attendanceHistoryRows]);
+  const adminAttendanceDates = useMemo(() => (
+    Array.from(new Set(attendanceRecords.map((record) => record.class_date).filter(Boolean)))
+      .sort((left, right) => compareValues(right, left))
+  ), [attendanceRecords]);
+  const selectedAdminAttendanceDate = adminAttendanceDates.includes(adminAttendanceDate)
+    ? adminAttendanceDate
+    : adminAttendanceDates[0] || "";
   const adminAttendanceRows = useMemo(() => {
     const studentsById = new Map(students.map((student) => [student.id, student]));
     const recordsByClass = new Map();
     attendanceRecords
-      .filter((record) => record.class_date === adminAttendanceDate)
+      .filter((record) => record.class_date === selectedAdminAttendanceDate)
       .forEach((record) => {
         if (!recordsByClass.has(record.class_id)) recordsByClass.set(record.class_id, new Map());
         recordsByClass.get(record.class_id).set(record.student_id, record.status);
@@ -2096,7 +2103,7 @@ function StaffPortal({ isAdmin }) {
         absentStudents,
       };
     });
-  }, [adminAttendanceDate, attendanceRecords, registrations, rosterClasses, students]);
+  }, [attendanceRecords, registrations, rosterClasses, selectedAdminAttendanceDate, students]);
   const toggleAttendanceDate = (date) => {
     setExpandedAttendanceDates((current) => ({
       ...current,
@@ -2729,13 +2736,16 @@ function StaffPortal({ isAdmin }) {
             <button className="outline-link" type="button" onClick={load}>Refresh</button>
           </div>
           <label className="standalone-field">
-            <span>Class date</span>
-            <input type="date" value={adminAttendanceDate} onChange={(event) => setAdminAttendanceDate(event.target.value)} />
+            <span>Attendance date</span>
+            <select value={selectedAdminAttendanceDate} onChange={(event) => setAdminAttendanceDate(event.target.value)} disabled={!adminAttendanceDates.length}>
+              {!adminAttendanceDates.length && <option value="">No attendance dates</option>}
+              {adminAttendanceDates.map((date) => <option value={date} key={date}>{date}</option>)}
+            </select>
           </label>
           <p className="admin-attendance-help">
             Total Students uses the current class roster. Students without a saved status are included only in the total.
           </p>
-          <div className="data-table-wrap admin-attendance-table">
+          {!adminAttendanceDates.length ? <div className="empty-state">No attendance records are available.</div> : <div className="data-table-wrap admin-attendance-table">
             <table className="data-table">
               <thead>
                 <tr>
@@ -2766,7 +2776,7 @@ function StaffPortal({ isAdmin }) {
                 ))}
               </tbody>
             </table>
-          </div>
+          </div>}
         </div>
       )}
       {["rosters", "attendance", "grades", "email"].includes(active) && (

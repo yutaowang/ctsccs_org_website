@@ -2,7 +2,8 @@
 
 ## 2026-09-14
 
-- Changed Teacher and Admin attendance date defaults to the most recent Sunday class date while keeping special dates selectable.
+- Changed the Admin Attendance date selector to list unique saved dates from `sccs.attendance`, newest first.
+- Changed the Teacher Attendance date default to the most recent Sunday class date while keeping special dates selectable.
 - Added automatic retry for transient Supabase API gateway failures and removed the duplicate Staff Portal load on sign-in.
 - Added an administrator Attendance page for active classes with per-class daily totals, status counts, and highlighted absent student names.
 - Replaced Teacher Portal attendance status dropdowns with four mutually exclusive checkboxes for Absent, Excused, Late, and Present.
