@@ -130,6 +130,11 @@ const mostRecentSunday = () => {
   const day = String(date.getDate()).padStart(2, "0");
   return `${year}-${month}-${day}`;
 };
+const isSundayDate = (value) => {
+  const [year, month, day] = String(value || "").split("-").map(Number);
+  if (!year || !month || !day) return false;
+  return new Date(year, month - 1, day, 12).getDay() === 0;
+};
 const csvEscape = (value) => {
   const text = String(value ?? "");
   return /[",\n\r]/.test(text) ? `"${text.replace(/"/g, '""')}"` : text;
@@ -2110,6 +2115,14 @@ function StaffPortal({ isAdmin }) {
       [date]: !current[date],
     }));
   };
+  const selectAttendanceDate = (value) => {
+    if (!isSundayDate(value)) {
+      setStatus({ error: "Attendance date must be a Sunday.", message: "" });
+      return;
+    }
+    setAttendanceDate(value);
+    setStatus({ error: "", message: "" });
+  };
 
   const saveAttendance = async (studentId, classId, classDate, statusValue) => {
     if (!classDate) {
@@ -2813,7 +2826,13 @@ function StaffPortal({ isAdmin }) {
               <div className="attendance-toolbar">
                 <label className="standalone-field">
                   <span>Class date</span>
-                  <input type="date" value={attendanceDate} onChange={(event) => setAttendanceDate(event.target.value)} />
+                  <input
+                    type="date"
+                    min="2000-01-02"
+                    step="7"
+                    value={attendanceDate}
+                    onChange={(event) => selectAttendanceDate(event.target.value)}
+                  />
                 </label>
                 <button
                   className="button-link"
