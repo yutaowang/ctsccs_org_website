@@ -2,6 +2,7 @@
 
 ## 2026-09-21
 
+- Added the initial Expo React Native mobile app for iOS and Android with family accounts, registration, billing and Stripe Checkout, teacher attendance, school announcements, and push notification registration.
 - Kept the $80 book fee when a Waterford free Chinese-course seat is applied to a course whose name contains Maliping.
 
 ## 2026-09-14
