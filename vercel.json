@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/send-push-notification", "destination": "/api/admin-users?operation=send-push-notification" },
     { "source": "/about", "destination": "/index.html" },
     { "source": "/administration", "destination": "/index.html" },
     { "source": "/regulation", "destination": "/index.html" },

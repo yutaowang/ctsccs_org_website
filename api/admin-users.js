@@ -1,4 +1,5 @@
 import { mailConfig, portalAccountTemplate, sendMail } from "../lib/mail.js";
+import { handlePushNotification } from "../lib/push-notification.js";
 
 const STAFF_ROLE = "sccs_admin_team_role";
 const SUPERADMIN_ROLE = "sccs_superadmin_role";
@@ -217,6 +218,10 @@ async function updateStaff(configuration, administratorToken, body) {
 }
 
 export default async function handler(request, response) {
+  if (request.query?.operation === "send-push-notification") {
+    return handlePushNotification(request, response);
+  }
+
   if (!["GET", "POST", "PATCH", "DELETE"].includes(request.method)) {
     response.setHeader("Allow", "GET, POST, PATCH, DELETE");
     return json(response, 405, { error: "Method not allowed." });

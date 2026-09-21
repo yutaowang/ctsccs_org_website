@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import handler from "../api/send-push-notification.js";
+import { handlePushNotification as handler } from "../lib/push-notification.js";
 
 function response() { return { code: 0, headers: {}, status(code) { this.code = code; return this; }, setHeader(key, value) { this.headers[key] = value; return this; }, end(value) { this.body = JSON.parse(value); } }; }
 async function run(role, audience = "families") {
