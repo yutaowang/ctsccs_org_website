@@ -1,5 +1,9 @@
 # SCCS Website Change Log
 
+## 2026-09-21
+
+- Kept the $80 book fee when a Waterford free Chinese-course seat is applied to a course whose name contains Maliping.
+
 ## 2026-09-14
 
 - Limited the Admin Attendance report to active classes that have saved attendance records on the selected date.

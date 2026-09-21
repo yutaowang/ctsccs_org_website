@@ -1,4 +1,4 @@
-import { hasFreeWaterfordSeat, patrolDepositFromBilling } from "../lib/tuition.js";
+import { patrolDepositFromBilling, tuitionAfterWaterfordDiscount } from "../lib/tuition.js";
 const STRIPE_API_VERSION = "2026-02-25.clover";
 
 function json(response, status, body) {
@@ -195,9 +195,8 @@ export default async function handler(request, response) {
       return [...new Set(idsForRegistration(registration))]
         .map((classId) => {
           const course = classesById.get(classId);
-          const amount = Math.round(Number(course?.donation || 0) * 100);
+          const amount = Math.round(tuitionAfterWaterfordDiscount(course, registration.student_id, seats) * 100);
           if (!course || amount <= 0) return null;
-          if (hasFreeWaterfordSeat(course, registration.student_id, seats)) return null;
           return {
             price_data: {
               currency: "usd",

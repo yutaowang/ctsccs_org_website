@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { hasFreeWaterfordSeat, isChineseCourse, patrolDepositFromBilling, tuitionForRegistrations } from "../lib/tuition.js";
+import { hasFreeWaterfordSeat, isChineseCourse, patrolDepositFromBilling, tuitionAfterWaterfordDiscount, tuitionForRegistrations } from "../lib/tuition.js";
 import checkout from "../api/create-checkout-session.js";
 
 const classes = [
@@ -8,6 +8,7 @@ const classes = [
   { id: 2, name: "Mandarin", type: "CHN", donation: 150 },
   { id: 3, name: "Chinese Painting", type: "CC", donation: 290 },
   { id: 4, name: "SAT", type: "SAT", donation: 290 },
+  { id: 5, name: "Maliping 6", type: "CHN", donation: 370 },
 ];
 const seat = { student_id: 10, class_id: 1, seat_number: 20, released_at: null };
 const registration = { student_id: 10, session_1: 1, session_2: 3, session_3: 4 };
@@ -41,7 +42,7 @@ test("two Chinese courses use two awards; duplicate session IDs count once", () 
   assert.equal(tuitionForRegistrations(registrations, classes, [seat, { ...seat, class_id: 2, seat_number: 19 }]), 0);
 });
 
-async function runCheckout(awards, failSeats = false, deposit = 40) {
+async function runCheckout(awards, failSeats = false, deposit = 40, billingRegistrations = [registration]) {
   const originalFetch = globalThis.fetch;
   const keys = ["SUPABASE_URL", "SUPABASE_SERVICE_ROLE_KEY", "STRIPE_SECRET_KEY", "SITE_URL"];
   const previous = Object.fromEntries(keys.map((key) => [key, process.env[key]]));
@@ -55,7 +56,7 @@ async function runCheckout(awards, failSeats = false, deposit = 40) {
     else if (url.includes("/students?")) data = [{ id: 10, first_name: "Student" }];
     else if (url.includes("/rpc/waterford_billing_snapshot")) {
       assert.deepEqual(JSON.parse(options.body), { target_family_id: 1 });
-      data = { seats: awards, registrations: [registration], classes, usage: { used: 20, waiting: 0 }, deposits: [{ family_id: 1, amount: deposit }] };
+      data = { seats: awards, registrations: billingRegistrations, classes, usage: { used: 20, waiting: 0 }, deposits: [{ family_id: 1, amount: deposit }] };
       ok = !failSeats;
     }
     else if (url.endsWith("/customers")) data = { id: "cus_test" };
@@ -92,10 +93,26 @@ test("Stripe charges full tuition when the resident has no allocated seat", asyn
   assert.deepEqual(amounts, [29000,29000,29000,4000]);
 });
 
+test("Stripe charges the $80 book fee for an awarded Maliping course", async () => {
+  const malipingSeat = { ...seat, class_id: 5 };
+  const malipingRegistration = { student_id: 10, session_1: 5, session_2: null, session_3: null };
+  const { response, stripeForm } = await runCheckout([malipingSeat], false, 40, [malipingRegistration]);
+  assert.equal(response.code, 200);
+  assert.deepEqual([...stripeForm].filter(([key]) => key.endsWith("[unit_amount]")).map(([, value]) => Number(value)), [8000,4000]);
+});
+
 test("allocation lookup errors stop checkout instead of guessing a discount", async () => {
   const { response, stripeForm } = await runCheckout([], true);
   assert.equal(response.code, 500);
   assert.equal(stripeForm, undefined);
+});
+
+test("an awarded Maliping course keeps the $80 book fee", () => {
+  const malipingSeat = { ...seat, class_id: 5 };
+  const malipingRegistration = { student_id: 10, session_1: 5, session_2: null, session_3: null };
+  assert.equal(tuitionAfterWaterfordDiscount(classes[4], 10, [malipingSeat]), 80);
+  assert.equal(tuitionForRegistrations([malipingRegistration], classes, [malipingSeat]), 80);
+  assert.equal(tuitionForRegistrations([malipingRegistration], classes, []), 370);
 });
 
 test("an eligible member pays tuition but no deposit", async () => {
