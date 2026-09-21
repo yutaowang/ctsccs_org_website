@@ -19,15 +19,24 @@
       "package": "org.ctsccs.mobile",
       "predictiveBackGestureEnabled": false
     },
-    "plugins": ["expo-router", "expo-notifications", "expo-web-browser", "expo-sqlite"],
-    "experiments": { "typedRoutes": true },
+    "plugins": [
+      "expo-router",
+      "expo-notifications",
+      "expo-web-browser",
+      "expo-sqlite"
+    ],
+    "experiments": {
+      "typedRoutes": true
+    },
     "web": {
       "favicon": "./assets/favicon.png"
     },
-    "plugins": [
-      "expo-router",
-      "expo-web-browser",
-      "expo-sqlite"
-    ]
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "7e9f8bec-0f50-48c3-84d7-c7571c51718f"
+      }
+    },
+    "owner": "ywang9"
   }
 }

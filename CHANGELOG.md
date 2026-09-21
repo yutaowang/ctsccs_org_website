@@ -2,6 +2,7 @@
 
 ## 2026-09-21
 
+- Linked the mobile app to its EAS project, configured development/preview/production environments, restored the Expo Notifications config plugin, added the SDK-compatible development client, and created the Android production keystore.
 - Added the initial Expo React Native mobile app for iOS and Android with family accounts, registration, billing and Stripe Checkout, teacher attendance, school announcements, and push notification registration.
 - Kept the $80 book fee when a Waterford free Chinese-course seat is applied to a course whose name contains Maliping.
 
