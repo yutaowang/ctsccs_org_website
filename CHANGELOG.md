@@ -2,6 +2,7 @@
 
 ## 2026-09-22
 
+- Added the npm peer-dependency install setting required for reproducible EAS clean installs after the first Android cloud build exposed a lockfile installation mismatch.
 - Temporarily disabled mobile push permission requests, device token registration, and push delivery while retaining in-app school notices, with Android selected as the first mobile build target.
 
 ## 2026-09-21
