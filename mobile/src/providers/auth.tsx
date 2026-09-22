@@ -24,7 +24,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const value = useMemo<AuthValue>(() => ({
     session, role, teacherId, loading,
     signIn: async (email, password) => {
-      if (!configured) return "Set the Expo Supabase environment variables first.";
+      if (!configured) return "Set the Expo Supabase environment variables first. / 请先配置 Expo Supabase 环境变量。";
       const { error } = await supabase.auth.signInWithPassword({ email: email.trim(), password });
       return error?.message || null;
     },

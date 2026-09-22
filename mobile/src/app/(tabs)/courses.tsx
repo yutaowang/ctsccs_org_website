@@ -1,7 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { StyleSheet, Text, View } from "react-native";
-import { Picker } from "@react-native-picker/picker";
-import { Button, Card, Header, Notice, Screen, ui } from "@/components/ui";
+import { BilingualText, Button, Card, Dropdown, Header, Notice, Screen, ui } from "@/components/ui";
 import { colors } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 import { fullName, type Course, type Registration, type Student } from "@/lib/types";
@@ -34,13 +33,13 @@ export default function Courses() {
     const row = registrations[studentId] || { student_id: studentId };
     const payload = { student_id: studentId, session_1: clear ? null : row.session_1 || null, session_2: clear ? null : row.session_2 || null, session_3: clear ? null : row.session_3 || null };
     const { error } = await supabase.from("class_registrations").upsert(payload, { onConflict: "student_id" });
-    if (error) setStatus({ error: error.message }); else { setStatus({ message: clear ? "All classes cancelled." : "Registration saved." }); await load(); }
+    if (error) setStatus({ error: error.message }); else { setStatus({ message: clear ? "All classes cancelled. / 已取消全部课程。" : "Registration saved. / 课程报名已保存。" }); await load(); }
   };
   const sessionCourses = (number: number) => courses.filter((course) => Number(course.class_time_id) === number);
   return <Screen refreshing={busy}>
-    <Header eyebrow="2026–2027" title="Course Registration"><Text style={ui.body}>Select one course for each available session, then save each student.</Text></Header>
+    <Header eyebrow="2026–2027 School Year" eyebrowZh="2026–2027 学年" title="Course Registration" titleZh="课程报名"><BilingualText en="Select one course for each available session, then save each student." zh="每个时段选择一门课程，然后保存每位学生的报名。" style={ui.body} /></Header>
     <Notice {...status} />
-    {!students.length && <Card><Text style={ui.body}>Add a student from the Family tab before registering.</Text></Card>}
+    {!students.length && <Card><BilingualText en="Add a student from the Family tab before registering." zh="请先在家庭页面添加学生，再进行课程报名。" style={ui.body} /></Card>}
     {students.map((student) => {
       const registration = registrations[student.id] || { student_id: student.id };
       return <Card key={student.id}>
@@ -50,24 +49,26 @@ export default function Courses() {
           const selectedId = registration[field] as number | null | undefined;
           const selected = available.find((course) => course.id === selectedId);
           return <View key={number} style={styles.session}>
-            <Text style={ui.subheading}>Session {number}</Text>
+            <BilingualText en={`Session ${number}`} zh={`第 ${number} 时段`} style={ui.subheading} size={16} />
             {available.length ? <>
-              <View style={styles.pickerBorder}><Picker accessibilityLabel={`Select a course for session ${number}`} selectedValue={selectedId ?? 0} onValueChange={(value) => choose(student.id, number, Number(value) || null)} style={styles.picker} dropdownIconColor={colors.navy}>
-                <Picker.Item label="Select a course" value={0} color={colors.muted} />
-                {available.map((course) => <Picker.Item key={course.id} label={`${course.name || course.short_name || "Course"} — ${course.display_time || "Time TBD"}`} value={course.id} />)}
-              </Picker></View>
-              {selected && <View style={styles.details}><Text style={styles.courseName}>{selected.name || selected.short_name}</Text><Text style={ui.muted}>{selected.display_time || "Time TBD"} · {selected.classroom || "Room TBD"}</Text><Text style={styles.price}>${selected.donation || 0}</Text></View>}
-            </> : <Text style={ui.muted}>No open courses in this session.</Text>}
+              <Dropdown
+                value={selectedId}
+                options={available.map((course) => ({ value: course.id, label: course.name || course.short_name || "Course / 课程", detail: `${course.display_time || "Time TBD / 时间待定"} · ${course.classroom || "Room TBD / 教室待定"} · $${course.donation || 0}` }))}
+                placeholder="Select a course"
+                placeholderZh="选择课程"
+                onChange={(value) => choose(student.id, number, value)}
+              />
+              {selected && <View style={styles.details}><Text style={styles.courseName}>{selected.name || selected.short_name}</Text><Text style={ui.muted}>{selected.display_time || "Time TBD / 时间待定"} · {selected.classroom || "Room TBD / 教室待定"}</Text><Text style={styles.price}>${selected.donation || 0}</Text></View>}
+            </> : <BilingualText en="No open courses in this session." zh="此时段暂无开放课程。" style={ui.muted} size={13} />}
           </View>;
         })}
-        <Button title="Save registration" onPress={() => save(student.id)} />
-        <Button title="Cancel all classes" kind="danger" onPress={() => save(student.id, true)} />
+        <Button title="Save registration" titleZh="保存报名" onPress={() => save(student.id)} />
+        <Button title="Cancel all classes" titleZh="取消全部课程" kind="danger" onPress={() => save(student.id, true)} />
       </Card>;
     })}
   </Screen>;
 }
 const styles = StyleSheet.create({
-  session: { gap: 7 }, pickerBorder: { borderWidth: 1, borderColor: colors.border, borderRadius: 10, backgroundColor: colors.white, overflow: "hidden" },
-  picker: { color: colors.navy, minHeight: 52 }, details: { borderRadius: 10, padding: 11, backgroundColor: colors.cream, gap: 3 },
+  session: { gap: 7 }, details: { borderRadius: 10, padding: 11, backgroundColor: colors.cream, gap: 3 },
   courseName: { color: colors.navy, fontWeight: "700", fontSize: 15 }, price: { color: colors.blue, fontWeight: "800" },
 });

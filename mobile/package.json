@@ -4,7 +4,6 @@
   "main": "expo-router/entry",
   "dependencies": {
     "@expo/vector-icons": "^15.0.2",
-    "@react-native-picker/picker": "2.11.4",
     "@supabase/supabase-js": "^2.116.0",
     "expo": "~57.0.24",
     "expo-constants": "~57.0.19",
