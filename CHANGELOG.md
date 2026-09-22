@@ -2,6 +2,7 @@
 
 ## 2026-09-22
 
+- Moved mobile password recovery to a dedicated bilingual screen where users enter their email and request the existing website password-reset email flow.
 - Made the mobile interface bilingual throughout, with English as the primary text and Chinese one point smaller, and replaced the native course picker with a React Native modal dropdown that works in the existing development build.
 - Added a bilingual password-reset action to the mobile sign-in screen using the existing SCCS recovery-email service, and changed mobile course registration to per-session dropdown selectors with selected-course details.
 - Reworked the mobile bottom navigation with compact single-line icon-and-label tabs and added the SCCS logo beside each screen title in the top navigation bar.
