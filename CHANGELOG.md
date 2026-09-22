@@ -1,5 +1,9 @@
 # SCCS Website Change Log
 
+## 2026-09-22
+
+- Temporarily disabled mobile push permission requests, device token registration, and push delivery while retaining in-app school notices, with Android selected as the first mobile build target.
+
 ## 2026-09-21
 
 - Linked the mobile app to its EAS project, configured development/preview/production environments, restored the Expo Notifications config plugin, added the SDK-compatible development client, and created the Android production keystore.
