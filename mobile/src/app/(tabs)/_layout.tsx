@@ -1,17 +1,57 @@
 import { Redirect, Tabs } from "expo-router";
-import { Text, type ColorValue } from "react-native";
-import { useAuth } from "@/providers/auth";
+import { Image, StyleSheet, Text, View } from "react-native";
+import logo from "../../../assets/icon.png";
 import { colors } from "@/lib/theme";
-const icon = (label: string, color: ColorValue) => <Text style={{ color, fontWeight: "900", fontSize: 12 }}>{label}</Text>;
+import { useAuth } from "@/providers/auth";
+
+const titles: Record<string, string> = {
+  home: "Home",
+  students: "Family",
+  courses: "Courses",
+  billing: "Billing",
+  attendance: "Attendance",
+  notifications: "Notices",
+};
+
+function HeaderTitle({ title }: { title: string }) {
+  return <View style={styles.headerTitle}>
+    <Image source={logo} style={styles.logo} resizeMode="contain" />
+    <Text style={styles.headerText}>{title}</Text>
+  </View>;
+}
+
 export default function TabsLayout() {
-  const { session, role, loading } = useAuth(); if (!loading && !session) return <Redirect href="/login" />;
-  const family = role === "sccs_family_role"; const teacher = role === "sccs_teacher_ta_role";
-  return <Tabs screenOptions={{ headerStyle: { backgroundColor: colors.navy }, headerTintColor: colors.white, tabBarActiveTintColor: colors.blue, tabBarInactiveTintColor: colors.muted, tabBarStyle: { height: 66, paddingBottom: 8, paddingTop: 6 } }}>
-    <Tabs.Screen name="home" options={{ title: "Home", tabBarIcon: ({ color }) => icon("HOME", color) }} />
-    <Tabs.Screen name="students" options={{ title: "Family", href: family ? undefined : null, tabBarIcon: ({ color }) => icon("FAM", color) }} />
-    <Tabs.Screen name="courses" options={{ title: "Courses", href: family ? undefined : null, tabBarIcon: ({ color }) => icon("CLASS", color) }} />
-    <Tabs.Screen name="billing" options={{ title: "Billing", href: family ? undefined : null, tabBarIcon: ({ color }) => icon("PAY", color) }} />
-    <Tabs.Screen name="attendance" options={{ title: "Attendance", href: teacher ? undefined : null, tabBarIcon: ({ color }) => icon("ATT", color) }} />
-    <Tabs.Screen name="notifications" options={{ title: "Notices", tabBarIcon: ({ color }) => icon("NEWS", color) }} />
+  const { session, role, loading } = useAuth();
+  if (!loading && !session) return <Redirect href="/login" />;
+  const family = role === "sccs_family_role";
+  const teacher = role === "sccs_teacher_ta_role";
+
+  return <Tabs screenOptions={({ route }) => ({
+    headerStyle: { backgroundColor: colors.navy },
+    headerTintColor: colors.white,
+    headerTitle: () => <HeaderTitle title={titles[route.name] || "SCCS"} />,
+    headerTitleAlign: "left",
+    tabBarActiveTintColor: colors.blue,
+    tabBarInactiveTintColor: colors.muted,
+    tabBarShowLabel: true,
+    tabBarLabelStyle: styles.tabLabel,
+    tabBarItemStyle: styles.tabItem,
+    tabBarStyle: styles.tabBar,
+  })}>
+    <Tabs.Screen name="home" options={{ title: "Home" }} />
+    <Tabs.Screen name="students" options={{ title: "Family", href: family ? undefined : null }} />
+    <Tabs.Screen name="courses" options={{ title: "Courses", href: family ? undefined : null }} />
+    <Tabs.Screen name="billing" options={{ title: "Billing", href: family ? undefined : null }} />
+    <Tabs.Screen name="attendance" options={{ title: "Attendance", href: teacher ? undefined : null }} />
+    <Tabs.Screen name="notifications" options={{ title: "Notices" }} />
   </Tabs>;
 }
+
+const styles = StyleSheet.create({
+  headerTitle: { flexDirection: "row", alignItems: "center", gap: 10 },
+  logo: { width: 34, height: 34, borderRadius: 8 },
+  headerText: { color: colors.white, fontSize: 20, fontWeight: "800" },
+  tabBar: { height: 58, paddingTop: 6, paddingBottom: 8 },
+  tabItem: { minWidth: 0 },
+  tabLabel: { fontSize: 11, lineHeight: 14, fontWeight: "700" },
+});
