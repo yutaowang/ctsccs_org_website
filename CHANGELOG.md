@@ -2,7 +2,7 @@
 
 ## 2026-09-22
 
-- Simplified the mobile bottom navigation to one compact label per tab and added the SCCS logo beside each screen title in the top navigation bar.
+- Reworked the mobile bottom navigation with compact single-line icon-and-label tabs and added the SCCS logo beside each screen title in the top navigation bar.
 - Added the npm peer-dependency install setting required for reproducible EAS clean installs after the first Android cloud build exposed a lockfile installation mismatch.
 - Temporarily disabled mobile push permission requests, device token registration, and push delivery while retaining in-app school notices, with Android selected as the first mobile build target.
 

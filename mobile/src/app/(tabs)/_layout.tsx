@@ -1,4 +1,5 @@
 import { Redirect, Tabs } from "expo-router";
+import MaterialCommunityIcons from "@expo/vector-icons/MaterialCommunityIcons";
 import { Image, StyleSheet, Text, View } from "react-native";
 import logo from "../../../assets/icon.png";
 import { colors } from "@/lib/theme";
@@ -12,6 +13,15 @@ const titles: Record<string, string> = {
   attendance: "Attendance",
   notifications: "Notices",
 };
+
+const icons = {
+  home: "home-outline",
+  students: "account-group-outline",
+  courses: "book-open-page-variant-outline",
+  billing: "credit-card-outline",
+  attendance: "clipboard-check-outline",
+  notifications: "bell-outline",
+} as const;
 
 function HeaderTitle({ title }: { title: string }) {
   return <View style={styles.headerTitle}>
@@ -33,8 +43,8 @@ export default function TabsLayout() {
     headerTitleAlign: "left",
     tabBarActiveTintColor: colors.blue,
     tabBarInactiveTintColor: colors.muted,
-    tabBarIcon: () => null,
-    tabBarIconStyle: styles.hiddenIcon,
+    tabBarIcon: ({ color, size }) => <MaterialCommunityIcons name={icons[route.name as keyof typeof icons] || "circle-outline"} color={color} size={Math.min(size, 19)} />,
+    tabBarIconStyle: styles.tabIcon,
     tabBarLabelPosition: "beside-icon",
     tabBarShowLabel: true,
     tabBarLabelStyle: styles.tabLabel,
@@ -56,6 +66,6 @@ const styles = StyleSheet.create({
   headerText: { color: colors.white, fontSize: 20, fontWeight: "800" },
   tabBar: { height: 52, paddingTop: 0, paddingBottom: 0 },
   tabItem: { minWidth: 0, alignItems: "center", justifyContent: "center" },
-  hiddenIcon: { display: "none", width: 0, height: 0 },
+  tabIcon: { margin: 0 },
   tabLabel: { margin: 0, fontSize: 11, lineHeight: 14, fontWeight: "700" },
 });
