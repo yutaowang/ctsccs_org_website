@@ -24,10 +24,12 @@
       "expo-router",
       "expo-notifications",
       "expo-web-browser",
-      "expo-sqlite"
+      "expo-sqlite",
+      "expo-font"
     ],
     "experiments": {
-      "typedRoutes": true
+      "typedRoutes": true,
+      "autolinkingModuleResolution": true
     },
     "web": {
       "favicon": "./assets/favicon.png"

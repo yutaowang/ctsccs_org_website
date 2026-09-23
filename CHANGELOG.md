@@ -2,6 +2,7 @@
 
 ## 2026-09-23
 
+- Added Expo's unified autolinking and Metro module resolution for the nested mobile project, preventing the website's parent dependencies from being selected by the app bundle.
 - Re-enabled Android push notification permissions, Expo device-token registration, notification routing, and push delivery when administrators publish school notices.
 - Added mobile family-account creation with the same profile fields, validation rules, and email-verification flow as the website.
 - Added a student-by-student mobile billing breakdown with course time, classroom, teacher, and tuition, and replaced online checkout with the school's cash-and-check payment instructions.
