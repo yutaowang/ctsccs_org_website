@@ -2,6 +2,7 @@
 
 ## 2026-09-22
 
+- Added a persistent English/中文 interface toggle, removed the duplicated bilingual text layout, moved page content closer to the navigation header, and resized the app icon artwork within Android's adaptive-icon safe area.
 - Moved mobile password recovery to a dedicated bilingual screen where users enter their email and request the existing website password-reset email flow.
 - Made the mobile interface bilingual throughout, with English as the primary text and Chinese one point smaller, and replaced the native course picker with a React Native modal dropdown that works in the existing development build.
 - Added a bilingual password-reset action to the mobile sign-in screen using the existing SCCS recovery-email service, and changed mobile course registration to per-session dropdown selectors with selected-course details.

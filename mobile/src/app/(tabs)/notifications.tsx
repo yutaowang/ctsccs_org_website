@@ -4,13 +4,14 @@ import { BilingualText, Button, Card, Field, Header, Notice, Screen, ui } from "
 import { supabase } from "@/lib/supabase";
 import { colors } from "@/lib/theme";
 import { useAuth } from "@/providers/auth";
+import { useLanguage } from "@/providers/language";
 
 type Announcement = { id: number; title: string; body: string; audience: string; published_at: string };
 const audiences = [["all", "Everyone", "所有人"], ["families", "Families", "家庭"], ["teachers", "Teachers", "教师"]];
-const audienceLabel = (value: string) => audiences.find(([key]) => key === value)?.slice(1).join(" / ") || value;
 
 export default function Notifications() {
   const { session, role } = useAuth();
+  const { t } = useLanguage();
   const [rows, setRows] = useState<Announcement[]>([]);
   const [title, setTitle] = useState("");
   const [body, setBody] = useState("");
@@ -62,7 +63,7 @@ export default function Notifications() {
     {rows.length ? rows.map((row) => <Card key={row.id}>
       <Text style={ui.heading}>{row.title}</Text>
       <Text style={ui.body}>{row.body}</Text>
-      <Text style={ui.muted}>{new Date(row.published_at).toLocaleString()} · {audienceLabel(row.audience)}</Text>
+      <Text style={ui.muted}>{new Date(row.published_at).toLocaleString()} · {(() => { const label = audiences.find(([key]) => key === row.audience); return label ? t(label[1], label[2]) : row.audience; })()}</Text>
     </Card>) : <Card><BilingualText en="No school notices have been published." zh="暂未发布学校通知。" style={ui.body} /></Card>}
   </Screen>;
 }

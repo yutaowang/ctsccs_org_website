@@ -1,7 +1,7 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet } from "react-native";
+import { KeyboardAvoidingView, Platform, StyleSheet, View } from "react-native";
 import { Redirect, router } from "expo-router";
-import { BilingualText, Button, Card, Field, Notice } from "@/components/ui";
+import { BilingualText, Button, Card, Field, LanguageToggle, Notice } from "@/components/ui";
 import { siteUrl } from "@/lib/supabase";
 import { colors } from "@/lib/theme";
 import { useAuth } from "@/providers/auth";
@@ -42,6 +42,7 @@ export default function ForgotPassword() {
   };
 
   return <KeyboardAvoidingView behavior={Platform.OS === "ios" ? "padding" : undefined} style={styles.page}>
+    <View style={styles.language}><LanguageToggle /></View>
     <Card>
       <BilingualText en="Reset Password" zh="重置密码" style={styles.title} size={26} />
       <BilingualText en="Enter the email address used for your SCCS account. We will send you a password reset link." zh="请输入 SCCS 账户使用的电子邮箱，我们会向您发送密码重置链接。" style={styles.help} />
@@ -55,6 +56,7 @@ export default function ForgotPassword() {
 
 const styles = StyleSheet.create({
   page: { flex: 1, justifyContent: "center", backgroundColor: colors.navy, padding: 22 },
+  language: { position: "absolute", top: 48, right: 14 },
   title: { color: colors.navy, fontSize: 26, fontWeight: "900" },
   help: { color: colors.muted, lineHeight: 20 },
 });

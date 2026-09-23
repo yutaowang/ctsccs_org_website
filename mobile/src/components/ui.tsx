@@ -2,12 +2,21 @@ import { useState, type PropsWithChildren } from "react";
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, TextInput, type StyleProp, type TextInputProps, type TextStyle, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { colors } from "@/lib/theme";
+import { useLanguage } from "@/providers/language";
 
 export function Screen({ children, refreshing = false }: PropsWithChildren<{ refreshing?: boolean }>) {
-  return <SafeAreaView style={styles.safe} edges={["top"]}><ScrollView contentContainerStyle={styles.screen}>{refreshing && <ActivityIndicator color={colors.blue} />}{children}</ScrollView></SafeAreaView>;
+  return <SafeAreaView style={styles.safe} edges={["left", "right", "bottom"]}><ScrollView contentInsetAdjustmentBehavior="never" contentContainerStyle={styles.screen}>{refreshing && <ActivityIndicator color={colors.blue} />}{children}</ScrollView></SafeAreaView>;
 }
 export function BilingualText({ en, zh, style, size = 15 }: { en: string; zh: string; style?: StyleProp<TextStyle>; size?: number }) {
-  return <Text style={style}>{en}{zh ? <>{"\n"}<Text style={{ fontSize: size - 1 }}>{zh}</Text></> : null}</Text>;
+  const { language } = useLanguage();
+  return <Text style={[style, language === "zh" && { fontSize: size - 1 }]}>{language === "zh" ? zh : en}</Text>;
+}
+export function LanguageToggle() {
+  const { language, setLanguage } = useLanguage();
+  return <View style={styles.languageToggle}>
+    <Pressable accessibilityRole="button" onPress={() => setLanguage("en")} style={[styles.languageChoice, language === "en" && styles.languageActive]}><Text style={[styles.languageText, language === "en" && styles.languageTextActive]}>English</Text></Pressable>
+    <Pressable accessibilityRole="button" onPress={() => setLanguage("zh")} style={[styles.languageChoice, language === "zh" && styles.languageActive]}><Text style={[styles.languageText, styles.languageChinese, language === "zh" && styles.languageTextActive]}>中文</Text></Pressable>
+  </View>;
 }
 export function Header({ eyebrow, eyebrowZh, title, titleZh, children }: PropsWithChildren<{ eyebrow?: string; eyebrowZh?: string; title: string; titleZh?: string }>) {
   return <View style={styles.header}>
@@ -73,7 +82,7 @@ export const ui = StyleSheet.create({
 });
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.cream },
-  screen: { padding: 18, gap: 14, paddingBottom: 40 },
+  screen: { paddingHorizontal: 18, paddingTop: 10, gap: 14, paddingBottom: 40 },
   header: { marginBottom: 4 }, eyebrow: { color: colors.blue, fontSize: 12, fontWeight: "800", textTransform: "uppercase", letterSpacing: 1 },
   title: { color: colors.navy, fontSize: 30, fontWeight: "900", marginTop: 3 },
   card: { backgroundColor: colors.white, borderColor: colors.border, borderWidth: 1, borderRadius: 16, padding: 16, gap: 10, shadowColor: "#0b2545", shadowOpacity: 0.05, shadowRadius: 8, elevation: 2 },
@@ -91,5 +100,11 @@ const styles = StyleSheet.create({
   option: { borderBottomWidth: 1, borderBottomColor: colors.border, paddingHorizontal: 12, paddingVertical: 12, gap: 3 },
   optionSelected: { backgroundColor: colors.blue }, optionText: { color: colors.navy, fontSize: 15, fontWeight: "700" },
   optionDetail: { color: colors.muted, fontSize: 13 }, optionSelectedText: { color: colors.white },
+  languageToggle: { flexDirection: "row", borderWidth: 1, borderColor: "#7890b5", borderRadius: 8, overflow: "hidden", marginRight: 8 },
+  languageChoice: { paddingHorizontal: 7, paddingVertical: 5, backgroundColor: "#294873" },
+  languageActive: { backgroundColor: colors.gold },
+  languageText: { color: colors.white, fontSize: 11, fontWeight: "700" },
+  languageChinese: { fontSize: 10 },
+  languageTextActive: { color: colors.navy },
   notice: { borderRadius: 10, padding: 12 }, errorNotice: { backgroundColor: "#fdecea" }, successNotice: { backgroundColor: "#e8f6ed" }, errorText: { color: colors.red, fontSize: 14 }, successText: { color: colors.green, fontSize: 14 },
 });

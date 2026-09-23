@@ -5,9 +5,11 @@ import { colors } from "@/lib/theme";
 import { supabase } from "@/lib/supabase";
 import { fullName, type Course, type Registration, type Student } from "@/lib/types";
 import { useAuth } from "@/providers/auth";
+import { useLanguage } from "@/providers/language";
 
 export default function Courses() {
   const { session } = useAuth(); const [students, setStudents] = useState<Student[]>([]); const [courses, setCourses] = useState<Course[]>([]); const [registrations, setRegistrations] = useState<Record<number, Registration>>({}); const [busy, setBusy] = useState(true); const [status, setStatus] = useState<{ message?: string; error?: string }>({});
+  const { t } = useLanguage();
   const load = useCallback(async () => {
     if (!session) return;
     const family = await supabase.from("families").select("id").eq("user_id", session.user.id).maybeSingle();
@@ -53,12 +55,12 @@ export default function Courses() {
             {available.length ? <>
               <Dropdown
                 value={selectedId}
-                options={available.map((course) => ({ value: course.id, label: course.name || course.short_name || "Course / 课程", detail: `${course.display_time || "Time TBD / 时间待定"} · ${course.classroom || "Room TBD / 教室待定"} · $${course.donation || 0}` }))}
+                options={available.map((course) => ({ value: course.id, label: course.name || course.short_name || t("Course", "课程"), detail: `${course.display_time || t("Time TBD", "时间待定")} · ${course.classroom || t("Room TBD", "教室待定")} · $${course.donation || 0}` }))}
                 placeholder="Select a course"
                 placeholderZh="选择课程"
                 onChange={(value) => choose(student.id, number, value)}
               />
-              {selected && <View style={styles.details}><Text style={styles.courseName}>{selected.name || selected.short_name}</Text><Text style={ui.muted}>{selected.display_time || "Time TBD / 时间待定"} · {selected.classroom || "Room TBD / 教室待定"}</Text><Text style={styles.price}>${selected.donation || 0}</Text></View>}
+              {selected && <View style={styles.details}><Text style={styles.courseName}>{selected.name || selected.short_name}</Text><Text style={ui.muted}>{selected.display_time || t("Time TBD", "时间待定")} · {selected.classroom || t("Room TBD", "教室待定")}</Text><Text style={styles.price}>${selected.donation || 0}</Text></View>}
             </> : <BilingualText en="No open courses in this session." zh="此时段暂无开放课程。" style={ui.muted} size={13} />}
           </View>;
         })}
