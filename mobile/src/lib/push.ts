@@ -19,7 +19,6 @@ export async function registerPushDevice(userId: string) {
     await Notifications.setNotificationChannelAsync("school", {
       name: "School notices",
       importance: Notifications.AndroidImportance.HIGH,
-      sound: "default",
       vibrationPattern: [0, 250, 250, 250],
     });
   }
