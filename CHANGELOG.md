@@ -2,7 +2,7 @@
 
 ## 2026-09-23
 
-- Changed announcement RLS so every authenticated user can read notices while only Admin Team and Superadmin users can publish, and granted the server-side push endpoint the minimum announcement and device-read permissions it requires.
+- Restricted announcement visibility by audience: families see Everyone and Families notices, teachers see Everyone and Teachers notices, and Admin/Superadmin users can see all notices and publish them; also granted the server-side push endpoint the minimum announcement and device-read permissions it requires.
 - Prevented the mobile Notices screen from querying announcements before the authenticated session and portal role are ready, and clear the stale anonymous-permission error after a successful refresh.
 - Configured the git-ignored Android Firebase client file to be supplied to EAS builds through a secret file environment variable.
 - Prevented startup race warnings by waiting for the Expo Router navigation container before opening a notification and ignoring Supabase Auth results after provider unmount.
