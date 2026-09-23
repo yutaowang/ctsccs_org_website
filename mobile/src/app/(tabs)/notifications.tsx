@@ -20,14 +20,21 @@ export default function Notifications() {
   const [status, setStatus] = useState<{ message?: string; error?: string }>({});
   const manager = role === "sccs_admin_team_role" || role === "sccs_superadmin_role";
 
-  const load = useCallback(async () => {
+  const load = useCallback(async (isCurrent: () => boolean = () => true) => {
+    if (!session || !role) return;
     const result = await supabase.from("announcements").select("id,title,body,audience,published_at").order("published_at", { ascending: false }).limit(100);
+    if (!isCurrent()) return;
     setRows(result.data || []);
-    if (result.error) setStatus({ error: result.error.message });
+    setStatus((current) => result.error ? { error: result.error.message } : current.error ? {} : current);
     setBusy(false);
-  }, []);
+  }, [role, session]);
 
-  useEffect(() => { void Promise.resolve().then(load); }, [load, role]);
+  useEffect(() => {
+    if (!session || !role) return;
+    let active = true;
+    void Promise.resolve().then(() => load(() => active));
+    return () => { active = false; };
+  }, [load, role, session]);
 
   const publish = async () => {
     if (!session) return;
