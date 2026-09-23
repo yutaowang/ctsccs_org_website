@@ -2,6 +2,7 @@
 
 ## 2026-09-23
 
+- Allowed older development clients to start without the newly added native notification module while a notification-enabled client is being installed.
 - Added Expo's unified autolinking and Metro module resolution for the nested mobile project, preventing the website's parent dependencies from being selected by the app bundle.
 - Re-enabled Android push notification permissions, Expo device-token registration, notification routing, and push delivery when administrators publish school notices.
 - Added mobile family-account creation with the same profile fields, validation rules, and email-verification flow as the website.

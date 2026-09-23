@@ -1,26 +1,32 @@
 import { useEffect } from "react";
 import { Stack, router } from "expo-router";
-import * as Notifications from "expo-notifications";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "@/providers/auth";
 import { LanguageProvider } from "@/providers/language";
-import { registerPushDevice } from "@/lib/push";
+
+type NotificationLike = { request: { content: { data?: Record<string, unknown> | null } } };
 
 function AppStack() {
   const { session } = useAuth();
   useEffect(() => {
-    if (session) void registerPushDevice(session.user.id).catch((error) => console.warn("Push registration failed", error));
+    if (session) void import("@/lib/push")
+      .then(({ registerPushDevice }) => registerPushDevice(session.user.id))
+      .catch((error) => console.warn("Push notifications are unavailable in this development client", error));
   }, [session]);
   useEffect(() => {
-    const open = (notification: Notifications.Notification) => {
+    let active = true;
+    let subscription: { remove: () => void } | undefined;
+    const open = (notification: NotificationLike) => {
       const url = notification.request.content.data?.url;
       router.push(typeof url === "string" ? url as never : "/(tabs)/notifications");
     };
-    void Notifications.getLastNotificationResponseAsync().then((response) => {
-      if (response?.notification) open(response.notification);
-    });
-    const subscription = Notifications.addNotificationResponseReceivedListener((response) => open(response.notification));
-    return () => subscription.remove();
+    void import("expo-notifications").then(async (Notifications) => {
+      if (!active) return;
+      const response = await Notifications.getLastNotificationResponseAsync();
+      if (active && response?.notification) open(response.notification);
+      if (active) subscription = Notifications.addNotificationResponseReceivedListener((next) => open(next.notification));
+    }).catch((error) => console.warn("Notification routing is unavailable in this development client", error));
+    return () => { active = false; subscription?.remove(); };
   }, []);
   return <><StatusBar style="light" /><Stack screenOptions={{ headerShown: false }} /></>;
 }
