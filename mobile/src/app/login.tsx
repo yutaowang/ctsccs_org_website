@@ -30,6 +30,7 @@ export default function Login() {
       <Field label="Password" labelZh="密码" value={password} onChangeText={setPassword} secureTextEntry autoComplete="current-password" onSubmitEditing={submit} />
       <Notice {...status} />
       <Button title={busy ? "Signing in…" : "Sign in"} titleZh={busy ? "正在登录…" : "登录"} onPress={submit} disabled={busy || !email || !password} />
+      <Button title="Create Account" titleZh="创建家庭账户" kind="secondary" onPress={() => router.push("/create-account")} disabled={busy} />
       <Button title="Forgot Password" titleZh="忘记密码" kind="secondary" onPress={() => router.push("/forgot-password")} disabled={busy} />
     </Card>
   </KeyboardAvoidingView>;

@@ -1,5 +1,10 @@
 # SCCS Website Change Log
 
+## 2026-09-23
+
+- Added mobile family-account creation with the same profile fields, validation rules, and email-verification flow as the website.
+- Added a student-by-student mobile billing breakdown with course time, classroom, teacher, and tuition, and replaced online checkout with the school's cash-and-check payment instructions.
+
 ## 2026-09-22
 
 - Added a persistent English/中文 interface toggle, removed the duplicated bilingual text layout, moved page content closer to the navigation header, and resized the app icon artwork within Android's adaptive-icon safe area.
