@@ -11,7 +11,7 @@ Expo React Native app for iOS and Android. It uses the existing SCCS Supabase pr
 
 The app is linked to the `@ywang9/sccs-mobile` EAS project. Development, preview, and production builds each use the matching EAS environment; the three public client variables in `.env.example` are configured remotely for all three environments.
 
-Push notifications are temporarily disabled. School notices remain available in the app and are saved directly to Supabase. Android is the first target; create an installable development build with `npx eas-cli@latest build --profile development --platform android`.
+Push notifications are enabled for Android production builds. The app requests notification permission after sign-in, registers the device with Expo Push Service, and sends notifications when an administrator publishes a school notice. Android uses the configured FCM V1 credentials and `google-services.json` client configuration.
 
 ## Features
 

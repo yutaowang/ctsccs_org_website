@@ -12,6 +12,7 @@
       "bundleIdentifier": "org.ctsccs.mobile"
     },
     "android": {
+      "googleServicesFile": "./google-services.json",
       "adaptiveIcon": {
         "backgroundColor": "#F0BF32",
         "foregroundImage": "./assets/adaptive-icon.png"
@@ -21,6 +22,7 @@
     },
     "plugins": [
       "expo-router",
+      "expo-notifications",
       "expo-web-browser",
       "expo-sqlite"
     ],

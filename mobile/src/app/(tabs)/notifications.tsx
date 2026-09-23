@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 import { BilingualText, Button, Card, Field, Header, Notice, Screen, ui } from "@/components/ui";
-import { supabase } from "@/lib/supabase";
+import { siteUrl, supabase } from "@/lib/supabase";
 import { colors } from "@/lib/theme";
 import { useAuth } from "@/providers/auth";
 import { useLanguage } from "@/providers/language";
@@ -34,16 +34,19 @@ export default function Notifications() {
     setBusy(true);
     setStatus({});
     try {
-      const result = await supabase.from("announcements").insert({
-        title: title.trim(), body: body.trim(), audience, created_by: session.user.id,
-      }).select("id").single();
-      if (result.error) throw result.error;
+      const response = await fetch(`${siteUrl}/api/send-push-notification`, {
+        method: "POST",
+        headers: { Authorization: `Bearer ${session.access_token}`, "Content-Type": "application/json" },
+        body: JSON.stringify({ title: title.trim(), body: body.trim(), audience }),
+      });
+      const result = await response.json();
+      if (!response.ok) throw new Error(result.error || t("Could not publish notification.", "无法发布通知。"));
       setTitle("");
       setBody("");
-      setStatus({ message: "School notice published. / 学校通知已发布。" });
+      setStatus({ message: t(`Notification published to ${result.sent} device${result.sent === 1 ? "" : "s"}.`, `通知已发送至 ${result.sent} 台设备。`) });
       await load();
     } catch (error) {
-      setStatus({ error: error instanceof Error ? error.message : "Could not publish school notice. / 无法发布学校通知。" });
+      setStatus({ error: error instanceof Error ? error.message : t("Could not publish notification.", "无法发布通知。") });
     } finally {
       setBusy(false);
     }
@@ -58,7 +61,7 @@ export default function Notifications() {
       <Field label="Message" labelZh="内容" value={body} onChangeText={setBody} multiline maxLength={2000} />
       <BilingualText en="Audience" zh="接收对象" style={ui.subheading} size={16} />
       <View style={ui.row}>{audiences.map(([value, label, labelZh]) => <Pressable key={value} onPress={() => setAudience(value)} style={[styles.audience, audience === value && styles.audienceActive]}><BilingualText en={label} zh={labelZh} style={[styles.audienceText, audience === value && styles.audienceTextActive]} /></Pressable>)}</View>
-      <Button title="Publish notice" titleZh="发布通知" onPress={publish} disabled={busy || !title.trim() || !body.trim()} />
+      <Button title="Publish and Send Push" titleZh="发布并推送通知" onPress={publish} disabled={busy || !title.trim() || !body.trim()} />
     </Card>}
     {rows.length ? rows.map((row) => <Card key={row.id}>
       <Text style={ui.heading}>{row.title}</Text>
