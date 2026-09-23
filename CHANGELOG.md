@@ -2,6 +2,7 @@
 
 ## 2026-09-23
 
+- Configured the git-ignored Android Firebase client file to be supplied to EAS builds through a secret file environment variable.
 - Prevented startup race warnings by waiting for the Expo Router navigation container before opening a notification and ignoring Supabase Auth results after provider unmount.
 - Corrected the Android notification channel to use the system default sound without treating `default` as a bundled custom audio file.
 - Allowed older development clients to start without the newly added native notification module while a notification-enabled client is being installed.

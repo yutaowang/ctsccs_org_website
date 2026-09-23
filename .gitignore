@@ -13,5 +13,6 @@ backups/
 __pycache__/
 *.py[cod]
 DATABASE_TABLES.md
+google-services.json
 *-firebase-adminsdk-*.json
 firebase-service-account*.json
