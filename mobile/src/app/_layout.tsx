@@ -1,5 +1,5 @@
 import { useEffect } from "react";
-import { Stack, router } from "expo-router";
+import { Stack, router, useRootNavigationState } from "expo-router";
 import { StatusBar } from "expo-status-bar";
 import { AuthProvider, useAuth } from "@/providers/auth";
 import { LanguageProvider } from "@/providers/language";
@@ -8,12 +8,14 @@ type NotificationLike = { request: { content: { data?: Record<string, unknown> |
 
 function AppStack() {
   const { session } = useAuth();
+  const navigationState = useRootNavigationState();
   useEffect(() => {
     if (session) void import("@/lib/push")
       .then(({ registerPushDevice }) => registerPushDevice(session.user.id))
       .catch((error) => console.warn("Push notifications are unavailable in this development client", error));
   }, [session]);
   useEffect(() => {
+    if (!navigationState?.key) return;
     let active = true;
     let subscription: { remove: () => void } | undefined;
     const open = (notification: NotificationLike) => {
@@ -27,7 +29,7 @@ function AppStack() {
       if (active) subscription = Notifications.addNotificationResponseReceivedListener((next) => open(next.notification));
     }).catch((error) => console.warn("Notification routing is unavailable in this development client", error));
     return () => { active = false; subscription?.remove(); };
-  }, []);
+  }, [navigationState?.key]);
   return <><StatusBar style="light" /><Stack screenOptions={{ headerShown: false }} /></>;
 }
 export default function RootLayout() { return <LanguageProvider><AuthProvider><AppStack /></AuthProvider></LanguageProvider>; }

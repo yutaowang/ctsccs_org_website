@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type PropsWithChildren } from "react";
 import type { Session } from "@supabase/supabase-js";
 import { configured, supabase } from "@/lib/supabase";
 import type { AppRole } from "@/lib/types";
@@ -11,16 +11,34 @@ export function AuthProvider({ children }: PropsWithChildren) {
   const [role, setRole] = useState<AppRole | null>(null);
   const [teacherId, setTeacherId] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
-  const loadRole = async (next: Session | null) => {
-    if (!next) { setRole(null); setTeacherId(null); return; }
+  const loadRole = useCallback(async (next: Session | null, isActive: () => boolean = () => true) => {
+    if (!next) {
+      if (isActive()) { setRole(null); setTeacherId(null); }
+      return;
+    }
     const { data } = await supabase.from("user_roles").select("role, teacher_id").eq("user_id", next.user.id).maybeSingle();
+    if (!isActive()) return;
     setRole((data?.role as AppRole) || "sccs_family_role"); setTeacherId(data?.teacher_id || null);
-  };
-  useEffect(() => {
-    supabase.auth.getSession().then(async ({ data }) => { setSession(data.session); await loadRole(data.session); setLoading(false); });
-    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => { setSession(next); void loadRole(next); setLoading(false); });
-    return () => listener.subscription.unsubscribe();
   }, []);
+  useEffect(() => {
+    let active = true;
+    const isActive = () => active;
+    void supabase.auth.getSession().then(async ({ data }) => {
+      if (!active) return;
+      setSession(data.session);
+      await loadRole(data.session, isActive);
+      if (active) setLoading(false);
+    });
+    const { data: listener } = supabase.auth.onAuthStateChange((_event, next) => {
+      void (async () => {
+        if (!active) return;
+        setSession(next);
+        await loadRole(next, isActive);
+        if (active) setLoading(false);
+      })();
+    });
+    return () => { active = false; listener.subscription.unsubscribe(); };
+  }, [loadRole]);
   const value = useMemo<AuthValue>(() => ({
     session, role, teacherId, loading,
     signIn: async (email, password) => {
@@ -30,7 +48,7 @@ export function AuthProvider({ children }: PropsWithChildren) {
     },
     signOut: async () => { await supabase.auth.signOut(); },
     refreshRole: async () => loadRole(session),
-  }), [session, role, teacherId, loading]);
+  }), [session, role, teacherId, loading, loadRole]);
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 export function useAuth() { const value = useContext(AuthContext); if (!value) throw new Error("AuthProvider is missing"); return value; }
