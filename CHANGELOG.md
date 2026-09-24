@@ -1,5 +1,9 @@
 # SCCS Website Change Log
 
+## 2026-09-24
+
+- Added the iOS App Store encryption declaration so SCCS production builds using standard HTTPS/TLS do not require manual export-compliance configuration for each upload.
+
 ## 2026-09-23
 
 - Restricted announcement visibility by audience: families see Everyone and Families notices, teachers see Everyone and Teachers notices, and Admin/Superadmin users can see all notices and publish them; also granted the server-side push endpoint the minimum announcement and device-read permissions it requires.
