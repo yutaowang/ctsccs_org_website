@@ -1,5 +1,9 @@
 # SCCS Website Change Log
 
+## 2026-09-25
+
+- Enabled R8 code minification and unused-resource shrinking for Android production builds to improve DEX optimization, runtime memory use, and bundle size.
+
 ## 2026-09-24
 
 - Added the iOS App Store encryption declaration so SCCS production builds using standard HTTPS/TLS do not require manual export-compliance configuration for each upload.
