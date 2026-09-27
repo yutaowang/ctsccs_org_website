@@ -1,5 +1,9 @@
 # SCCS Website Change Log
 
+## 2026-09-27
+
+- Mobile: allow Android phones, tablets, foldables, and large-screen devices to resize and rotate instead of locking the app to portrait orientation.
+
 ## 2026-09-25
 
 - Enabled R8 code minification and unused-resource shrinking for Android production builds to improve DEX optimization, runtime memory use, and bundle size.
