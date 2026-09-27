@@ -3,6 +3,7 @@
 ## 2026-09-27
 
 - Mobile: allow Android phones, tablets, foldables, and large-screen devices to resize and rotate instead of locking the app to portrait orientation.
+- Converted the web and mobile projects to one npm workspace, aligned both apps on React 19.2.3, and removed duplicate React installations reported by Expo Doctor.
 
 ## 2026-09-25
 

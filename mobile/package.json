@@ -38,12 +38,5 @@
     "doctor": "npx expo-doctor@latest",
     "lint": "expo lint"
   },
-  "expo": {
-    "autolinking": {
-      "searchPaths": [
-        "./node_modules"
-      ]
-    }
-  },
   "private": true
 }
