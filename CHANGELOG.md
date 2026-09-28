@@ -4,6 +4,7 @@
 
 - Mobile: allow Android phones, tablets, foldables, and large-screen devices to resize and rotate instead of locking the app to portrait orientation.
 - Converted the web and mobile projects to one npm workspace, aligned both apps on React 19.2.3, and removed duplicate React installations reported by Expo Doctor.
+- Fixed mobile Billing so returning from course registration reloads the latest registrations, course prices, Waterford discounts, deposit, payments, and total; course and seat IDs are also normalized across Supabase JSON responses.
 
 ## 2026-09-25
 

@@ -1,9 +1,10 @@
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useMemo, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { BilingualText, Card, Header, Notice, Screen, ui } from "@/components/ui";
 import { supabase } from "@/lib/supabase";
 import { colors } from "@/lib/theme";
-import { money, tuitionTotal } from "@/lib/tuition";
+import { money, registrationCourseIds, tuitionTotal } from "@/lib/tuition";
 import type { Course, Family, Registration, Seat, Student } from "@/lib/types";
 import { fullName } from "@/lib/types";
 import { useAuth } from "@/providers/auth";
@@ -25,10 +26,11 @@ export default function Billing() {
   const [busy, setBusy] = useState(true);
   const [status, setStatus] = useState<{ message?: string; error?: string }>({});
 
-  const load = useCallback(async () => {
-    if (!session) return;
+  const load = useCallback(async (isActive: () => boolean = () => true) => {
+    if (!session) { if (isActive()) setBusy(false); return; }
     setBusy(true); setStatus({});
     const familyResult = await supabase.from("families").select("*").eq("user_id", session.user.id).maybeSingle();
+    if (!isActive()) return;
     setFamily(familyResult.data);
     if (familyResult.error) setStatus({ error: familyResult.error.message });
     if (familyResult.data) {
@@ -38,10 +40,11 @@ export default function Billing() {
         supabase.from("students").select("*").eq("family_id", familyResult.data.id).order("id"),
         supabase.from("public_course_schedule").select("id,name,short_name,type,classroom,teacher_short_name,teacher_name,class_time_id,display_time,donation"),
       ]);
+      if (!isActive()) return;
       const snapshot = snapshotResult.data as BillingSnapshot | null;
       if (snapshot) {
-        const scheduleById = new Map((scheduleResult.data || []).map((course) => [course.id, course]));
-        snapshot.classes = snapshot.classes.map((course) => ({ ...course, ...scheduleById.get(course.id) }));
+        const scheduleById = new Map((scheduleResult.data || []).map((course) => [String(course.id), course]));
+        snapshot.classes = snapshot.classes.map((course) => ({ ...course, ...scheduleById.get(String(course.id)) }));
       }
       setBilling(snapshot); setPayments(paymentResult.data || []); setStudents(studentResult.data || []); setSchedule(scheduleResult.data || []);
       const error = snapshotResult.error || paymentResult.error || studentResult.error || scheduleResult.error;
@@ -50,18 +53,22 @@ export default function Billing() {
     setBusy(false);
   }, [session]);
 
-  useEffect(() => { void Promise.resolve().then(load); }, [load]);
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    void load(() => active);
+    return () => { active = false; };
+  }, [load]));
 
-  const courseById = useMemo(() => new Map((schedule.length ? schedule : (billing?.classes || [])).map((course) => [course.id, course])), [billing, schedule]);
+  const courseById = useMemo(() => new Map((schedule.length ? schedule : (billing?.classes || [])).map((course) => [Number(course.id), course])), [billing, schedule]);
   const registrationsByStudent = useMemo<StudentCourses[]>(() => students.map((student) => {
-    const registration = billing?.registrations.find((row) => row.student_id === student.id);
-    const ids = [...new Set([registration?.session_1, registration?.session_2, registration?.session_3].filter((id): id is number => typeof id === "number"))];
+    const registration = billing?.registrations.find((row) => String(row.student_id) === String(student.id));
+    const ids = registrationCourseIds(registration);
     const courses = ids.map((id) => courseById.get(id)).filter((course): course is Course => Boolean(course)).sort((a, b) => Number(a.class_time_id || 0) - Number(b.class_time_id || 0));
     return { student, courses };
   }).filter((row) => row.courses.length > 0), [billing, courseById, students]);
-  const subtotal = useMemo(() => !billing ? 0 : billing.registrations.reduce((sum, row) => sum + [...new Set([row.session_1, row.session_2, row.session_3].filter((id): id is number => typeof id === "number"))].reduce((courseSum, id) => courseSum + Number(billing.classes.find((course) => course.id === id)?.donation || 0), 0), 0), [billing]);
+  const subtotal = useMemo(() => !billing ? 0 : billing.registrations.reduce((sum, row) => sum + registrationCourseIds(row).reduce((courseSum, id) => courseSum + Number(billing.classes.find((course) => String(course.id) === String(id))?.donation || 0), 0), 0), [billing]);
   const tuition = billing ? tuitionTotal(billing.registrations, billing.classes, billing.seats) : 0;
-  const deposit = billing?.deposits?.find((row) => row.family_id === family?.id)?.amount ?? 0;
+  const deposit = billing?.deposits?.find((row) => String(row.family_id) === String(family?.id))?.amount ?? 0;
   const due = tuition + deposit;
   const paid = payments.filter((row) => row.status === "paid").reduce((sum, row) => sum + Number(row.amount_cents || 0) / 100, 0) - payments.filter((row) => row.status === "refunded").reduce((sum, row) => sum + Number(row.amount_cents || 0) / 100, 0);
 
