@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { KeyboardAvoidingView, Platform, StyleSheet, Text, View } from "react-native";
+import { KeyboardAvoidingView, Linking, Platform, StyleSheet, Text, View } from "react-native";
 import { Redirect, router } from "expo-router";
 import { BilingualText, Button, Card, Field, LanguageToggle, Notice } from "@/components/ui";
 import { colors } from "@/lib/theme";
@@ -33,6 +33,16 @@ export default function Login() {
       <Button title="Create Account" titleZh="创建家庭账户" kind="secondary" onPress={() => router.push("/create-account")} disabled={busy} />
       <Button title="Forgot Password" titleZh="忘记密码" kind="secondary" onPress={() => router.push("/forgot-password")} disabled={busy} />
     </Card>
+    <Text style={styles.footer}>
+      © 2026–2027 SCCS ·{" "}
+      <Text
+        accessibilityRole="link"
+        style={styles.footerLink}
+        onPress={() => void Linking.openURL("https://ctsccs.org/regulation")}
+      >
+        {language === "zh" ? "隐私政策" : "Privacy Policy"}
+      </Text>
+    </Text>
   </KeyboardAvoidingView>;
 }
 const styles = StyleSheet.create({
@@ -41,4 +51,6 @@ const styles = StyleSheet.create({
   brand: { alignItems: "center", gap: 4 }, mark: { color: colors.gold, fontSize: 42, fontWeight: "900", letterSpacing: 3 },
   chinese: { color: "#dbe7f8", fontSize: 15, fontWeight: "700" }, english: { color: colors.white, fontSize: 16, fontWeight: "800", textAlign: "center" },
   title: { color: colors.navy, fontSize: 26, fontWeight: "900" }, help: { color: colors.muted, lineHeight: 20 },
+  footer: { color: "#dbe7f8", fontSize: 13, lineHeight: 19, textAlign: "center" },
+  footerLink: { color: colors.gold, fontWeight: "800", textDecorationLine: "underline" },
 });

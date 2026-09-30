@@ -4,6 +4,7 @@
 
 - Added the Grade 1 course-description link to Grade 1b on the public Courses page.
 - Added a bilingual privacy policy to the Regulation page covering collected registration and mobile-notification data, school-only uses, limited service-provider processing, school-year retention, and account-data deletion options.
+- Added a language-aware Privacy Policy link and 2026–2027 copyright notice to the SCCS Mobile sign-in screen.
 
 ## 2026-09-27
 
