@@ -1,5 +1,9 @@
 # SCCS Website Change Log
 
+## 2026-09-30
+
+- Fixed SCCS Mobile course registration so returning from the Family tab immediately reloads newly added students and their registrations without requiring sign-out.
+
 ## 2026-09-29
 
 - Added the Grade 1 course-description link to Grade 1b on the public Courses page.

@@ -1,4 +1,5 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useState } from "react";
+import { useFocusEffect } from "expo-router";
 import { StyleSheet, Text, View } from "react-native";
 import { BilingualText, Button, Card, Dropdown, Header, Notice, Screen, ui } from "@/components/ui";
 import { colors } from "@/lib/theme";
@@ -10,24 +11,34 @@ import { useLanguage } from "@/providers/language";
 export default function Courses() {
   const { session } = useAuth(); const [students, setStudents] = useState<Student[]>([]); const [courses, setCourses] = useState<Course[]>([]); const [registrations, setRegistrations] = useState<Record<number, Registration>>({}); const [busy, setBusy] = useState(true); const [status, setStatus] = useState<{ message?: string; error?: string }>({});
   const { t } = useLanguage();
-  const load = useCallback(async () => {
-    if (!session) return;
+  const load = useCallback(async (isActive: () => boolean = () => true) => {
+    if (!session) { if (isActive()) setBusy(false); return; }
+    setBusy(true); setStatus({});
     const family = await supabase.from("families").select("id").eq("user_id", session.user.id).maybeSingle();
+    if (!isActive()) return;
     const [classResult, studentResult] = await Promise.all([
       supabase.from("public_course_schedule").select("id,name,short_name,type,classroom,class_time_id,display_time,donation").eq("is_open", true).order("class_time_id").order("name"),
       family.data ? supabase.from("students").select("*").eq("family_id", family.data.id).order("created_at") : Promise.resolve({ data: [], error: null }),
     ]);
+    if (!isActive()) return;
     setCourses((classResult.data || []) as Course[]); setStudents((studentResult.data || []) as Student[]);
     const ids = (studentResult.data || []).map((row: Student) => row.id);
+    let registrationError: string | undefined;
     if (ids.length) {
       const result = await supabase.from("class_registrations").select("*").in("student_id", ids);
+      if (!isActive()) return;
       setRegistrations(Object.fromEntries((result.data || []).map((row: Registration) => [row.student_id, row])));
-      if (result.error) setStatus({ error: result.error.message });
-    }
-    if (classResult.error || studentResult.error) setStatus({ error: classResult.error?.message || studentResult.error?.message });
+      registrationError = result.error?.message;
+    } else setRegistrations({});
+    const error = family.error?.message || classResult.error?.message || studentResult.error?.message || registrationError;
+    if (error) setStatus({ error });
     setBusy(false);
   }, [session]);
-  useEffect(() => { void Promise.resolve().then(load); }, [load]);
+  useFocusEffect(useCallback(() => {
+    let active = true;
+    void load(() => active);
+    return () => { active = false; };
+  }, [load]));
   const choose = (studentId: number, sessionNumber: number, courseId: number | null) => setRegistrations((current) => ({
     ...current, [studentId]: { ...(current[studentId] || {}), student_id: studentId, [`session_${sessionNumber}`]: courseId },
   }));
