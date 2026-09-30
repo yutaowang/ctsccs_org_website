@@ -418,6 +418,7 @@ export const courseDescriptionLinks = {
       .map(([name, , , , , file]) => [name.toLowerCase(), localPath(file)]),
   ),
   "grade 6": localPath("course_description/cn_Challenger.pdf"),
+  "grade 1b": localPath("course_description/cn_Pioneer.pdf"),
   "maliping 6": localPath("course_description/cn_Experimenter.pdf"),
   "math kangaroo l1-l2": localPath("course_description/Math-Kangaroo-Curriculum-for-grades-1-and-2.pdf"),
   "sat/psat": localPath("course_description/SAT.pdf"),
@@ -506,6 +507,7 @@ const courseDescriptionLinksById = {
   2094: courseDescriptionLinksByShortName.ma21,
   2097: courseDescriptionLinksByShortName.art12,
   2098: localPath("course_description/Math-Kangaroo-Curriculum-for-grades-1-and-2.pdf"),
+  2099: courseDescriptionLinksByShortName.cn2,
 };
 
 const normalizedCourseName = (value) => String(value || "")

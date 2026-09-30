@@ -1,5 +1,9 @@
 # SCCS Website Change Log
 
+## 2026-09-29
+
+- Added the Grade 1 course-description link to Grade 1b on the public Courses page.
+
 ## 2026-09-27
 
 - Mobile: allow Android phones, tablets, foldables, and large-screen devices to resize and rotate instead of locking the app to portrait orientation.
