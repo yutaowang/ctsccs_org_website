@@ -216,6 +216,56 @@ function Regulation() {
           <Download href="Forms/SCCS Teacher Code - English.pdf">教师守则 Code of Conduct for Teachers</Download>
         </div>
       </Section>
+      <Section title="隐私政策 Privacy Policy">
+        <div className="privacy-copy">
+          <h3>中文</h3>
+          <p>本隐私政策适用于东南康州中文学校（SCCS）的网站、移动应用和网上注册系统。学校仅收集完成注册、教学管理和学校联系所必需的信息。</p>
+          <h3>我们收集的信息</h3>
+          <ul>
+            <li>家长或监护人的姓名、电子邮件、电话号码、家庭地址，以及自愿提供的微信联系方式；</li>
+            <li>学生姓名、中文姓名、出生年份、性别及其他注册所需的学生资料；</li>
+            <li>课程报名、转课和退课记录；</li>
+            <li>学生出勤记录；</li>
+            <li>学费、押金和付款记录。SCCS 移动应用目前不处理网上信用卡付款；</li>
+            <li>家庭账户用户 ID、移动设备平台、Push Notification Token（推送通知令牌）及通知设置。</li>
+          </ul>
+          <h3>信息用途</h3>
+          <p>上述信息仅用于建立和管理家庭账户、办理课程注册、编制班级名单、记录出勤、计算和核对学费与付款、发送学校通知、联系家庭，以及维护学校系统的安全和正常运行。只有因工作需要获得授权的 SCCS 行政人员和教师可以访问相关信息。</p>
+          <h3>信息共享</h3>
+          <p>SCCS 不会出售、出租或向外部第三方提供家庭或学生信息，也不会将这些信息用于第三方广告或营销。为运行网站、数据库和推送通知而受 SCCS 委托的技术服务商，可能仅代表学校处理提供服务所必需的信息，不得将其用于自己的目的。</p>
+          <h3>保存期限</h3>
+          <p>注册相关信息原则上仅保存至其所属注册学年结束。每个学年结束后，学校会清理该学年的家庭和学生注册资料、课程报名、出勤、付款记录及 Push Token，为下一学年的注册做准备。</p>
+          <h3>删除方式</h3>
+          <ol>
+            <li>家长可在学年期间申请提前删除账户和相关注册资料。请于上课期间每周日前往学校办公室联系 <a href="/administration">行政团队</a>，或发送电子邮件给校长李啸辰先生：<a href="mailto:xli@ctsccs.org">xli@ctsccs.org</a>。为保护学生和家庭信息，学校可能需要核实申请人的身份。</li>
+            <li>如果没有提出提前删除申请，学校会在每个学年结束后的年度数据清理中删除该学年的注册数据，为下一学年重新注册做准备。</li>
+          </ol>
+        </div>
+        <div className="privacy-copy english-copy">
+          <h3>English</h3>
+          <p>This Privacy Policy applies to the Southeastern Connecticut Chinese School (SCCS) website, mobile application, and online registration system. SCCS collects only the information needed for registration, school administration, instruction, and communication.</p>
+          <h3>Information We Collect</h3>
+          <ul>
+            <li>Parent or guardian name, email address, telephone number, home address, and an optional WeChat contact;</li>
+            <li>Student name, Chinese name, birth year, gender, and other student information needed for registration;</li>
+            <li>Course enrollment, course change, and withdrawal records;</li>
+            <li>Student attendance records;</li>
+            <li>Tuition, deposit, and payment records. The SCCS mobile app does not currently process online credit card payments;</li>
+            <li>Family-account user ID, mobile-device platform, Push Notification Token, and notification settings.</li>
+          </ul>
+          <h3>How We Use Information</h3>
+          <p>SCCS uses this information only to create and manage family accounts, register students for courses, prepare class rosters, record attendance, calculate and reconcile tuition and payments, send school notices, contact families, and maintain the security and operation of school systems. Access is limited to authorized SCCS administrators and teachers who need the information for their school responsibilities.</p>
+          <h3>Information Sharing</h3>
+          <p>SCCS does not sell, rent, or provide family or student information to outside third parties, and does not use it for third-party advertising or marketing. Technical service providers engaged by SCCS to operate the website, database, and push notifications may process only the information necessary to provide those services on the school’s behalf and may not use it for their own purposes.</p>
+          <h3>Retention</h3>
+          <p>Registration-related information is generally retained only through the end of the school year for which it was collected. After each school year, SCCS clears that year’s family and student registration information, course enrollments, attendance, payment records, and Push Tokens in preparation for the next registration cycle.</p>
+          <h3>How to Request Deletion</h3>
+          <ol>
+            <li>A parent or guardian may request early deletion of an account and its related registration information during the school year. Visit the school office on any Sunday when school is in session and speak with the <a href="/administration">Admin Team</a>, or email Principal Xiaochen Li at <a href="mailto:xli@ctsccs.org">xli@ctsccs.org</a>. SCCS may verify the requester’s identity to protect family and student information.</li>
+            <li>If no early deletion request is made, the school deletes the school year’s registration data during its annual year-end data reset before registration begins for the next school year.</li>
+          </ol>
+        </div>
+      </Section>
     </Page>
   );
 }
