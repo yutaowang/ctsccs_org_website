@@ -68,7 +68,44 @@ def table_names(conn: psycopg.Connection) -> list[tuple[str, str]]:
             """,
             (list(SCHEMAS),),
         )
-        return [(row[0], row[1]) for row in cur.fetchall()]
+        tables = [(row[0], row[1]) for row in cur.fetchall()]
+
+    # Inline foreign keys require referenced SCCS tables to exist first.
+    table_set = set(tables)
+    dependencies = {table: set() for table in tables}
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            select source_ns.nspname, source.relname,
+                   target_ns.nspname, target.relname
+            from pg_constraint constraint_row
+            join pg_class source on source.oid = constraint_row.conrelid
+            join pg_namespace source_ns on source_ns.oid = source.relnamespace
+            join pg_class target on target.oid = constraint_row.confrelid
+            join pg_namespace target_ns on target_ns.oid = target.relnamespace
+            where constraint_row.contype = 'f'
+              and source_ns.nspname = any(%s)
+              and target_ns.nspname = any(%s)
+            """,
+            (list(SCHEMAS), list(SCHEMAS)),
+        )
+        for source_schema, source_table, target_schema, target_table in cur.fetchall():
+            source = (source_schema, source_table)
+            target = (target_schema, target_table)
+            if source in table_set and target in table_set and source != target:
+                dependencies[source].add(target)
+
+    ordered: list[tuple[str, str]] = []
+    remaining = set(tables)
+    while remaining:
+        ready = sorted(table for table in remaining if not (dependencies[table] & remaining))
+        if not ready:
+            # Cyclic foreign keys are unusual in SCCS. Keep deterministic output;
+            # session_replication_role suppresses their checks during data load.
+            ready = [sorted(remaining)[0]]
+        ordered.extend(ready)
+        remaining.difference_update(ready)
+    return ordered
 
 
 def column_names(conn: psycopg.Connection, schema: str, table: str) -> list[str]:
@@ -330,6 +367,17 @@ def write_insert_table(conn: psycopg.Connection, out, schema: str, table: str) -
     column_list = ", ".join(sql.Identifier(col).as_string(conn) for col in columns)
 
     with conn.cursor() as cur:
+        cur.execute(
+            """
+            select exists (
+              select 1 from information_schema.columns
+              where table_schema = %s and table_name = %s
+                and is_identity = 'YES' and identity_generation = 'ALWAYS'
+            )
+            """,
+            (schema, table),
+        )
+        override_identity = cur.fetchone()[0]
         query = sql.SQL("select {} from {}.{}").format(
             sql.SQL(", ").join(sql.Identifier(col) for col in columns),
             sql.Identifier(schema),
@@ -342,10 +390,41 @@ def write_insert_table(conn: psycopg.Connection, out, schema: str, table: str) -
                 sql.Literal(json.dumps(value) if isinstance(value, (dict, list)) else value).as_string(conn)
                 for value in row
             )
-            out.write(f"INSERT INTO {table_name} ({column_list}) VALUES ({values});\n")
+            override = " OVERRIDING SYSTEM VALUE" if override_identity else ""
+            out.write(f"INSERT INTO {table_name} ({column_list}){override} VALUES ({values});\n")
             rows += 1
 
     return rows
+
+
+def write_sequence_resets(conn: psycopg.Connection, out) -> None:
+    with conn.cursor() as cur:
+        cur.execute(
+            """
+            select table_schema, table_name, column_name
+            from information_schema.columns
+            where table_schema = any(%s)
+              and (is_identity = 'YES' or column_default like 'nextval(%%')
+            order by table_schema, table_name, ordinal_position
+            """,
+            (list(SCHEMAS),),
+        )
+        columns = cur.fetchall()
+
+    if not columns:
+        return
+    out.write("\n-- Reset identity and serial sequences\n")
+    for schema, table, column in columns:
+        qualified = f"{sql.Identifier(schema).as_string(conn)}.{sql.Identifier(table).as_string(conn)}"
+        relation_literal = sql.Literal(f"{schema}.{table}").as_string(conn)
+        column_literal = sql.Literal(column).as_string(conn)
+        identifier = sql.Identifier(column).as_string(conn)
+        out.write(
+            "SELECT setval(pg_get_serial_sequence("
+            f"{relation_literal}, {column_literal}), "
+            f"COALESCE((SELECT MAX({identifier}) FROM {qualified}), 1), "
+            f"EXISTS (SELECT 1 FROM {qualified}));\n"
+        )
 
 
 def main() -> int:
@@ -387,6 +466,7 @@ def main() -> int:
                         counts.append((schema, table, write_insert_table(conn, out, schema, table)))
 
                     out.write("\nSET session_replication_role = DEFAULT;\n")
+                    write_sequence_resets(conn, out)
             break
         except psycopg.OperationalError as exc:
             last_error = exc

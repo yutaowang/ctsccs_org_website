@@ -10,6 +10,7 @@ Thumbs.db
 !.env.example
 supabase/seed/*.sql
 backups/
+scripts/output/
 __pycache__/
 *.py[cod]
 DATABASE_TABLES.md
