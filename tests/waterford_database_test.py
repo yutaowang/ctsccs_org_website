@@ -58,6 +58,7 @@ class WaterfordDatabaseTest(unittest.TestCase):
         """)
         cls.db.execute((ROOT / "supabase/migrations/20260913230655_waterford_annual_seats.sql").read_text())
         cls.db.execute((ROOT / "supabase/migrations/20260913231422_member_deposit_waivers_pta.sql").read_text(encoding="utf-8"))
+        cls.db.execute((ROOT / "supabase/migrations/20261004212108_waive_deposit_for_sat_only_family.sql").read_text(encoding="utf-8"))
         cls.seeded_pta = cls.db.execute(
             "select name_zh,email from sccs.pta_leaders order by display_order"
         ).fetchall()
@@ -211,6 +212,22 @@ class WaterfordDatabaseTest(unittest.TestCase):
             self.assertEqual(connection.execute("select private.family_patrol_deposit(1)").fetchone()[0],40)
             self.db.execute("update sccs.pta_leaders set is_active=true,email=null")
             self.assertEqual(connection.execute("select private.family_patrol_deposit(1)").fetchone()[0],40)
+
+    def test_single_sat_course_waives_deposit_only_while_it_is_the_only_course(self):
+        with self.member_connection("ordinary@example.com") as connection:
+            deposit = lambda: connection.execute("select private.family_patrol_deposit(1)").fetchone()[0]
+            self.assertEqual(deposit(), 40)
+            self.register(1, 4)
+            self.assertEqual(deposit(), 0)
+            self.register(1, 4, 3)
+            self.assertEqual(deposit(), 40)
+            self.register(1, 4)
+            self.register(2, 4)
+            self.assertEqual(deposit(), 40)
+            self.register(2, None)
+            self.assertEqual(deposit(), 0)
+            self.register(1, 3)
+            self.assertEqual(deposit(), 40)
 
     def test_employee_waiver_remains_and_admin_can_match_legacy_family_email(self):
         with self.member_connection("employee@pfizer.com",admin=True) as connection:

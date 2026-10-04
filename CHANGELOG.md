@@ -1,5 +1,9 @@
 # SCCS Website Change Log
 
+## 2026-10-04
+
+- Waived the $40 household Safety Patrol Deposit when the family's only registered course is an SAT course; adding any second course restores the deposit.
+
 ## 2026-09-30
 
 - Fixed SCCS Mobile course registration so returning from the Family tab immediately reloads newly added students and their registrations without requiring sign-out.

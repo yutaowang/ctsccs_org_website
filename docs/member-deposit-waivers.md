@@ -1,8 +1,8 @@
 # Member household deposit waivers and PTA directory
 
-Apply `20260913231422_member_deposit_waivers_pta.sql` after `20260913230655_waterford_annual_seats.sql`, before deploying the updated application. These local migrations have not been applied to the hosted database.
+Apply `20260913231422_member_deposit_waivers_pta.sql` after `20260913230655_waterford_annual_seats.sql`, then apply `20261004212108_waive_deposit_for_sat_only_family.sql` before deploying the updated application. These local migrations have not been applied to the hosted database.
 
-The $40 Safety Patrol Deposit is waived when the household email matches an Admin Team member (`admin_team_members.email`), teacher (`teachers.email_1` or `email_2`), or active PTA Leader (`pta_leaders.email`). Matching ignores case and surrounding whitespace. Existing qualifying Pfizer/SCCS employee waivers remain. Other households, including Waterford residents without an independent waiver, owe $40 when registered.
+The $40 Safety Patrol Deposit is waived when the entire household has exactly one registered course and that course has type `SAT`. Adding any second course restores the household deposit. The deposit is also waived when the household email matches an Admin Team member (`admin_team_members.email`), teacher (`teachers.email_1` or `email_2`), or active PTA Leader (`pta_leaders.email`). Matching ignores case and surrounding whitespace. Existing qualifying Pfizer/SCCS employee waivers remain. Other households, including Waterford residents without an independent waiver, owe $40 when registered.
 
 For linked family accounts, the database uses the Auth login email so editing the profile's email cannot impersonate a staff member. Administrators can evaluate unlinked legacy families using their stored family email. The billing snapshot provides the authoritative per-family amount; browser printouts and Stripe consume that amount and do not infer staff membership themselves. Missing eligibility data prevents checkout.
 
