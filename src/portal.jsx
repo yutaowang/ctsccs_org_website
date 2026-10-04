@@ -154,6 +154,26 @@ const missingFamilyWaiverColumn = (error) => {
 
 const classStatusRank = (course) => (course?.is_open === false ? 1 : 0);
 
+function staffPortalTabStorageKey(userId, isAdmin) {
+  return `sccs.staffPortal.activeTab.${userId}.${isAdmin ? "admin" : "teacher"}`;
+}
+
+function readStaffPortalTab(storageKey) {
+  try {
+    return window.sessionStorage.getItem(storageKey) || "classes";
+  } catch {
+    return "classes";
+  }
+}
+
+function writeStaffPortalTab(storageKey, tab) {
+  try {
+    window.sessionStorage.setItem(storageKey, tab);
+  } catch {
+    // Browsers can disable session storage; in-memory navigation still works.
+  }
+}
+
 function settingDate(value) {
   if (!value) return "";
   if (typeof value === "string") return value;
@@ -1572,7 +1592,8 @@ function TeacherManager({ teachers, assignments = [], onReload, setStatus }) {
 
 function StaffPortal({ isAdmin }) {
   const { session, role, teacherId, refreshRole } = useAuth();
-  const [active, setActive] = useState(isAdmin ? "classes" : "classes");
+  const tabStorageKey = staffPortalTabStorageKey(session.user.id, isAdmin);
+  const [active, setActive] = useState(() => readStaffPortalTab(tabStorageKey));
   const [classes, setClasses] = useState([]);
   const [classTimes, setClassTimes] = useState([]);
   const [teachers, setTeachers] = useState([]);
@@ -2399,6 +2420,21 @@ function StaffPortal({ isAdmin }) {
     ["grades", "Grades"], ["email", "Email Students"], ["password", "Password"],
   ];
   const tabs = isAdmin ? adminTabs : teacherTabs;
+  useEffect(() => {
+    const storedTab = readStaffPortalTab(tabStorageKey);
+    const nextTab = tabs.some(([key]) => key === storedTab) ? storedTab : "classes";
+    setActive(nextTab);
+  }, [tabStorageKey]);
+  useEffect(() => {
+    if (!tabs.some(([key]) => key === active)) {
+      writeStaffPortalTab(tabStorageKey, "classes");
+      setActive("classes");
+    }
+  }, [active, isAdmin, role, tabStorageKey]);
+  const selectActiveTab = (tab) => {
+    writeStaffPortalTab(tabStorageKey, tab);
+    setActive(tab);
+  };
   const defaultSiteSettings = [
     { key: "online_registration_open_at", value: { datetime: "2026-07-20T09:00:00-04:00" } },
     { key: "registration_change_deadline", value: { date: "2026-09-21" } },
@@ -2737,7 +2773,7 @@ function StaffPortal({ isAdmin }) {
       title={role === roles.superadmin ? "Administrator Portal" : isAdmin ? "Management Team Portal" : "Teacher Portal"}
       tabs={tabs}
       active={active}
-      setActive={setActive}
+      setActive={selectActiveTab}
     >
       <Status status={status} />
       {active === "classes" && (isAdmin ? <ClassManager classes={classes} classTimes={classTimes} teachers={teachers} assignments={assignments} registrations={registrations} onReload={load} setStatus={setStatus} /> : <div className="portal-panel"><div className="panel-heading"><div><span>课程</span><h2>My Classes</h2></div></div><DataTable columns={[["id", "ID"], ["name", "Name"], ["count", "Registered"], ["available", "Available"], ["teacher", "Teacher"], ["room", "Room"], ["time", "Time"]]} rows={classRows} /></div>)}

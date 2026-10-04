@@ -3,6 +3,7 @@
 ## 2026-10-04
 
 - Waived the $40 household Safety Patrol Deposit when the family's only registered course is an SAT course; adding any second course restores the deposit.
+- Preserved the active Admin or Teacher Portal tab when switching to another application and returning, without remounting the portal during same-user Supabase token refresh events.
 
 ## 2026-09-30
 

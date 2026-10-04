@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useEffect, useState } from "react";
+import React, { createContext, useContext, useEffect, useRef, useState } from "react";
 import { isSupabaseConfigured, supabase } from "./supabase";
 
 const FAMILY_ROLE = "sccs_family_role";
@@ -72,6 +72,7 @@ export function AuthProvider({ children }) {
   const [recovering, setRecovering] = useState(false);
   const [role, setRole] = useState(FAMILY_ROLE);
   const [teacherId, setTeacherId] = useState(null);
+  const sessionUserIdRef = useRef(null);
 
   const loadRole = async (nextSession) => {
     if (!nextSession || !supabase) {
@@ -95,15 +96,26 @@ export function AuthProvider({ children }) {
     }
 
     supabase.auth.getSession().then(async ({ data }) => {
+      sessionUserIdRef.current = data.session?.user?.id || null;
       setSession(data.session);
       await loadRole(data.session);
       setLoading(false);
     });
     const { data } = supabase.auth.onAuthStateChange((event, nextSession) => {
-      setLoading(true);
+      const nextUserId = nextSession?.user?.id || null;
+      const userChanged = sessionUserIdRef.current !== nextUserId;
+      sessionUserIdRef.current = nextUserId;
       setSession(nextSession);
       if (event === "PASSWORD_RECOVERY") setRecovering(true);
       if (event === "SIGNED_OUT") setRecovering(false);
+
+      // Supabase can emit SIGNED_IN or TOKEN_REFRESHED again when a browser
+      // tab returns to the foreground. The identity and role are unchanged,
+      // so keep the portal mounted instead of flashing the loading gate and
+      // discarding its current UI state.
+      if (!userChanged && nextSession) return;
+
+      setLoading(true);
       void loadRole(nextSession).finally(() => setLoading(false));
     });
     return () => data.subscription.unsubscribe();
