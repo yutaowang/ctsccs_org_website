@@ -4,6 +4,7 @@ import { handlePushNotification } from "../lib/push-notification.js";
 const STAFF_ROLE = "sccs_admin_team_role";
 const SUPERADMIN_ROLE = "sccs_superadmin_role";
 const STAFF_EMAIL = /^[A-Za-z0-9.!#$%&'*+/=?^_`{|}~-]+@ctsccs\.org$/i;
+const PHONE_PATTERN = /^[0-9]{10}$/;
 const ROLE_ALIASES = {
   saas_admin_team_role: STAFF_ROLE,
 };
@@ -117,10 +118,11 @@ async function listStaff(configuration, administratorToken) {
   };
 }
 
-function validateStaffPayload(body, existing = false) {
+export function validateStaffPayload(body, existing = false) {
   const email = String(body.email || "").trim().toLowerCase();
   const role = normalizeStaffRole(String(body.role || STAFF_ROLE));
   const password = String(body.password || "");
+  const phone = String(body.phone || "").trim();
 
   if (!STAFF_EMAIL.test(email)) {
     throw new Error("Staff email is required and must end with @ctsccs.org.");
@@ -133,6 +135,9 @@ function validateStaffPayload(body, existing = false) {
   }
   if (existing && password && password.length < 10) {
     throw new Error("Password must be at least 10 characters.");
+  }
+  if (!existing && phone && !PHONE_PATTERN.test(phone)) {
+    throw new Error("Phone must be exactly 10 digits.");
   }
   return { email, password };
 }
@@ -148,7 +153,7 @@ async function saveTeamProfile(configuration, administratorToken, userId, email,
       email,
       first_name: body.first_name || null,
       last_name: body.last_name || null,
-      phone: body.phone || null,
+      phone: String(body.phone || "").trim() || null,
       title: body.title || null,
     },
   });

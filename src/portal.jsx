@@ -11,6 +11,7 @@ const roles = {
   team: "sccs_admin_team_role",
   superadmin: "sccs_superadmin_role",
 };
+const PHONE_PATTERN = /^[0-9]{10}$/;
 const familyFields = [
   "parent_first_name", "parent_last_name", "parent_chinese_name",
   "address", "city", "state", "zip", "phone", "wechat",
@@ -1053,6 +1054,10 @@ function StaffUserManager() {
       setStatus({ error: "Admin email is required and must end with @ctsccs.org.", message: "" });
       return;
     }
+    if (!form.id && form.phone.trim() && !PHONE_PATTERN.test(form.phone.trim())) {
+      setStatus({ error: "Phone must be exactly 10 digits.", message: "" });
+      return;
+    }
     setBusy(true);
     setStatus({ error: "", message: "" });
     try {
@@ -1135,7 +1140,7 @@ function StaffUserManager() {
             <label><span>Role</span><input value="sccs_admin_team_role" disabled /></label>
             <label><span>First name</span><input value={form.first_name} onChange={(event) => setForm({ ...form, first_name: event.target.value })} /></label>
             <label><span>Last name</span><input value={form.last_name} onChange={(event) => setForm({ ...form, last_name: event.target.value })} /></label>
-            <label><span>Phone</span><input value={form.phone} onChange={(event) => setForm({ ...form, phone: event.target.value })} /></label>
+            <label><span>Phone</span><input type="tel" inputMode="numeric" value={form.phone} pattern={!form.id ? "[0-9]{10}" : undefined} maxLength={!form.id ? 10 : undefined} placeholder={!form.id ? "##########" : undefined} title={!form.id ? "Phone must be exactly 10 digits." : undefined} onChange={(event) => setForm({ ...form, phone: form.id ? event.target.value : event.target.value.replace(/\D/g, "").slice(0, 10) })} /></label>
             <label><span>Title</span><input value={form.title} onChange={(event) => setForm({ ...form, title: event.target.value })} /></label>
             <div className="button-row">
               <button className="button-link" type="submit" disabled={busy}>{form.id ? "Update admin user" : "Create admin user"}</button>

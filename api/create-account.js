@@ -9,7 +9,7 @@ const STATE_CODES = new Set([
   "WV", "WI", "WY",
 ]);
 const ZIP_PATTERN = /^[0-9]{5}$/;
-const PHONE_PATTERN = /^[0-9]{3}-[0-9]{3}-[0-9]{4}$/;
+const PHONE_PATTERN = /^[0-9]{10}$/;
 const SIMPLE_EMAIL_PATTERN = /^[^@ ]+@[^@ ]+[.][^@ ]+$/;
 
 function json(response, status, body) {
@@ -66,7 +66,7 @@ function missingFamilyWaiverColumn(data) {
   ) || /Could not find the '(pfizer_employee|waterford_resident)' column/i.test(text);
 }
 
-function validateProfile(body) {
+export function validateProfile(body) {
   const profile = body.profile || {};
   const payload = {
     family_name: clean(profile.family_name),
@@ -101,7 +101,7 @@ function validateProfile(body) {
     throw new Error("Zip must be exactly 5 digits.");
   }
   if (!PHONE_PATTERN.test(payload.phone)) {
-    throw new Error("Phone must use ###-###-#### format.");
+    throw new Error("Phone must be exactly 10 digits.");
   }
   return payload;
 }

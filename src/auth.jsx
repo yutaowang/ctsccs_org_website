@@ -56,7 +56,7 @@ const US_STATES = [
   ["WY", "Wyoming"],
 ];
 const ZIP_PATTERN = /^[0-9]{5}$/;
-const PHONE_PATTERN = /^[0-9]{3}-[0-9]{3}-[0-9]{4}$/;
+const PHONE_PATTERN = /^[0-9]{10}$/;
 const SIMPLE_EMAIL_PATTERN = /^[^@ ]+@[^@ ]+[.][^@ ]+$/;
 const AuthContext = createContext({
   session: null,
@@ -229,7 +229,7 @@ export function LoginPage({ Link, navigate }) {
       return;
     }
     if (mode === "signup" && !PHONE_PATTERN.test(signupProfile.phone.trim())) {
-      setError("Phone must use ###-###-#### format.");
+      setError("Phone must be exactly 10 digits.");
       return;
     }
     if (mode === "signup" && !SIMPLE_EMAIL_PATTERN.test(email.trim())) {
@@ -317,7 +317,7 @@ export function LoginPage({ Link, navigate }) {
               </select>
             </label>
             <label><RequiredLabel>Zip</RequiredLabel><input value={signupProfile.zip} inputMode="numeric" maxLength="5" pattern="[0-9]{5}" title="Zip must be exactly 5 digits." onChange={(e) => setSignupProfile({ ...signupProfile, zip: e.target.value })} required /></label>
-            <label><RequiredLabel>Phone</RequiredLabel><input type="tel" value={signupProfile.phone} inputMode="tel" pattern="[0-9]{3}-[0-9]{3}-[0-9]{4}" placeholder="###-###-####" title="Phone must use ###-###-#### format." onChange={(e) => setSignupProfile({ ...signupProfile, phone: e.target.value })} required /></label>
+            <label><RequiredLabel>Phone</RequiredLabel><input type="tel" value={signupProfile.phone} inputMode="numeric" maxLength="10" pattern="[0-9]{10}" placeholder="##########" title="Phone must be exactly 10 digits." onChange={(e) => setSignupProfile({ ...signupProfile, phone: e.target.value.replace(/\D/g, "").slice(0, 10) })} required /></label>
             <label><span>Wechat</span><input value={signupProfile.wechat} onChange={(e) => setSignupProfile({ ...signupProfile, wechat: e.target.value })} /></label>
             <label>
               <span>Are you a Pfizer employee, or do you work for SCCS?</span>

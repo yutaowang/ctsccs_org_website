@@ -9,7 +9,7 @@ import { useLanguage } from "@/providers/language";
 
 const EMAIL_PATTERN = /^[^@ ]+@[^@ ]+[.][^@ ]+$/;
 const ZIP_PATTERN = /^[0-9]{5}$/;
-const PHONE_PATTERN = /^[0-9]{3}-[0-9]{3}-[0-9]{4}$/;
+const PHONE_PATTERN = /^[0-9]{10}$/;
 
 type Profile = {
   parent_first_name: string;
@@ -52,8 +52,7 @@ export default function CreateAccount() {
   const update = <K extends keyof Profile>(key: K, value: Profile[K]) => setProfile((current) => ({ ...current, [key]: value }));
   const formatPhone = (value: string) => {
     const digits = value.replace(/\D/g, "").slice(0, 10);
-    const formatted = digits.length <= 3 ? digits : digits.length <= 6 ? `${digits.slice(0, 3)}-${digits.slice(3)}` : `${digits.slice(0, 3)}-${digits.slice(3, 6)}-${digits.slice(6)}`;
-    update("phone", formatted);
+    update("phone", digits);
   };
 
   const submit = async () => {
@@ -64,7 +63,7 @@ export default function CreateAccount() {
     if (password.length < 8) return setStatus({ error: t("Password must be at least 8 characters.", "密码至少需要 8 个字符。") });
     if (password !== retypePassword) return setStatus({ error: t("Passwords do not match.", "两次输入的密码不一致。") });
     if (!ZIP_PATTERN.test(profile.zip)) return setStatus({ error: t("Zip must be exactly 5 digits.", "邮政编码必须为 5 位数字。") });
-    if (!PHONE_PATTERN.test(profile.phone)) return setStatus({ error: t("Phone must use ###-###-#### format.", "电话号码格式必须为 ###-###-####。") });
+    if (!PHONE_PATTERN.test(profile.phone)) return setStatus({ error: t("Phone must be exactly 10 digits.", "电话号码必须正好为 10 位数字。") });
     if (!/^[A-Za-z]{2}$/.test(profile.state)) return setStatus({ error: t("State must be a two-letter code.", "州名请填写两位英文缩写。") });
     if (profile.pfizer_employee && !["pfizer.com", "ctsccs.org"].includes(email.trim().toLowerCase().split("@").pop() || "")) {
       return setStatus({ error: t("Pfizer and SCCS employees must register with a pfizer.com or ctsccs.org email address.", "辉瑞和 SCCS 员工必须使用 pfizer.com 或 ctsccs.org 邮箱注册。") });
@@ -101,7 +100,7 @@ export default function CreateAccount() {
           <View style={styles.flex}><Field label="State *" labelZh="州 *" value={profile.state} onChangeText={(value) => update("state", value.slice(0, 2).toUpperCase())} autoCapitalize="characters" maxLength={2} autoComplete="postal-address-region" /></View>
           <View style={styles.flex}><Field label="Zip *" labelZh="邮政编码 *" value={profile.zip} onChangeText={(value) => update("zip", value.replace(/\D/g, "").slice(0, 5))} keyboardType="number-pad" maxLength={5} autoComplete="postal-code" /></View>
         </View>
-        <Field label="Phone *" labelZh="电话 *" value={profile.phone} onChangeText={formatPhone} placeholder="###-###-####" keyboardType="phone-pad" autoComplete="tel" maxLength={12} />
+        <Field label="Phone *" labelZh="电话 *" value={profile.phone} onChangeText={formatPhone} placeholder="##########" keyboardType="number-pad" autoComplete="tel" maxLength={10} />
         <Field label="WeChat (Optional)" labelZh="微信（选填）" value={profile.wechat} onChangeText={(value) => update("wechat", value)} />
         <BilingualText en="Are you a Pfizer employee, or do you work for SCCS?" zh="您是辉瑞员工或 SCCS 工作人员吗？" style={styles.question} size={13} />
         <View style={styles.choiceRow}>
