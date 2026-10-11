@@ -1,8 +1,9 @@
 import { useState } from "react";
-import { Alert, Text } from "react-native";
+import { Alert, Pressable, StyleSheet, Text, View } from "react-native";
 import { router } from "expo-router";
-import { BilingualText, Button, Card, Header, Notice, Screen, ui } from "@/components/ui";
+import { BilingualText, Notice, Screen } from "@/components/ui";
 import { siteUrl, supabase } from "@/lib/supabase";
+import { colors } from "@/lib/theme";
 import { useAuth } from "@/providers/auth";
 import { useLanguage } from "@/providers/language";
 const labels = {
@@ -11,6 +12,42 @@ const labels = {
   sccs_admin_team_role: { en: "Admin Team", zh: "管理团队" },
   sccs_superadmin_role: { en: "Administrator", zh: "管理员" },
 };
+
+function HomeButton({
+  title,
+  titleZh,
+  onPress,
+  kind = "outline",
+  disabled = false,
+}: {
+  title: string;
+  titleZh: string;
+  onPress: () => void;
+  kind?: "outline" | "primary" | "danger";
+  disabled?: boolean;
+}) {
+  return (
+    <Pressable
+      accessibilityRole="button"
+      disabled={disabled}
+      onPress={onPress}
+      style={({ pressed }) => [
+        styles.action,
+        kind === "primary" && styles.primaryAction,
+        kind === "danger" && styles.dangerAction,
+        (pressed || disabled) && styles.actionPressed,
+      ]}
+    >
+      <BilingualText
+        en={title}
+        zh={titleZh}
+        size={16}
+        style={[styles.actionText, kind !== "outline" && styles.filledActionText]}
+      />
+    </Pressable>
+  );
+}
+
 export default function Home() {
   const { session, role, signOut } = useAuth(); const family = role === "sccs_family_role"; const teacher = role === "sccs_teacher_ta_role";
   const { t } = useLanguage();
@@ -64,5 +101,137 @@ export default function Home() {
     ],
     { cancelable: false },
   );
-  return <Screen><Header eyebrow="SCCS Mobile" eyebrowZh="中文学校移动端" title="Welcome" titleZh="欢迎"><Text style={ui.body}>{session?.user.email}</Text></Header><Card><BilingualText en={account.en} zh={account.zh} style={ui.heading} size={19} /><BilingualText {...description} style={ui.body} /></Card>{family && <><Button title="Students and family profile" titleZh="学生和家庭资料" onPress={() => router.push("/(tabs)/students")} /><Button title="Course registration" titleZh="课程报名" onPress={() => router.push("/(tabs)/courses")} kind="secondary" /><Button title="Tuition and payment" titleZh="学费与付款" onPress={() => router.push("/(tabs)/billing")} kind="secondary" /></>}{teacher && <Button title="Take attendance" titleZh="学生点名" onPress={() => router.push("/(tabs)/attendance")} />}<Button title="School notifications" titleZh="学校通知" onPress={() => router.push("/(tabs)/notifications")} kind="secondary" /><Button title="Sign out" titleZh="退出登录" onPress={() => void signOut()} kind="danger" />{family && <Card><BilingualText en="Account deletion" zh="删除账户" style={ui.heading} size={19} /><BilingualText en="Available only after all course registrations and students have been removed." zh="只有取消所有课程并删除全部学生后，才能删除账户。" style={ui.muted} size={13} /><Notice error={deleteError} /><Button title={deleting ? "Deleting account…" : "Delete account"} titleZh={deleting ? "正在删除账户…" : "删除账户"} onPress={confirmDelete} disabled={deleting} kind="danger" /></Card>}</Screen>;
+  return (
+    <Screen>
+      <View style={styles.welcome}>
+        <BilingualText en="Welcome" zh="欢迎" size={38} style={styles.welcomeTitle} />
+        <Text style={styles.email}>{session?.user.email}</Text>
+      </View>
+
+      <View style={styles.card}>
+        <BilingualText en={account.en} zh={account.zh} size={22} style={styles.cardTitle} />
+        <BilingualText {...description} size={16} style={styles.description} />
+
+        <View style={styles.actions}>
+          {family && (
+            <>
+              <HomeButton title="Students and family profile" titleZh="学生和家庭资料" onPress={() => router.push("/(tabs)/students")} />
+              <HomeButton title="Course registration" titleZh="课程报名" onPress={() => router.push("/(tabs)/courses")} />
+              <HomeButton title="Tuition and payment" titleZh="学费与付款" onPress={() => router.push("/(tabs)/billing")} />
+            </>
+          )}
+          {teacher && <HomeButton title="Take attendance" titleZh="学生点名" onPress={() => router.push("/(tabs)/attendance")} />}
+          <HomeButton title="School notifications" titleZh="学校通知" onPress={() => router.push("/(tabs)/notifications")} />
+          <HomeButton title="Sign out" titleZh="退出登录" onPress={() => void signOut()} kind="primary" />
+        </View>
+      </View>
+
+      {family && (
+        <View style={styles.card}>
+          <BilingualText en="Account deletion" zh="删除账户" size={21} style={styles.cardTitle} />
+          <BilingualText
+            en="Available only after all course registrations and students have been removed."
+            zh="只有取消所有课程并删除全部学生后，才能删除账户。"
+            size={15}
+            style={styles.deleteDescription}
+          />
+          <Notice error={deleteError} />
+          <HomeButton
+            title={deleting ? "Deleting account…" : "Delete account"}
+            titleZh={deleting ? "正在删除账户…" : "删除账户"}
+            onPress={confirmDelete}
+            disabled={deleting}
+            kind="danger"
+          />
+        </View>
+      )}
+    </Screen>
+  );
 }
+
+const styles = StyleSheet.create({
+  welcome: {
+    paddingHorizontal: 8,
+    paddingTop: 2,
+    paddingBottom: 12,
+    gap: 4,
+  },
+  welcomeTitle: {
+    color: colors.navy,
+    fontSize: 38,
+    lineHeight: 46,
+    fontWeight: "900",
+    letterSpacing: -0.8,
+  },
+  email: {
+    color: colors.navy,
+    fontSize: 17,
+    lineHeight: 24,
+  },
+  card: {
+    backgroundColor: colors.white,
+    borderColor: "#d3e2f2",
+    borderWidth: 1,
+    borderRadius: 18,
+    padding: 18,
+    gap: 12,
+    shadowColor: "#15345f",
+    shadowOffset: { width: 0, height: 3 },
+    shadowOpacity: 0.11,
+    shadowRadius: 9,
+    elevation: 3,
+  },
+  cardTitle: {
+    color: colors.navy,
+    fontSize: 22,
+    lineHeight: 28,
+    fontWeight: "900",
+  },
+  description: {
+    color: colors.navy,
+    fontSize: 16,
+    lineHeight: 24,
+    marginBottom: 4,
+  },
+  deleteDescription: {
+    color: "#60779b",
+    fontSize: 15,
+    lineHeight: 22,
+    marginBottom: 2,
+  },
+  actions: {
+    gap: 10,
+  },
+  action: {
+    minHeight: 50,
+    paddingHorizontal: 14,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    backgroundColor: colors.white,
+    borderColor: "#0871d9",
+    borderWidth: 1.5,
+    borderRadius: 10,
+  },
+  primaryAction: {
+    backgroundColor: "#1169c4",
+    borderColor: "#1169c4",
+  },
+  dangerAction: {
+    backgroundColor: "#d52c27",
+    borderColor: "#d52c27",
+  },
+  actionPressed: {
+    opacity: 0.62,
+  },
+  actionText: {
+    color: "#096ac7",
+    fontSize: 16,
+    lineHeight: 21,
+    fontWeight: "800",
+    textAlign: "center",
+  },
+  filledActionText: {
+    color: colors.white,
+  },
+});
