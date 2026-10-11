@@ -2,6 +2,7 @@
 
 ## 2026-10-11
 
+- Changed the SCCS Mobile Sign out button to the standard blue theme while keeping Delete account styled as a red destructive action.
 - Changed SCCS Mobile student Gender and Birth Year inputs to dropdown lists, with Male, Female, and Other gender options and birth years limited dynamically from age 5 through age 50.
 - Brightened and enriched the homepage slideshow photos while preserving text readability.
 - Added secure self-service account deletion to SCCS Mobile for Family accounts with no students or course registrations, including confirmation and cleanup guidance when the account is not yet empty.
