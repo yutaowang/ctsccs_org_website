@@ -14,6 +14,24 @@ type BillingSnapshot = { registrations: Registration[]; classes: Course[]; seats
 type Payment = { id: number; amount_cents: number; status: string; paid_at?: string; payment_method?: string };
 type StudentCourses = { student: Student; courses: Course[] };
 const paymentStatuses: Record<string, { en: string; zh: string }> = { paid: { en: "Paid", zh: "已付款" }, refunded: { en: "Refunded", zh: "已退款" }, pending: { en: "Pending", zh: "待处理" } };
+const notes = [
+  {
+    en: "Fill out payment information: make checks payable to SCCS.",
+    zh: "填写付款信息：支票抬头请写 SCCS。",
+  },
+  {
+    en: "Please bring the Registration Summary along with a payment check to the Registration Desk.",
+    zh: "和支票一起交给注册工作人员。",
+  },
+  {
+    en: "We agree to comply with SCCS rules and policies described in the student handbook. We understand that we will be responsible for consequences of any violations.",
+    zh: "我们愿意遵守东南康州中文学校所制定的校规，并同意对违反校规所造成的后果负责。",
+  },
+  {
+    en: "Safety Patrol Deposit: $40 per family, including Waterford residents; refundable after safety patrol duty.",
+    zh: "安全巡逻押金：每家庭 $40，Waterford 居民不会自动豁免。家长完成安全巡逻值日后退还。",
+  },
+];
 
 export default function Billing() {
   const { session } = useAuth();
@@ -99,7 +117,15 @@ export default function Billing() {
         <View style={ui.between}><BilingualText en="Payments received" zh="已收款" style={ui.body} /><Text style={ui.subheading}>{money(paid)}</Text></View>
         <View style={styles.paymentNotice}><BilingualText en="Southeastern Connecticut Chinese School currently accepts cash and checks only. Please come to the school on Sunday to register and make your payment." zh="东南康州中文学校目前只接受现金和支票，请于周日来中文学校注册付款。" style={styles.paymentNoticeText} size={14} /></View>
       </Card>
-      {billing && <Card><BilingualText en="Waterford seats" zh="Waterford 免费席位" style={ui.heading} size={19} /><BilingualText en={`${billing.usage.used}/20 free Chinese-course seats used school-wide.`} zh={`全校已使用 ${billing.usage.used}/20 个免费中文课席位。`} style={ui.body} /><BilingualText en="Maliping courses retain the $80 book fee when a free seat is awarded." zh="Maliping 课程获得免费席位后仍需支付 80 美元书本费。" style={ui.muted} size={13} /></Card>}
+      <Card>
+        <BilingualText en="Notes" zh="注意事项" style={ui.heading} size={19} />
+        <View style={styles.notesList}>
+          {notes.map((note, index) => <View key={note.en} style={styles.noteRow}>
+            <Text style={styles.noteNumber}>{index + 1}.</Text>
+            <BilingualText en={note.en} zh={note.zh} style={styles.noteText} />
+          </View>)}
+        </View>
+      </Card>
       <Card>
         <BilingualText en="Payment history" zh="付款记录" style={ui.heading} size={19} />
         {payments.length ? payments.map((row) => { const label = paymentStatuses[row.status]; return <View key={row.id} style={ui.between}><Text style={ui.body}>{label ? t(label.en, label.zh) : row.status} · {row.paid_at ? new Date(row.paid_at).toLocaleDateString() : ""}</Text><Text style={ui.subheading}>{money(row.amount_cents / 100)}</Text></View>; }) : <BilingualText en="No payments recorded." zh="暂无付款记录。" style={ui.muted} size={13} />}
@@ -115,4 +141,8 @@ const styles = StyleSheet.create({
   courseMain: { flex: 1, gap: 3 }, courseName: { color: colors.navy, fontSize: 15, fontWeight: "800" }, courseAmount: { color: colors.navy, fontSize: 16, fontWeight: "800" },
   paymentNotice: { backgroundColor: "#fff5cc", borderColor: colors.gold, borderWidth: 1, borderRadius: 10, padding: 12, marginTop: 4 },
   paymentNoticeText: { color: colors.navy, fontSize: 14, lineHeight: 21, fontWeight: "700" },
+  notesList: { gap: 12 },
+  noteRow: { flexDirection: "row", alignItems: "flex-start", gap: 8 },
+  noteNumber: { color: colors.blue, fontSize: 15, lineHeight: 22, fontWeight: "800" },
+  noteText: { flex: 1, color: colors.ink, fontSize: 15, lineHeight: 22 },
 });
