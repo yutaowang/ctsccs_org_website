@@ -1,7 +1,7 @@
 import assert from "node:assert/strict";
 import test from "node:test";
 
-import handler from "../api/delete-account.js";
+import handler from "../api/admin-users.js";
 
 function response() {
   return {
@@ -43,7 +43,7 @@ async function run({ role = "sccs_family_role", students = [], registrations = [
   };
   const res = response();
   try {
-    await handler({ method: "DELETE", headers: { authorization: "Bearer access-token" } }, res);
+    await handler({ method: "DELETE", query: { operation: "delete-account" }, headers: { authorization: "Bearer access-token" } }, res);
     return { res, authDeleteCalls };
   } finally {
     globalThis.fetch = originalFetch;
