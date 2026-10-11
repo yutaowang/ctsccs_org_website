@@ -657,7 +657,7 @@ function FamilyPortal() {
           )}
           <div className="registration-notes">
             <strong>Notes</strong>
-            <p>1. 在两份表格上填写付款信息；支票抬头请写 SCCS。 Fill out payment information on both copies; make checks payable to SCCS.</p>
+            <p>1. 填写付款信息：支票抬头请写 SCCS。 Fill out payment information: make checks payable to SCCS.</p>
             <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
             <p>3. 我们愿意遵守东南康州中文学校所制定的校规，并同意对违反校规所造成的后果负责 We agree to comply with SCCS rules and policies described in the student handbook.  We understand that we will be responsible for consequences of any violations.</p>
             <p>4. {safetyPatrolDeposit === 0 && hasRegisteredCourses ? "符合条件的成员家庭，或全家只注册一门 SAT 课程的家庭，可免交安全巡逻押金。 Safety Patrol Deposit waived for eligible member households or families registering only one SAT course." : "安全巡逻押金：每家庭 $40，Waterford 居民不会自动豁免。家长完成安全巡逻值日后退还。 Safety Patrol Deposit: $40 per family, including Waterford residents; refundable after safety patrol duty."}</p>
@@ -3407,7 +3407,7 @@ function StaffPortal({ isAdmin }) {
               </div>
               <div className="registration-notes">
                 <strong>Notes</strong>
-                <p>1. 在两份表格上填写付款信息；支票抬头请写 SCCS。 Fill out payment information on both copies; make checks payable to SCCS.</p>
+                <p>1. 填写付款信息：支票抬头请写 SCCS。 Fill out payment information: make checks payable to SCCS.</p>
                 <p>2. 和支票一起交给注册工作人员 Please bring the Registration Summary along with a payment check to the Registration Desk.</p>
                 <p>3. {selectedPrintSafetyPatrolDeposit === 0 && selectedPrintHasRegisteredCourses ? "符合条件的成员家庭，或全家只注册一门 SAT 课程的家庭，可免交安全巡逻押金。 Safety Patrol Deposit waived for eligible member households or families registering only one SAT course." : "安全巡逻押金：每家庭 $40，Waterford 居民不会自动豁免。家长完成安全巡逻值日后退还。 Safety Patrol Deposit: $40 per family, including Waterford residents; refundable after safety patrol duty."}</p>
               </div>
