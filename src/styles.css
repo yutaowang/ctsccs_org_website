@@ -1993,6 +1993,12 @@ footer {
   font-size: 0.66rem;
   line-height: 1.35;
 }
+.print-registration-area .registration-notes strong {
+  font-size: 0.78rem;
+}
+.print-registration-area .registration-notes p {
+  font-size: 0.74rem;
+}
 .office-use {
   margin-top: 26px;
   padding-top: 14px;
@@ -3067,6 +3073,12 @@ footer {
   }
   .registration-notes p {
     font-size: 8.5pt !important;
+  }
+  .print-registration-area .registration-notes strong {
+    font-size: 10pt !important;
+  }
+  .print-registration-area .registration-notes p {
+    font-size: 10pt !important;
   }
   .office-use {
     margin-top: 16px !important;

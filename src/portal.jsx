@@ -3323,7 +3323,7 @@ function StaffPortal({ isAdmin }) {
       )}
       {active === "search" && <div className="portal-panel"><div className="panel-heading"><div><span>家庭与学生搜索</span><h2>Search Families</h2></div></div><label className="standalone-field"><span>Family ID, parent/student name, phone, or email</span><input value={search} onChange={(event) => { setSearch(event.target.value); setSelectedPrintFamilyId(""); }} /></label><ActionTable columns={["Family ID", "Parent", "Student", "Email", "Phone", "Status"]} rows={searchActionRows} empty="Enter a search term." /></div>}
       {active === "print" && (
-        <div className="portal-panel print-area">
+        <div className="portal-panel print-area print-registration-area">
           <div className="panel-heading">
             <div><span>打印注册信息</span><h2>Print Registration</h2></div>
             <button className="outline-link no-print" type="button" onClick={() => window.print()} disabled={!selectedPrintFamily || !tuitionReady}>Print</button>
