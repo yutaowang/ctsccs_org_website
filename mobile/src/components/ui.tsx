@@ -32,8 +32,10 @@ export function Field({ label, labelZh, ...props }: TextInputProps & { label: st
 export function Button({ title, titleZh, onPress, disabled, kind = "primary" }: { title: string; titleZh?: string; onPress: () => void; disabled?: boolean; kind?: "primary" | "secondary" | "danger" }) {
   return <Pressable accessibilityRole="button" onPress={onPress} disabled={disabled} style={({ pressed }) => [styles.button, kind === "secondary" && styles.secondary, kind === "danger" && styles.danger, (disabled || pressed) && styles.dim]}><BilingualText en={title} zh={titleZh || ""} style={[styles.buttonText, kind === "secondary" && styles.secondaryText]} /></Pressable>;
 }
-type DropdownOption = { value: number; label: string; detail?: string };
-export function Dropdown({ value, options, placeholder, placeholderZh, onChange }: { value?: number | null; options: DropdownOption[]; placeholder: string; placeholderZh: string; onChange: (value: number | null) => void }) {
+type DropdownValue = number | string;
+type DropdownOption<T extends DropdownValue> = { value: T; label: string; detail?: string };
+type DropdownProps<T extends DropdownValue> = { value?: T | null; options: DropdownOption<T>[]; placeholder: string; placeholderZh: string; emptyLabel?: string; emptyLabelZh?: string; onChange: (value: T | null) => void };
+export function Dropdown<T extends DropdownValue>({ value, options, placeholder, placeholderZh, emptyLabel = "No course", emptyLabelZh = "不选择课程", onChange }: DropdownProps<T>) {
   const [open, setOpen] = useState(false);
   const selected = options.find((option) => option.value === value);
   return <>
@@ -47,7 +49,7 @@ export function Dropdown({ value, options, placeholder, placeholderZh, onChange 
           <BilingualText en={placeholder} zh={placeholderZh} style={styles.modalTitle} size={19} />
           <ScrollView style={styles.optionList}>
             <Pressable style={styles.option} onPress={() => { onChange(null); setOpen(false); }}>
-              <BilingualText en="No course" zh="不选择课程" style={styles.optionText} />
+              <BilingualText en={emptyLabel} zh={emptyLabelZh} style={styles.optionText} />
             </Pressable>
             {options.map((option) => <Pressable key={option.value} style={[styles.option, option.value === value && styles.optionSelected]} onPress={() => { onChange(option.value); setOpen(false); }}>
               <Text style={[styles.optionText, option.value === value && styles.optionSelectedText]}>{option.label}</Text>
@@ -59,6 +61,12 @@ export function Dropdown({ value, options, placeholder, placeholderZh, onChange 
       </Pressable>
     </Modal>
   </>;
+}
+export function DropdownField<T extends DropdownValue>({ label, labelZh, ...props }: DropdownProps<T> & { label: string; labelZh?: string }) {
+  return <View style={styles.field}>
+    <BilingualText en={label} zh={labelZh || ""} style={styles.label} size={13} />
+    <Dropdown {...props} />
+  </View>;
 }
 export function Notice({ message, error }: { message?: string; error?: string }) {
   if (!message && !error) return null;

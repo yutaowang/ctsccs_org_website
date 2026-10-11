@@ -316,6 +316,7 @@ main {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  filter: brightness(1.1) saturate(1.08);
   opacity: 0;
   transform: scale(1.04);
   transition: opacity 800ms ease, transform 6s ease;
@@ -330,8 +331,8 @@ main {
   position: absolute;
   inset: 0;
   background:
-    linear-gradient(90deg, rgba(6, 24, 51, 0.88) 0%, rgba(6, 24, 51, 0.47) 55%, rgba(6, 24, 51, 0.05) 100%),
-    linear-gradient(0deg, rgba(6, 24, 51, 0.28), transparent 45%);
+    linear-gradient(90deg, rgba(6, 24, 51, 0.78) 0%, rgba(6, 24, 51, 0.36) 55%, rgba(6, 24, 51, 0.03) 100%),
+    linear-gradient(0deg, rgba(6, 24, 51, 0.2), transparent 45%);
 }
 
 .hero-copy {

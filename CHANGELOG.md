@@ -2,9 +2,11 @@
 
 ## 2026-10-11
 
+- Changed SCCS Mobile student Gender and Birth Year inputs to dropdown lists, with Male, Female, and Other gender options and birth years limited dynamically from age 5 through age 50.
+- Brightened and enriched the homepage slideshow photos while preserving text readability.
 - Added secure self-service account deletion to SCCS Mobile for Family accounts with no students or course registrations, including confirmation and cleanup guidance when the account is not yet empty.
 - Consolidated the account-deletion endpoint into an existing Serverless Function so deployments remain within the Vercel Hobby plan's 12-function limit.
-- Clarified the printed registration notes to specify that payment information must be completed on both copies and checks must be payable to SCCS.
+- Clarified the printed registration notes to specify that payment information must be completed on both copies and checks must be payable to SCCS, and restored the SCCS rules and policies agreement to the Admin Portal copy.
 - Increased the Notes font size on the Admin Portal Print Registration screen and printed output.
 
 ## 2026-10-05
