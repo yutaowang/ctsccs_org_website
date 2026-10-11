@@ -2,6 +2,7 @@
 
 ## 2026-10-11
 
+- Added secure self-service account deletion to SCCS Mobile for Family accounts with no students or course registrations, including confirmation and cleanup guidance when the account is not yet empty.
 - Clarified the printed registration notes to specify that payment information must be completed on both copies and checks must be payable to SCCS.
 
 ## 2026-10-05
