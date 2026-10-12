@@ -61,16 +61,29 @@ const midAutumnHeroImages = [
   "/Images/hero-mid-autumn-osmanthus-family.webp",
   "/Images/hero-mid-autumn-osmanthus-still-life.webp",
 ];
-const midAutumnHeroAlt = {
+const dragonBoatHeroImages = [
+  "/Images/hero-dragon-boat-race.webp",
+  "/Images/hero-dragon-boat-zongzi-workshop.webp",
+  "/Images/hero-dragon-boat-crafts.webp",
+  "/Images/hero-dragon-boat-family-picnic.webp",
+  "/Images/hero-dragon-boat-still-life.webp",
+];
+const heroImageAlt = {
   "/Images/hero-mid-autumn-mooncake-workshop.webp": "Families making mooncakes together for the Mid-Autumn Festival",
   "/Images/hero-mid-autumn-lantern-walk.webp": "Children carrying glowing lanterns during a Mid-Autumn Festival gathering",
   "/Images/hero-mid-autumn-family-tea.webp": "A family sharing tea and mooncakes during the Mid-Autumn Festival",
   "/Images/hero-mid-autumn-osmanthus-family.webp": "A family arranging mooncakes beneath blooming osmanthus and the full moon",
   "/Images/hero-mid-autumn-osmanthus-still-life.webp": "Osmanthus blossoms, mooncakes, and tea beneath the Mid-Autumn full moon",
+  "/Images/hero-dragon-boat-race.webp": "A Dragon Boat Festival team racing as families cheer from the riverbank",
+  "/Images/hero-dragon-boat-zongzi-workshop.webp": "Children and parents learning to wrap zongzi for the Dragon Boat Festival",
+  "/Images/hero-dragon-boat-crafts.webp": "Children making dragon boats and traditional sachets in a festival craft class",
+  "/Images/hero-dragon-boat-family-picnic.webp": "A multigenerational family sharing zongzi at a Dragon Boat Festival picnic",
+  "/Images/hero-dragon-boat-still-life.webp": "Zongzi, tea, five-color cords, and a miniature dragon boat arranged for the festival",
 };
 
 const heroImages = [
   ...midAutumnHeroImages,
+  ...dragonBoatHeroImages,
   "/Images/hero-children-laughing.png",
   "/Images/hero-chinese-reading.png",
   "/Images/hero-calligraphy-class.png",
@@ -249,7 +262,7 @@ function Slideshow() {
         <img
           className={index === activeSlide ? "is-active" : ""}
           src={slide}
-          alt={midAutumnHeroAlt[slide] || `SCCS 校园活动照片 ${index + 1}`}
+          alt={heroImageAlt[slide] || `SCCS 校园活动照片 ${index + 1}`}
           key={slide}
         />
       ))}
