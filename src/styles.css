@@ -2715,6 +2715,12 @@ footer {
   border: 1px solid var(--line);
 }
 .staff-user-form .button-row { grid-column: 1 / -1; }
+.registration-admin-form {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+.registration-admin-form select {
+  min-width: 0;
+}
 .collapsible-editor {
   margin-bottom: 28px;
   border: 1px solid var(--line);
@@ -2848,6 +2854,7 @@ footer {
 
 @media (max-width: 920px) {
   .portal-panel, .portal-form { padding-right: 18px; padding-left: 18px; }
+  .registration-admin-form { grid-template-columns: 1fr; }
   .registration-selects, .email-list, .roster-summary { grid-template-columns: 1fr; }
 }
 

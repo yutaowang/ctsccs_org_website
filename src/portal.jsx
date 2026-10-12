@@ -938,7 +938,7 @@ function ActionTable({ columns, rows, empty = "No records found." }) {
   );
 }
 
-function RowActions({ onEdit, onDelete, disabled = false }) {
+function RowActions({ onEdit, onDelete, deleteLabel = "Delete", disabled = false }) {
   const [open, setOpen] = useState(false);
   const [position, setPosition] = useState(null);
   const buttonRef = React.useRef(null);
@@ -997,7 +997,7 @@ function RowActions({ onEdit, onDelete, disabled = false }) {
       {open && (
         <div ref={menuRef} className="row-actions-menu" style={position || undefined}>
           {onEdit && <button type="button" onClick={() => { setOpen(false); onEdit(); }}>Edit</button>}
-          {onDelete && <button className="danger" type="button" onClick={() => { setOpen(false); onDelete(); }} disabled={disabled}>Delete</button>}
+          {onDelete && <button className="danger" type="button" onClick={() => { setOpen(false); onDelete(); }} disabled={disabled}>{deleteLabel}</button>}
         </div>
       )}
     </div>
@@ -1631,6 +1631,9 @@ function StaffPortal({ isAdmin }) {
   const [settingEdit, setSettingEdit] = useState(null);
   const [search, setSearch] = useState("");
   const [paymentHistorySearch, setPaymentHistorySearch] = useState("");
+  const [registrationSearch, setRegistrationSearch] = useState("");
+  const [registrationEdit, setRegistrationEdit] = useState(null);
+  const [registrationBusy, setRegistrationBusy] = useState(false);
   const [paymentHistorySort, setPaymentHistorySort] = useState(null);
   const [adjustEdit, setAdjustEdit] = useState(null);
   const [selectedPrintFamilyId, setSelectedPrintFamilyId] = useState("");
@@ -2634,6 +2637,94 @@ function StaffPortal({ isAdmin }) {
         .map((seat) => `${classes.find((course) => course.id === seat.class_id)?.short_name || seat.class_id}: ${seat.seat_number == null ? "Waiting" : `Free #${seat.seat_number}`}`).join(", "),
     };
   }).filter((row) => hasFamilyId(row.family_id)), (row) => `${row.parent || ""} ${row.family_id || ""}`);
+  const registrationQuery = registrationSearch.trim().toLowerCase();
+  const filteredRegistrationRows = registrationQuery
+    ? registrationRows.filter((row) => [
+      row.family_id,
+      row.parent,
+      row.student_id,
+      row.student,
+      row.session_1,
+      row.session_2,
+      row.session_3,
+      row.waterford_seats,
+    ].join(" ").toLowerCase().includes(registrationQuery))
+    : registrationRows;
+  const editRegistration = (row) => {
+    const registration = registrations.find((item) => item.id === row.id);
+    if (!registration) return;
+    setRegistrationEdit({
+      id: registration.id,
+      student_id: registration.student_id,
+      student: row.student || `Student ${row.student_id}`,
+      session_1: registration.session_1 || null,
+      session_2: registration.session_2 || null,
+      session_3: registration.session_3 || null,
+    });
+    window.scrollTo({ top: 0, behavior: "smooth" });
+  };
+  const saveRegistrationEdit = async (event) => {
+    event.preventDefault();
+    if (!registrationEdit) return;
+    setRegistrationBusy(true);
+    const payload = {
+      session_1: registrationEdit.session_1 || null,
+      session_2: registrationEdit.session_2 || null,
+      session_3: registrationEdit.session_3 || null,
+    };
+    const result = await runSupabaseQuery(() => supabase.from("class_registrations")
+      .update(payload)
+      .eq("id", registrationEdit.id)
+      .select("id, student_id, session_1, session_2, session_3")
+      .maybeSingle());
+    if (result.error || !result.data) {
+      setStatus({ error: result.error?.message || "Registration was not updated.", message: "" });
+    } else {
+      setRegistrationEdit(null);
+      setStatus({ error: "", message: `Registration updated for ${registrationEdit.student}.` });
+      await load();
+    }
+    setRegistrationBusy(false);
+  };
+  const dropRegistration = async (row) => {
+    const studentName = row.student || `Student ${row.student_id}`;
+    if (!window.confirm(`Drop all classes for ${studentName}? This will clear Session 1, Session 2, and Session 3.`)) return;
+    setRegistrationBusy(true);
+    const result = await runSupabaseQuery(() => supabase.from("class_registrations")
+      .update({ session_1: null, session_2: null, session_3: null })
+      .eq("id", row.id)
+      .select("id, student_id, session_1, session_2, session_3")
+      .maybeSingle());
+    if (result.error || !result.data) {
+      setStatus({ error: result.error?.message || "Classes were not dropped.", message: "" });
+    } else {
+      if (registrationEdit?.id === row.id) setRegistrationEdit(null);
+      setStatus({ error: "", message: `All classes dropped for ${studentName}.` });
+      await load();
+    }
+    setRegistrationBusy(false);
+  };
+  const registrationActionRows = filteredRegistrationRows.map((row) => ({
+    id: row.id,
+    cells: [
+      row.family_id,
+      row.parent,
+      row.student_id,
+      row.student,
+      row.session_1,
+      row.session_2,
+      row.session_3,
+      ...(isAdmin ? [row.waterford_seats] : []),
+    ],
+    actions: (
+      <RowActions
+        onEdit={() => editRegistration(row)}
+        onDelete={() => dropRegistration(row)}
+        deleteLabel="Drop"
+        disabled={registrationBusy}
+      />
+    ),
+  }));
   const legacyMethods = (row) => {
     const methods = [];
     if ([row?.pay_1_cash, row?.pay_2_cash, row?.pay_3_cash, row?.pay_4_cash, row?.pay_5_cash]
@@ -3137,7 +3228,54 @@ function StaffPortal({ isAdmin }) {
       {active === "registrations" && <div className="portal-panel">
         <div className="panel-heading"><div><span>所有注册课程信息</span><h2>Registration Summary</h2></div><button type="button" className="outline-link" onClick={load}>Refresh</button></div>
         {isAdmin && seatUsage && <p>This school year · Waterford 免费中文课程席位 Free Chinese seats: {seatUsage.used}/20 used · {20 - seatUsage.used} remaining · {seatUsage.waiting} waiting</p>}
-        <DataTable columns={[["family_id", "Family ID"], ["parent", "Parent"], ["student_id", "Student ID"], ["student", "Student"], ["session_1", "Session 1"], ["session_2", "Session 2"], ["session_3", "Session 3"], ...(isAdmin ? [["waterford_seats", "Waterford Seats"]] : [])]} rows={registrationRows} />
+        {registrationEdit && (
+          <section className="collapsible-editor is-open">
+            <button className="collapsible-editor-toggle" type="button" onClick={() => setRegistrationEdit(null)} aria-expanded="true">
+              <span>Edit registration · {registrationEdit.student}</span>
+              <span aria-hidden="true">v</span>
+            </button>
+            <form className="portal-form staff-user-form registration-admin-form" onSubmit={saveRegistrationEdit}>
+              {[1, 2, 3].map((number) => {
+                const field = `session_${number}`;
+                return (
+                  <label key={field}>
+                    <span>Session {number}</span>
+                    <select
+                      value={registrationEdit[field] || ""}
+                      onChange={(event) => setRegistrationEdit({
+                        ...registrationEdit,
+                        [field]: event.target.value ? Number(event.target.value) : null,
+                      })}
+                    >
+                      <option value="">No class</option>
+                      {sortedByLabel(
+                        classes.filter((course) => Number(course.class_time_id) === number && (course.is_open !== false || course.id === registrationEdit[field])),
+                        (course) => course.name || course.short_name || "",
+                      ).map((course) => (
+                        <option value={course.id} key={course.id}>
+                          {course.name}{course.class_times?.display_time || course.display_time ? ` · ${course.class_times?.display_time || course.display_time}` : ""}
+                        </option>
+                      ))}
+                    </select>
+                  </label>
+                );
+              })}
+              <div className="button-row">
+                <button className="button-link" type="submit" disabled={registrationBusy}>{registrationBusy ? "Saving..." : "Save registration"}</button>
+                <button className="outline-link" type="button" onClick={() => setRegistrationEdit(null)} disabled={registrationBusy}>Cancel edit</button>
+              </div>
+            </form>
+          </section>
+        )}
+        <label className="standalone-field staff-search">
+          <span>Search registrations</span>
+          <input value={registrationSearch} onChange={(event) => setRegistrationSearch(event.target.value)} placeholder="Family, parent, student, or class" />
+        </label>
+        <ActionTable
+          columns={["Family ID", "Parent", "Student ID", "Student", "Session 1", "Session 2", "Session 3", ...(isAdmin ? ["Waterford Seats"] : [])]}
+          rows={registrationActionRows}
+          empty={registrationRows.length ? "No registrations match this search." : "No registration records."}
+        />
       </div>}
       {active === "payments" && !tuitionReady && <p>学费信息暂不可用，请刷新。 Tuition unavailable; please refresh.</p>}
       {active === "payments" && tuitionReady && (
