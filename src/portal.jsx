@@ -2650,6 +2650,32 @@ function StaffPortal({ isAdmin }) {
       row.waterford_seats,
     ].join(" ").toLowerCase().includes(registrationQuery))
     : registrationRows;
+  const exportRegistrationSummary = () => {
+    const headers = [
+      "Family ID", "Parent", "Student ID", "Student", "Session 1", "Session 2", "Session 3",
+      ...(isAdmin ? ["Waterford Seats"] : []),
+    ];
+    const rows = [
+      headers,
+      ...filteredRegistrationRows.map((row) => [
+        row.family_id,
+        row.parent,
+        row.student_id,
+        row.student,
+        row.session_1,
+        row.session_2,
+        row.session_3,
+        ...(isAdmin ? [row.waterford_seats] : []),
+      ]),
+    ];
+    const csv = rows.map((row) => row.map(csvEscape).join(",")).join("\r\n");
+    const url = URL.createObjectURL(new Blob(["\uFEFF", csv], { type: "text/csv;charset=utf-8" }));
+    const link = document.createElement("a");
+    link.href = url;
+    link.download = `registration-summary-${new Date().toISOString().slice(0, 10)}.csv`;
+    link.click();
+    URL.revokeObjectURL(url);
+  };
   const editRegistration = (row) => {
     const registration = registrations.find((item) => item.id === row.id);
     if (!registration) return;
@@ -3226,7 +3252,13 @@ function StaffPortal({ isAdmin }) {
         </div>
       )}
       {active === "registrations" && <div className="portal-panel">
-        <div className="panel-heading"><div><span>所有注册课程信息</span><h2>Registration Summary</h2></div><button type="button" className="outline-link" onClick={load}>Refresh</button></div>
+        <div className="panel-heading">
+          <div><span>所有注册课程信息</span><h2>Registration Summary</h2></div>
+          <div className="button-row">
+            <button type="button" className="outline-link" onClick={exportRegistrationSummary}>Export to CSV</button>
+            <button type="button" className="outline-link" onClick={load}>Refresh</button>
+          </div>
+        </div>
         {isAdmin && seatUsage && <p>This school year · Waterford 免费中文课程席位 Free Chinese seats: {seatUsage.used}/20 used · {20 - seatUsage.used} remaining · {seatUsage.waiting} waiting</p>}
         {registrationEdit && (
           <section className="collapsible-editor is-open">
