@@ -1,6 +1,6 @@
 import assert from "node:assert/strict";
 import test from "node:test";
-import { chineseDate, messageFor, validDate } from "../api/attendance-notifications.js";
+import { chineseDate, messageFor, validDate } from "../lib/attendance-notifications.js";
 
 test("attendance notification validates real calendar dates", () => {
   assert.equal(validDate("2026-10-25"), "2026-10-25");

@@ -1,4 +1,5 @@
 import { mailConfig, portalAccountTemplate, sendMail } from "../lib/mail.js";
+import { handleAttendanceNotifications } from "../lib/attendance-notifications.js";
 import { handlePushNotification } from "../lib/push-notification.js";
 
 const STAFF_ROLE = "sccs_admin_team_role";
@@ -330,6 +331,9 @@ async function handleAccountDeletion(request, response) {
 }
 
 export default async function handler(request, response) {
+  if (request.query?.operation === "attendance-notifications") {
+    return handleAttendanceNotifications(request, response);
+  }
   if (request.query?.operation === "send-push-notification") {
     return handlePushNotification(request, response);
   }

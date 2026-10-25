@@ -1,5 +1,6 @@
 {
   "rewrites": [
+    { "source": "/api/attendance-notifications", "destination": "/api/admin-users?operation=attendance-notifications" },
     { "source": "/api/send-push-notification", "destination": "/api/admin-users?operation=send-push-notification" },
     { "source": "/api/delete-account", "destination": "/api/admin-users?operation=delete-account" },
     { "source": "/about", "destination": "/index.html" },
