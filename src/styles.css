@@ -2506,6 +2506,61 @@ footer {
   color: #758096;
   font-weight: 600;
 }
+.attendance-email-button {
+  background: #0e2954;
+  color: #fff;
+}
+.attendance-email-button:hover:not(:disabled) {
+  background: #183d73;
+  color: #fff;
+}
+.attendance-notification-report {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+.attendance-notification-report-heading {
+  display: flex;
+  gap: 20px;
+  align-items: end;
+  justify-content: space-between;
+  margin-bottom: 14px;
+}
+.attendance-notification-report-heading span {
+  color: var(--gold-dark);
+  font-size: 0.7rem;
+  font-weight: 800;
+  letter-spacing: 0.08em;
+}
+.attendance-notification-report-heading h3 {
+  margin: 3px 0 0;
+}
+.attendance-notification-report-heading small {
+  color: #647087;
+  font-weight: 700;
+}
+.attendance-notification-table .data-table {
+  min-width: 940px;
+}
+.attendance-delivery-status {
+  display: inline-flex;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: #eef1f5;
+  color: #52627c;
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: capitalize;
+}
+.attendance-delivery-status.status-sent { background: #e4f5ea; color: #217141; }
+.attendance-delivery-status.status-failed { background: #ffe9e7; color: #9b2f2f; }
+.attendance-delivery-status.status-skipped { background: #fff4d2; color: #7c5c00; }
+.attendance-notification-table td:last-child small {
+  display: block;
+  max-width: 260px;
+  margin-top: 5px;
+  color: #9b2f2f;
+}
 .grades-panel,
 .grades-entry {
   display: grid;

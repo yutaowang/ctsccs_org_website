@@ -1640,6 +1640,9 @@ function StaffPortal({ isAdmin }) {
   const [selectedClass, setSelectedClass] = useState("");
   const [attendanceDate, setAttendanceDate] = useState(mostRecentSunday);
   const [adminAttendanceDate, setAdminAttendanceDate] = useState("");
+  const [attendanceNotificationReport, setAttendanceNotificationReport] = useState(null);
+  const [attendanceNotificationBusy, setAttendanceNotificationBusy] = useState(false);
+  const [attendanceNotificationLoading, setAttendanceNotificationLoading] = useState(false);
   const [attendanceBusyKeys, setAttendanceBusyKeys] = useState(() => new Set());
   const [attendanceBulkBusy, setAttendanceBulkBusy] = useState(false);
   const [expandedAttendanceDates, setExpandedAttendanceDates] = useState({});
@@ -2138,6 +2141,59 @@ function StaffPortal({ isAdmin }) {
       };
     });
   }, [attendanceRecords, registrations, rosterClasses, selectedAdminAttendanceDate, students]);
+  const loadAttendanceNotificationReport = async (classDate = selectedAdminAttendanceDate) => {
+    if (!isAdmin || !classDate) {
+      setAttendanceNotificationReport(null);
+      return;
+    }
+    setAttendanceNotificationLoading(true);
+    try {
+      const result = await fetch(`/api/attendance-notifications?classDate=${encodeURIComponent(classDate)}`, {
+        headers: { Authorization: `Bearer ${session.access_token}` },
+      });
+      const body = await result.json();
+      if (!result.ok) throw new Error(body.error || "Could not load the notification report.");
+      setAttendanceNotificationReport(body.report || null);
+    } catch (error) {
+      setAttendanceNotificationReport(null);
+      setStatus({ error: error.message, message: "" });
+    } finally {
+      setAttendanceNotificationLoading(false);
+    }
+  };
+  useEffect(() => {
+    if (active === "attendance_summary") void loadAttendanceNotificationReport(selectedAdminAttendanceDate);
+  }, [active, selectedAdminAttendanceDate]);
+  const sendAttendanceNotifications = async () => {
+    if (!selectedAdminAttendanceDate) return;
+    const absentCount = adminAttendanceRows.reduce((total, row) => total + row.absent, 0);
+    if (!absentCount) {
+      setStatus({ error: "No absent students were found for this date.", message: "" });
+      return;
+    }
+    if (!window.confirm(`Send an individual absence email for ${absentCount} absence record${absentCount === 1 ? "" : "s"} on ${selectedAdminAttendanceDate}?`)) return;
+    setAttendanceNotificationBusy(true);
+    setStatus({ error: "", message: "" });
+    try {
+      const result = await fetch("/api/attendance-notifications", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ classDate: selectedAdminAttendanceDate }),
+      });
+      const body = await result.json();
+      if (!result.ok) throw new Error(body.error || "Could not send attendance notifications.");
+      setAttendanceNotificationReport(body.report || null);
+      setStatus({ error: "", message: body.message || "Attendance notifications finished." });
+    } catch (error) {
+      setStatus({ error: error.message, message: "" });
+      await loadAttendanceNotificationReport(selectedAdminAttendanceDate);
+    } finally {
+      setAttendanceNotificationBusy(false);
+    }
+  };
   const toggleAttendanceDate = (date) => {
     setExpandedAttendanceDates((current) => ({
       ...current,
@@ -2904,7 +2960,17 @@ function StaffPortal({ isAdmin }) {
         <div className="portal-panel admin-attendance-panel">
           <div className="panel-heading">
             <div><span>每日出勤统计</span><h2>Attendance</h2></div>
-            <button className="outline-link" type="button" onClick={load}>Refresh</button>
+            <div className="button-row">
+              <button
+                className="outline-link attendance-email-button"
+                type="button"
+                onClick={sendAttendanceNotifications}
+                disabled={attendanceNotificationBusy || !selectedAdminAttendanceDate || !adminAttendanceRows.some((row) => row.absent)}
+              >
+                {attendanceNotificationBusy ? "Sending..." : "Send Email Notification"}
+              </button>
+              <button className="outline-link" type="button" onClick={load}>Refresh</button>
+            </div>
           </div>
           <label className="standalone-field">
             <span>Attendance date</span>
@@ -2950,6 +3016,48 @@ function StaffPortal({ isAdmin }) {
               </tbody>
             </table>
           </div>}
+          <section className="attendance-notification-report" aria-live="polite">
+            <div className="attendance-notification-report-heading">
+              <div>
+                <span>邮件通知记录</span>
+                <h3>Email Notification Report</h3>
+              </div>
+              {attendanceNotificationReport && (
+                <small>
+                  {formatTimestamp(attendanceNotificationReport.completed_at || attendanceNotificationReport.created_at)} ·
+                  {` ${attendanceNotificationReport.sent_count} sent, ${attendanceNotificationReport.failed_count} failed, ${attendanceNotificationReport.skipped_count} skipped`}
+                </small>
+              )}
+            </div>
+            {attendanceNotificationLoading ? (
+              <div className="empty-state">Loading notification report...</div>
+            ) : !attendanceNotificationReport ? (
+              <div className="empty-state">No email notification report has been saved for this date.</div>
+            ) : (
+              <div className="data-table-wrap attendance-notification-table">
+                <table className="data-table">
+                  <thead><tr><th>Student</th><th>Class</th><th>Parent</th><th>Email</th><th>Phone</th><th>Status</th></tr></thead>
+                  <tbody>
+                    {attendanceNotificationReport.recipients.map((recipient) => (
+                      <tr key={recipient.id}>
+                        <td><strong>{recipient.student_name}</strong></td>
+                        <td>{recipient.course_name}</td>
+                        <td>{recipient.parent_name || "Not provided"}</td>
+                        <td>{recipient.email || "Not provided"}</td>
+                        <td>{recipient.phone || "Not provided"}</td>
+                        <td>
+                          <span className={`attendance-delivery-status status-${recipient.delivery_status}`}>
+                            {recipient.delivery_status}
+                          </span>
+                          {recipient.error_message && <small>{recipient.error_message}</small>}
+                        </td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            )}
+          </section>
         </div>
       )}
       {["rosters", "attendance", "grades", "email"].includes(active) && (
