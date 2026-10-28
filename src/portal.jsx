@@ -2677,6 +2677,9 @@ function StaffPortal({ isAdmin }) {
   const selectedPrintSafetyPatrolDeposit = selectedPrintFamily && selectedPrintHasRegisteredCourses
     ? patrolDepositFromBilling(selectedPrintFamily.id, deposits)
     : 0;
+  const selectedPrintPaymentSummary = selectedPrintFamily
+    ? paymentSummaryForFamily(selectedPrintFamily)
+    : null;
   const registrationRows = sortedByLabel(registrations.map((row) => {
     const student = students.find((item) => item.id === row.student_id);
     const family = families.find((item) => item.id === student?.family_id);
@@ -3681,7 +3684,10 @@ function StaffPortal({ isAdmin }) {
                   <div><span>Waterford Chinese tuition discount ({waterfordSeats.filter((seat) => seat.family_id === selectedPrintFamily.id && seat.seat_number != null).length} seats)</span><strong>-{formatDonation(selectedPrintDonationSubtotal - selectedPrintDonationTotal)}</strong></div>
                 )}
                 <div><span>Safety Patrol Deposit</span><strong>{formatDonation(selectedPrintSafetyPatrolDeposit)}</strong></div>
-                <div className="donation-total-row"><span>Total</span><strong>{formatDonation(selectedPrintDonationTotal + selectedPrintSafetyPatrolDeposit)}</strong></div>
+                {(selectedPrintPaymentSummary?.adjust ?? 0) !== 0 && (
+                  <div><span>Adjust</span><strong>{formatDonation(selectedPrintPaymentSummary.adjust)}</strong></div>
+                )}
+                <div className="donation-total-row"><span>Total</span><strong>{formatDonation(selectedPrintPaymentSummary?.due ?? 0)}</strong></div>
               </div>
               <div className="registration-notes">
                 <strong>Notes</strong>

@@ -1,5 +1,9 @@
 # SCCS Website Change Log
 
+## 2026-10-28
+
+- Updated Admin Portal Print Registration to show nonzero payment adjustments and include them in the recalculated Total.
+
 ## 2026-10-11
 
 - Changed the SCCS Mobile Sign out button to the standard blue theme while keeping Delete account styled as a red destructive action.
