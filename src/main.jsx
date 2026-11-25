@@ -75,6 +75,20 @@ const thanksgivingHeroImages = [
   "/Images/hero-thanksgiving-food-drive.webp",
   "/Images/hero-thanksgiving-harvest-celebration.webp",
 ];
+const christmasHeroImages = [
+  "/Images/hero-christmas-tree-decorating.webp",
+  "/Images/hero-christmas-community-concert.webp",
+  "/Images/hero-christmas-baking-workshop.webp",
+  "/Images/hero-christmas-donation-drive.webp",
+  "/Images/hero-christmas-winter-lights.webp",
+];
+const newYearHeroImages = [
+  "/Images/hero-new-year-2027-countdown.webp",
+  "/Images/hero-new-year-2027-time-capsule.webp",
+  "/Images/hero-new-year-2027-family-toast.webp",
+  "/Images/hero-new-year-2027-fireworks.webp",
+  "/Images/hero-new-year-2027-community-walk.webp",
+];
 const heroImageAlt = {
   "/Images/hero-mid-autumn-mooncake-workshop.webp": "Families making mooncakes together for the Mid-Autumn Festival",
   "/Images/hero-mid-autumn-lantern-walk.webp": "Children carrying glowing lanterns during a Mid-Autumn Festival gathering",
@@ -91,12 +105,24 @@ const heroImageAlt = {
   "/Images/hero-thanksgiving-family-kitchen.webp": "A multigenerational Chinese American family preparing Thanksgiving dinner together",
   "/Images/hero-thanksgiving-food-drive.webp": "Families volunteering together at a Thanksgiving community food drive",
   "/Images/hero-thanksgiving-harvest-celebration.webp": "Families enjoying an outdoor multicultural autumn harvest celebration",
+  "/Images/hero-christmas-tree-decorating.webp": "Multicultural families decorating a Christmas tree together at school",
+  "/Images/hero-christmas-community-concert.webp": "Children performing together at a Christmas community concert",
+  "/Images/hero-christmas-baking-workshop.webp": "Families making Christmas cookies and dumplings at a holiday workshop",
+  "/Images/hero-christmas-donation-drive.webp": "School families organizing coats and toys for a Christmas donation drive",
+  "/Images/hero-christmas-winter-lights.webp": "Families enjoying a snowy outdoor Christmas lights gathering",
+  "/Images/hero-new-year-2027-countdown.webp": "A multicultural school community counting down to the year 2027",
+  "/Images/hero-new-year-2027-time-capsule.webp": "Children creating New Year goals and a 2027 classroom time capsule",
+  "/Images/hero-new-year-2027-family-toast.webp": "Families sharing a sparkling-cider toast for the Gregorian New Year",
+  "/Images/hero-new-year-2027-fireworks.webp": "Families watching New Year's Eve fireworks together on a winter night",
+  "/Images/hero-new-year-2027-community-walk.webp": "Families beginning New Year's Day with a winter community walk and cleanup",
 };
 
 const heroImages = [
   ...midAutumnHeroImages,
   ...dragonBoatHeroImages,
   ...thanksgivingHeroImages,
+  ...christmasHeroImages,
+  ...newYearHeroImages,
   "/Images/hero-children-laughing.png",
   "/Images/hero-chinese-reading.png",
   "/Images/hero-calligraphy-class.png",
