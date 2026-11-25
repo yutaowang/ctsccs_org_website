@@ -374,11 +374,60 @@ function QuickLinks() {
   );
 }
 
+const appDownloads = [
+  {
+    platform: "iPhone / iPad",
+    store: "App Store",
+    href: "https://apps.apple.com/app/id6815762256",
+    qr: "/app-store-qr.svg",
+    badge: "iOS",
+  },
+  {
+    platform: "Android",
+    store: "Google Play",
+    href: "https://play.google.com/store/apps/details?id=org.ctsccs.mobile",
+    qr: "/google-play-qr.svg",
+    badge: "AND",
+  },
+];
+
+function AppDownload() {
+  return (
+    <section className="app-download" aria-labelledby="app-download-title">
+      <div className="app-download-copy">
+        <span className="eyebrow">SCCS 随身服务 SCCS On the Go</span>
+        <h2 id="app-download-title">下载 SCCS Mobile App</h2>
+        <p>扫描对应二维码安装 App，随时查看学校通知、家庭资料、课程注册和学费信息。</p>
+        <p>Scan the code for your device to stay connected with SCCS wherever you go.</p>
+      </div>
+      <div className="app-download-options">
+        {appDownloads.map(({ platform, store, href, qr, badge }) => (
+          <a
+            className="app-download-option"
+            href={href}
+            target="_blank"
+            rel="noreferrer"
+            aria-label={`在 ${store} 下载 SCCS Mobile`}
+            key={store}
+          >
+            <img src={qr} alt={`${store} 下载二维码`} />
+            <span className="app-store-copy">
+              <span className="app-platform-badge" aria-hidden="true">{badge}</span>
+              <span><small>{platform}</small><strong>{store}</strong></span>
+            </span>
+          </a>
+        ))}
+      </div>
+    </section>
+  );
+}
+
 function HomePage({ schoolStartDate }) {
   return (
     <>
       <Slideshow />
       <QuickLinks />
+      <AppDownload />
       <Announcements schoolStartDate={schoolStartDate} />
     </>
   );

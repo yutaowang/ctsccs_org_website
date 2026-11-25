@@ -492,6 +492,106 @@ main {
   color: var(--gold);
 }
 
+.app-download {
+  display: grid;
+  padding: 30px;
+  margin-bottom: 38px;
+  align-items: center;
+  gap: 30px;
+  grid-template-columns: minmax(0, 1fr) auto;
+  background: var(--paper);
+  border: 1px solid rgba(14, 41, 84, 0.08);
+  border-left: 4px solid var(--gold);
+  box-shadow: 0 12px 38px rgba(14, 41, 84, 0.07);
+}
+
+.app-download .eyebrow {
+  color: #a67c0c;
+  font-size: 0.68rem;
+  font-weight: 700;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.app-download h2 {
+  margin: 7px 0 12px;
+  color: var(--navy);
+  font: 700 clamp(1.45rem, 2.5vw, 2rem)/1.2 "Playfair Display", Georgia, serif;
+}
+
+.app-download p {
+  max-width: 520px;
+  margin: 5px 0;
+  color: var(--muted);
+  font-size: 0.86rem;
+  line-height: 1.65;
+}
+
+.app-download-options {
+  display: flex;
+  gap: 22px;
+}
+
+.app-download-option {
+  display: flex;
+  width: 150px;
+  padding: 10px;
+  align-items: stretch;
+  flex-direction: column;
+  color: white;
+  background: var(--navy);
+  border-radius: 5px;
+  transition: 180ms ease;
+}
+
+.app-download-option:hover {
+  background: var(--blue);
+  box-shadow: 0 9px 22px rgba(14, 41, 84, 0.18);
+  transform: translateY(-2px);
+}
+
+.app-download-option > img {
+  display: block;
+  width: 130px;
+  height: 130px;
+  background: var(--paper);
+}
+
+.app-store-copy {
+  display: flex;
+  padding: 10px 3px 2px;
+  align-items: center;
+  gap: 8px;
+}
+
+.app-store-copy small,
+.app-store-copy strong {
+  display: block;
+}
+
+.app-store-copy small {
+  color: #c5d0df;
+  font-size: 0.59rem;
+}
+
+.app-store-copy strong {
+  margin-top: 1px;
+  font-size: 0.8rem;
+}
+
+.app-platform-badge {
+  display: grid;
+  width: 30px;
+  height: 30px;
+  flex: 0 0 30px;
+  place-items: center;
+  color: var(--navy);
+  background: var(--gold);
+  border-radius: 50%;
+  font-size: 0.56rem;
+  font-weight: 800;
+}
+
 .content-grid {
   display: grid;
   grid-template-columns: minmax(0, 1.6fr) minmax(260px, 1fr);
@@ -1716,6 +1816,25 @@ footer {
     padding: 14px 18px;
     border-right: 0;
     border-bottom: 1px solid rgba(255, 255, 255, 0.13);
+  }
+
+  .app-download {
+    margin: 0 16px 32px;
+    padding: 25px 21px;
+    grid-template-columns: 1fr;
+  }
+
+  .app-download-options {
+    gap: 14px;
+  }
+
+  .app-download-option {
+    width: calc(50% - 7px);
+  }
+
+  .app-download-option > img {
+    width: 100%;
+    height: auto;
   }
 
   .content-grid {
