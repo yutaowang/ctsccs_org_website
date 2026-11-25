@@ -68,6 +68,13 @@ const dragonBoatHeroImages = [
   "/Images/hero-dragon-boat-family-picnic.webp",
   "/Images/hero-dragon-boat-still-life.webp",
 ];
+const thanksgivingHeroImages = [
+  "/Images/hero-thanksgiving-community-table.webp",
+  "/Images/hero-thanksgiving-gratitude-tree.webp",
+  "/Images/hero-thanksgiving-family-kitchen.webp",
+  "/Images/hero-thanksgiving-food-drive.webp",
+  "/Images/hero-thanksgiving-harvest-celebration.webp",
+];
 const heroImageAlt = {
   "/Images/hero-mid-autumn-mooncake-workshop.webp": "Families making mooncakes together for the Mid-Autumn Festival",
   "/Images/hero-mid-autumn-lantern-walk.webp": "Children carrying glowing lanterns during a Mid-Autumn Festival gathering",
@@ -79,11 +86,17 @@ const heroImageAlt = {
   "/Images/hero-dragon-boat-crafts.webp": "Children making dragon boats and traditional sachets in a festival craft class",
   "/Images/hero-dragon-boat-family-picnic.webp": "A multigenerational family sharing zongzi at a Dragon Boat Festival picnic",
   "/Images/hero-dragon-boat-still-life.webp": "Zongzi, tea, five-color cords, and a miniature dragon boat arranged for the festival",
+  "/Images/hero-thanksgiving-community-table.webp": "Multicultural families sharing a Thanksgiving community meal",
+  "/Images/hero-thanksgiving-gratitude-tree.webp": "Children making a gratitude tree during a Thanksgiving classroom activity",
+  "/Images/hero-thanksgiving-family-kitchen.webp": "A multigenerational Chinese American family preparing Thanksgiving dinner together",
+  "/Images/hero-thanksgiving-food-drive.webp": "Families volunteering together at a Thanksgiving community food drive",
+  "/Images/hero-thanksgiving-harvest-celebration.webp": "Families enjoying an outdoor multicultural autumn harvest celebration",
 };
 
 const heroImages = [
   ...midAutumnHeroImages,
   ...dragonBoatHeroImages,
+  ...thanksgivingHeroImages,
   "/Images/hero-children-laughing.png",
   "/Images/hero-chinese-reading.png",
   "/Images/hero-calligraphy-class.png",
